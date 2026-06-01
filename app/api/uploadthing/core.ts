@@ -1,5 +1,6 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
+import type { Session } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { UTApi } from "uploadthing/server";
@@ -13,7 +14,7 @@ export const ourFileRouter = {
     image: { maxFileSize: "4MB", maxFileCount: 1 } 
   })
     .middleware(async () => {
-      const session = await getServerSession(authOptions);
+      const session = (await getServerSession(authOptions)) as Session | null;
       if (!session?.user?.id) throw new Error("Unauthorized");
 
       const photoCount = await prisma.photo.count({

@@ -10,6 +10,7 @@ declare module "next-auth" {
   }
 
   interface User extends DefaultUser {
+    [x: string]: string;
     id: string;
     role?: string;
   }

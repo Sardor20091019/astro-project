@@ -1,4 +1,5 @@
-import { getServerSession } from "next-auth";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin";
@@ -10,8 +11,9 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
+  const user = (session as any)?.user;
 
-  if (!session || !isAdmin(session.user.email)) {
+  if (!session || !user || !isAdmin(user.email)) {
     redirect("/");
   }
 
@@ -32,11 +34,11 @@ export default async function AdminPage() {
           </div>
           <div className="hidden md:flex items-center gap-4 text-right">
             <div className="text-xs text-zinc-500">
-              <p className="text-white font-bold">{session.user?.name}</p>
+              <p className="text-white font-bold">{user?.name}</p>
               <p className="text-[10px] uppercase tracking-widest text-red-500 font-bold">Admin</p>
             </div>
-            {session.user?.image && (
-              <img src={session.user.image} alt="" className="w-9 h-9 rounded-full border border-white/10 object-cover" />
+            {user?.image && (
+              <img src={user.image} alt="" className="w-9 h-9 rounded-full border border-white/10 object-cover" />
             )}
           </div>
         </header>
