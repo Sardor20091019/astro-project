@@ -142,6 +142,7 @@ export default function WebGLImage({ src, alt, className, style, fill }: Props) 
     function onEnter() { stateRef.current.hover = 1; }
     function onLeave() { stateRef.current.hover = 0; stateRef.current.mx = 0.5; stateRef.current.my = 0.5; }
     function onMove(e: MouseEvent) {
+      if (!canvas) return;
       const r = canvas.getBoundingClientRect();
       stateRef.current.mx = (e.clientX - r.left) / r.width;
       stateRef.current.my = 1 - (e.clientY - r.top) / r.height;
