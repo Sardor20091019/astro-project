@@ -143,3 +143,45 @@ h1, h2, h3, h4 {
   to   { opacity: 1; transform: scale(1); }
 }
 .animate-scale-in { animation: scaleIn 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+
+
+/* src/app/globals.css */
+
+@layer utilities {
+  /* Restructure form row pairs (e.g., Location + Coordinates or Shutter + ISO) */
+  /* Cascades from a single full-width stack on mobile to a clean side-by-side split on desktop */
+  .responsive-form-row {
+    @apply flex flex-col gap-4 sm:flex-row sm:items-center;
+  }
+
+  /* Standard template for text, select, and coordinates inputs */
+  .gallery-input {
+    @apply w-full bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-xl px-4 py-3 
+           text-sm outline-none transition-all duration-200
+           focus:border-zinc-600 focus:ring-1 focus:ring-zinc-600;
+  }
+
+  /* Customized modern container styling for mobile file selector buttons */
+  .mobile-file-picker {
+    @apply flex flex-col items-center justify-center w-full border border-dashed border-zinc-800 
+           rounded-xl p-4 text-center cursor-pointer bg-zinc-950/40 hover:bg-zinc-950 transition-all;
+  }
+}
+
+/* Fallback pure CSS styling specifically targeting native system controls on mobile views */
+@media (max-width: 640px) {
+  input[type="file"]::file-selector-button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    border-radius: 0.5rem;
+    background-color: #27272a; /* zinc-800 */
+    color: #ffffff;
+    border: none;
+    margin-right: 0.5rem;
+  }
+
+  /* Prevents iOS and Android mobile web browsers from zooming in automatically on smaller inputs */
+  input, select, textarea {
+    font-size: 16px !important; 
+  }
+}
