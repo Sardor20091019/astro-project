@@ -7,7 +7,6 @@ import { CheckCircle2, MapPin, User, Camera, Tag } from "lucide-react";
 import { CATEGORIES } from "@/data/photos";
 import { UploadButton } from "@uploadthing/react";
 import { OurFileRouter } from "@/app/api/uploadthing/core";
-import { moderateImageUrl } from "@/app/actions/moderation";
 
 export default function SubmitPage() {
   const { data: session } = useSession();
@@ -15,27 +14,25 @@ export default function SubmitPage() {
   const [submitted, setSubmitted] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
 
- async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-  e.preventDefault();
-  setLoading(true);
-  
-  const formData = new FormData(e.currentTarget);
-  
-  const res = await fetch("/api/photos/upload", { 
-    method: "POST", 
-    body: formData 
-  });
-  
-  if (res.ok) {
-    setSubmitted(true);
-  } else {
-    // This will show you the ACTUAL error from your API
-    const errorData = await res.json();
-    console.error("API Error Details:", errorData);
-    alert(`Upload failed: ${errorData.error || "Unknown error"}`);
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    
+    const formData = new FormData(e.currentTarget);
+    const res = await fetch("/api/photos/upload", { 
+      method: "POST", 
+      body: formData 
+    });
+    
+    if (res.ok) {
+      setSubmitted(true);
+    } else {
+      const errorData = await res.json();
+      console.error("API Error Details:", errorData);
+      alert(`Upload failed: ${errorData.error || "Unknown error"}`);
+    }
+    setLoading(false);
   }
-  setLoading(false);
-}
 
   if (submitted) {
     return (
@@ -70,7 +67,7 @@ export default function SubmitPage() {
         <p className="text-zinc-500 text-xs md:text-sm leading-relaxed mb-6 md:mb-8">
           Your photo goes live immediately — no approval needed.{" "}
           {session?.user ? (
-            <span className="text-zinc-400">Itll be credited to your profile.</span>
+            <span className="text-zinc-400">It'll be credited to your profile.</span>
           ) : (
             <span>
               <button type="button" onClick={() => signIn("google")} className="text-red-400 hover:text-red-300 underline underline-offset-2">
@@ -96,40 +93,29 @@ export default function SubmitPage() {
                     Remove
                   </button>
                 </div>
-                <input type="hidden" name="phoroUrl" value={uploadedUrl} />
               </div>
             ) : (
               <UploadButton<OurFileRouter, "imageUploader">
                 endpoint="imageUploader"
-    onClientUploadComplete={async (res) => {
-  if (res && res[0]) {
-    setLoading(true);
-    const result = await moderateImageUrl(res[0].url);
-    
-    // DEBUG: Log the full structure to console to see exactly what we get
-    console.log("Full API Response:", result);
-
-    // FIX: Many models return 'prob' instead of 'safe'. 
-    // Let's use the 'none' probability as a safe indicator.
-    // If the probability of nudity is low, it is safe.
-    const nudityProb = result.nudity.none; // 'none' is the probability that NO nudity was found
-    const goreProb = result.gore.prob;
-
-    // Use a lower threshold to be more forgiving
-    const isSafe = nudityProb > 0.5 && goreProb < 0.5;
-
-    if (isSafe) {
-      setUploadedUrl(res[0].url);
-    } else {
-      alert(`Rejected: NudityNone(${nudityProb}) | GoreProb(${goreProb})`);
-      setUploadedUrl(null);
-    }
-    setLoading(false);
-  }
-}}
-onUploadError={(error: Error) => {
-  alert(`Upload Failed: ${error.message}`);
-}}
+                onUploadBegin={() => setLoading(true)}
+                onClientUploadComplete={(res) => {
+                  if (res && res[0]) {
+                    // Extract structured server feedback directly from the response
+                    const serverData = res[0].serverData as { isSafe: boolean; error: string | null } | undefined;
+                    
+                    if (serverData && serverData.isSafe === false) {
+                      alert("Upload rejected: Content does not meet safety guidelines.");
+                      setUploadedUrl(null);
+                    } else {
+                      setUploadedUrl(res[0].url);
+                    }
+                  }
+                  setLoading(false);
+                }}
+                onUploadError={(error: Error) => {
+                  alert(`Upload Failed: ${error.message}`);
+                  setLoading(false);
+                }}
                 appearance={{
                   button: "bg-white/10 hover:bg-white/20 text-white text-[11px] md:text-xs uppercase tracking-widest px-6 md:px-8 py-3.5 md:py-4 rounded-xl transition-all w-full sm:w-auto",
                   allowedContent: "text-zinc-500 text-[9px] md:text-[10px] mt-2"

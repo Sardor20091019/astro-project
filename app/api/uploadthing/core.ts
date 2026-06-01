@@ -2,57 +2,50 @@ import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { UTApi } from "uploadthing/server";
+import { moderateImageUrl } from "@/lib/moderation";
 
 const f = createUploadthing();
+const utapi = new UTApi();
 
 export const ourFileRouter = {
-  // Define the upload route
   imageUploader: f({ 
-    image: { 
-      maxFileSize: "4MB", 
-      maxFileCount: 1 
-    } 
+    image: { maxFileSize: "4MB", maxFileCount: 1 } 
   })
     .middleware(async () => {
       const session = await getServerSession(authOptions);
       if (!session?.user?.id) throw new Error("Unauthorized");
 
-      // Fetch user role and check upload count
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { role: true },
+      const photoCount = await prisma.photo.count({
+        where: { userId: session.user.id },
       });
 
-      // ADMIN check: Bypass limit
-      // USER check: Enforce limit
-      if (user?.role !== "ADMIN") {
-        const photoCount = await prisma.photo.count({
-          where: { userId: session.user.id },
-        });
-
-        const LIMIT = 10;
-        if (photoCount >= LIMIT) {
-          throw new Error("Upload limit reached. Delete old photos to add more.");
-        }
-      }
+      if (photoCount >= 30) throw new Error("Upload limit reached.");
 
       return { userId: session.user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      // Logic to save the reference to your database
-      try {
-        await prisma.photo.create({
-          data: {
-            url: file.url,
-            title: "Untitled", // You can update this later via an edit form
-            userId: metadata.userId,
-            status: "APPROVED",
-          },
-        });
-        console.log("Upload complete for user:", metadata.userId);
-      } catch (error) {
-        console.error("Database save failed:", error);
+      const moderation = await moderateImageUrl(file.url);
+
+      if (!moderation.isSafe) {
+        console.log("CRITICAL: Flagged content block executed. Key:", file.key);
+        // Wipe file out of cloud storage immediately
+        await utapi.deleteFiles(file.key).catch(() => {});
+        
+        // Return JSON error state to client instead of breaking the pipeline
+        return { isSafe: false, error: "SAFETY_VIOLATION" };
       }
+
+      // Safe image: Persist to DB
+      await prisma.photo.create({
+        data: {
+          url: file.url,
+          title: "New Photo",
+          userId: metadata.userId,
+        },
+      });
+
+      return { isSafe: true, error: null };
     }),
 } satisfies FileRouter;
 

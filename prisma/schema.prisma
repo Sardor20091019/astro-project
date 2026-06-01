@@ -6,6 +6,7 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── Enums ───
 enum PhotoStatus {
   PENDING
   APPROVED
@@ -22,6 +23,12 @@ enum PhotoCategory {
   OTHER
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
+// ─── Auth Models ───
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -49,32 +56,28 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-enum Role {
-  USER
-  ADMIN
-}
-
+// ─── User Model (Fixed Role) ───
 model User {
-  id               String            @id @default(cuid())
-  name             String?
-  email            String?           @unique
-  emailVerified    DateTime?
-  image            String?
-  customImage      String?
-  accounts         Account[]
-  sessions         Session[]
-  ratings          Rating[]
-  likes            Like[]
-  comments         Comment[]
-  photos           Photo[]
-    role Role @default(USER)
-  // Follow System Relations
-  following        Follows[]         @relation("follower")
-  followers        Follows[]         @relation("following")
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  customImage   String?
+  role          Role      @default(USER)
+
+  accounts      Account[]
+  sessions      Session[]
+  ratings       Rating[]
+  likes         Like[]
+  comments      Comment[]
+  photos        Photo[]
   
-  // Chatting System Relations
-  sentMessages     Message[]         @relation("SentMessages")
-  receivedMessages Message[]         @relation("ReceivedMessages")
+  following     Follows[] @relation("follower")
+  followers     Follows[] @relation("following")
+  
+  sentMessages      Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
 }
 
 model VerificationToken {
@@ -85,6 +88,7 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// ─── App Models ───
 model Photo {
   id          Int           @id @default(autoincrement())
   url         String
@@ -102,6 +106,7 @@ model Photo {
   userId      String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @default(now()) @updatedAt
+  
   ratings     Rating[]
   likes       Like[]
   comments    Comment[]
