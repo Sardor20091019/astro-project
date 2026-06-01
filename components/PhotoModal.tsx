@@ -1,67 +1,66 @@
 "use client";
-import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 
-export default function PhotoModal({ photos, currentIndex }: { photos: any[], currentIndex: number }) {
-  const router = useRouter();
-  const [index, setIndex] = useState(currentIndex);
+import Link from "next/link";
+import { MessageSquare, Camera, Share2, Heart } from "lucide-react";
 
-  const goNext = (e?: any) => {
-    e?.stopPropagation();
-    if (index < photos.length - 1) setIndex(index + 1);
-  };
+interface PhotoDetailsProps {
+  photoUrl: string;
+  title: string;
+  ownerId: string;
+  ownerName: string;
+  cameraSettings?: string;
+}
 
-  const goPrev = (e?: any) => {
-    e?.stopPropagation();
-    if (index > 0) setIndex(index - 1);
-  };
-
-  const close = () => router.back();
-
+export default function PhotoDetailsSidePanel({ 
+  title, 
+  ownerId, 
+  ownerName, 
+  cameraSettings = "ISO 100 • 50mm • f/1.8 • 1/250s" 
+}: PhotoDetailsProps) {
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
-      onClick={close} // Click "anywhere" to go back
-    >
-      {/* X Close Button */}
-      <button 
-        onClick={close}
-        className="fixed top-5 right-5 z-[60] text-white text-4xl hover:scale-110 transition"
-      >
-        ✕
-      </button>
-
-      {/* Navigation Buttons (Desktop) */}
-      <button onClick={goPrev} className="fixed left-5 z-[60] text-white text-5xl hidden md:block">‹</button>
-      <button onClick={goNext} className="fixed right-5 z-[60] text-white text-5xl hidden md:block">›</button>
-
-      {/* The Image with Swipe Logic */}
-      <motion.div
-        key={index}
-        initial={{ opacity: 0, x: 100 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -100 }}
-        drag="x" // Enable swipe
-        dragConstraints={{ left: 0, right: 0 }}
-        onDragEnd={(e, { offset, velocity }) => {
-          if (offset.x > 100) goPrev();
-          else if (offset.x < -100) goNext();
-        }}
-        className="relative max-w-[90vw] max-h-[80vh]"
-        onClick={(e) => e.stopPropagation()} // Prevents closing when clicking the photo itself
-      >
-        <img 
-          src={photos[index].url} 
-          alt="Gallery" 
-          className="rounded-lg object-contain shadow-2xl"
-        />
-        
-        {/* Rating Stars (Shown at the bottom of modal) */}
-        <div className="absolute -bottom-12 left-0 right-0 text-center text-white">
-          <p className="text-lg">Rating: {photos[index].avgRating || "No reviews"}</p>
+    <div className="w-full lg:w-85 h-full p-6 bg-zinc-950 border-t lg:border-t-0 lg:border-l border-zinc-900 flex flex-col justify-between">
+      
+      {/* Top Section: Metadata Properties */}
+      <div className="space-y-6">
+        <div>
+          <span className="text-[10px] font-black uppercase tracking-widest text-red-500">Exhibition Frame</span>
+          <h2 className="text-lg font-bold text-zinc-100 tracking-tight mt-1">{title || "Untitled Exposure"}</h2>
+          <p className="text-xs text-zinc-400 mt-1">
+            by <span className="font-semibold text-zinc-200">{ownerName || "Anonymous Photographer"}</span>
+          </p>
         </div>
-      </motion.div>
+
+        {/* Camera Spec Block */}
+        <div className="p-3.5 bg-zinc-900/40 border border-zinc-900 rounded-lg flex items-start gap-3">
+          <Camera size={14} className="text-zinc-500 mt-0.5" />
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Capture Parameters</p>
+            <p className="text-xs text-zinc-500 mt-0.5 font-mono">{cameraSettings}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Section: System Relational CTAs */}
+      <div className="space-y-3 pt-6 border-t border-zinc-900/60">
+        <div className="flex gap-2">
+          <button className="flex-1 bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
+            <Heart size={12} /> Like
+          </button>
+          <button className="flex-1 bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
+            <Share2 size={12} /> Share
+          </button>
+        </div>
+
+        {/* Action Link: Pushes parameters cleanly directly over into /messages dashboard handler */}
+        <Link
+          href={`/messages?userId=${ownerId}&userName=${encodeURIComponent(ownerName || "User")}`}
+          className="w-full bg-zinc-100 hover:bg-zinc-200 text-zinc-950 py-2.5 rounded-lg text-xs font-black tracking-widest uppercase flex items-center justify-center gap-2 transition duration-200 shadow-lg"
+        >
+          <MessageSquare size={13} className="text-zinc-900 fill-zinc-900" />
+          Contact Photographer
+        </Link>
+      </div>
+
     </div>
   );
 }

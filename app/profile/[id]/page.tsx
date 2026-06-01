@@ -21,16 +21,23 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
       orderBy: { createdAt: "desc" },
       select: { id: true, url: true, title: true, location: true },
     }),
-    prisma.follow.count({ where: { followingId: userId } }),
-    prisma.follow.count({ where: { followerId: userId } }),
+    // Swapped .follow for .follows to match your updated schema models
+    prisma.follows.count({ where: { followingId: userId } }),
+    prisma.follows.count({ where: { followerId: userId } }),
   ]);
 
   if (!user) notFound();
 
   let isFollowing = false;
   if (session?.user?.id && session.user.id !== userId) {
-    const rel = await prisma.follow.findUnique({
-      where: { followerId_followingId: { followerId: session.user.id, followingId: userId } },
+    // Updated to match Prisma's composite ID layout map structure
+    const rel = await prisma.follows.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: session.user.id,
+          followingId: userId,
+        },
+      },
     });
     isFollowing = Boolean(rel);
   }

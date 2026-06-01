@@ -50,20 +50,26 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  customImage   String?
-  accounts      Account[]
-  sessions      Session[]
-  ratings       Rating[]
-  likes         Like[]
-  comments      Comment[]
-  photos        Photo[]
-  followers     Follow[]  @relation("UserFollowing")
-  following     Follow[]  @relation("UserFollowers")
+  id               String            @id @default(cuid())
+  name             String?
+  email            String?           @unique
+  emailVerified    DateTime?
+  image            String?
+  customImage      String?
+  accounts         Account[]
+  sessions         Session[]
+  ratings          Rating[]
+  likes            Like[]
+  comments         Comment[]
+  photos           Photo[]
+  
+  // Follow System Relations
+  following        Follows[]         @relation("follower")
+  followers        Follows[]         @relation("following")
+  
+  // Chatting System Relations
+  sentMessages     Message[]         @relation("SentMessages")
+  receivedMessages Message[]         @relation("ReceivedMessages")
 }
 
 model VerificationToken {
@@ -97,17 +103,31 @@ model Photo {
   user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
-model Follow {
-  id          Int      @id @default(autoincrement())
+model Follows {
   followerId  String
   followingId String
   createdAt   DateTime @default(now())
 
-  follower    User     @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
-  following   User     @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
 
-  @@unique([followerId, followingId])
-  @@index([followingId])
+  @@id([followerId, followingId])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  text       String   @db.Text
+  createdAt  DateTime @default(now())
+  isRead     Boolean  @default(false)
+  
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId])
+  @@index([receiverId])
 }
 
 model Rating {
