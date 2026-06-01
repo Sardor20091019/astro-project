@@ -1,11 +1,11 @@
 import Hero from "@/components/Hero";
 import { prisma } from "@/lib/prisma";
 import GallerySection from "@/components/GallerySection";
+import PhotoUploadZone from "@/components/PhotoUploadZone";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  // Single query with counts + avg ratings via groupBy
   const [photos, ratingRows] = await Promise.all([
     prisma.photo.findMany({
       where: { status: "APPROVED" },
@@ -30,6 +30,10 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen bg-black text-white">
       <Hero />
+      <div className="max-w-xl mx-auto my-10 px-4">
+        <PhotoUploadZone />
+      </div>
+      
       <GallerySection photos={photosWithRatings} />
     </main>
   );
