@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORIES } from "@/data/photos";
-import { Upload, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { UploadButton } from "@uploadthing/react";
 import { OurFileRouter } from "@/app/api/uploadthing/core";
 
@@ -22,7 +22,6 @@ export default function AdminUploadForm() {
 
     setLoading(true);
     const formData = new FormData(e.currentTarget);
-    
     const payload = {
       url: uploadedUrl,
       title: formData.get("title"),
@@ -63,30 +62,32 @@ export default function AdminUploadForm() {
       {/* Cloud File Drop Zone */}
       <div className="w-full aspect-video border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center bg-zinc-900/40 p-4 relative overflow-hidden">
         {uploadedUrl ? (
-           <div className="text-center text-green-500 font-black uppercase tracking-widest text-xs">
-             <CheckCircle2 size={32} className="mx-auto mb-2" /> Image Uploaded!
-           </div>
+          <div className="text-center text-green-500 font-black uppercase tracking-widest text-xs">
+            <CheckCircle2 size={32} className="mx-auto mb-2" /> Image Uploaded!
+          </div>
         ) : (
-       <UploadButton<OurFileRouter, any>
+        <UploadButton<OurFileRouter, "imageUploader">
   endpoint="imageUploader"
   onClientUploadComplete={(res) => {
-    // Your logic here (e.g., calling your API to save the URL)
     if (res && res[0]) {
-      console.log("Upload successful:", res[0].url);
-      // Example: saveToDatabase(res[0].url);
+      setUploadedUrl(res[0].url);
     }
   }}
   onUploadError={(error: Error) => {
     alert(`ERROR! ${error.message}`);
   }}
+  appearance={{
+    button: "bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-xl transition-all",
+  }}
 />
         )}
       </div>
 
+      {/* Inputs */}
       <div>
         <label className={labelClass}>Category</label>
         <select name="category" defaultValue="OTHER" className={`${inputClass} appearance-none cursor-pointer`}>
-          {CATEGORIES.filter(c => c.value !== "ALL").map(cat => (
+          {CATEGORIES.filter((c) => c.value !== "ALL").map((cat) => (
             <option key={cat.value} value={cat.value} className="bg-zinc-900">{cat.icon} {cat.label}</option>
           ))}
         </select>

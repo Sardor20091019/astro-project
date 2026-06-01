@@ -1,5 +1,3 @@
-import { mkdir, writeFile } from "fs/promises";
-import { join } from "path";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
@@ -10,22 +8,17 @@ export async function POST(req: Request) {
 
   try {
     const formData = await req.formData();
-    const file = formData.get("file") as File | null;
+    // 1. READ THE TEXT URL SENT BY UPLOADTHING
+    const url = formData.get("url") as string | null;
 
-    if (!file) {
-      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+    if (!url) {
+      return NextResponse.json({ error: "No image URL provided" }, { status: 400 });
     }
 
-    const uploadDir = join(process.cwd(), "public", "uploads");
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const uniqueName = `${Date.now()}-${safeName}`;
-
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(join(uploadDir, uniqueName), Buffer.from(await file.arrayBuffer()));
-
+    // 2. SAVE DIRECTLY TO NEON DATABASE
     const newPhoto = await prisma.photo.create({
       data: {
-        url: `/uploads/${uniqueName}`,
+        url: url, // Directly uses the secure UploadThing link
         title: String(formData.get("title") || "Untitled frame").trim(),
         location: String(formData.get("location") || "").trim() || null,
         coordinates: String(formData.get("coordinates") || "").trim() || null,
@@ -34,16 +27,16 @@ export async function POST(req: Request) {
         aperture: String(formData.get("aperture") || "").trim() || null,
         shutter: String(formData.get("shutter") || "").trim() || null,
         focalLength: String(formData.get("focalLength") || "").trim() || null,
-        authorName: String(formData.get("authorName") || session?.user?.name || "").trim() || null,
+        authorName: String(formData.get("authorName") || session?.user?.name || "Anonymous").trim() || null,
         category: (String(formData.get("category") || "OTHER")) as any,
-        status: "APPROVED", // always live immediately
+        status: "APPROVED", // Stays instantly live!
         userId: session?.user?.id ?? null,
       },
     });
 
     return NextResponse.json(newPhoto, { status: 201 });
   } catch (error) {
-    console.error("Upload Error:", error);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    console.error("Database Save Error:", error);
+    return NextResponse.json({ error: "Failed to publish frame to database" }, { status: 500 });
   }
 }
