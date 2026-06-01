@@ -15,21 +15,27 @@ export default function SubmitPage() {
   const [submitted, setSubmitted] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    
-    const formData = new FormData(e.currentTarget);
-    
-    const res = await fetch("/api/photos/upload", { 
-      method: "POST", 
-      body: formData 
-    });
-    
-    if (res.ok) setSubmitted(true);
-    else alert("Upload failed. Please try again.");
-    setLoading(false);
+ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  e.preventDefault();
+  setLoading(true);
+  
+  const formData = new FormData(e.currentTarget);
+  
+  const res = await fetch("/api/photos/upload", { 
+    method: "POST", 
+    body: formData 
+  });
+  
+  if (res.ok) {
+    setSubmitted(true);
+  } else {
+    // This will show you the ACTUAL error from your API
+    const errorData = await res.json();
+    console.error("API Error Details:", errorData);
+    alert(`Upload failed: ${errorData.error || "Unknown error"}`);
   }
+  setLoading(false);
+}
 
   if (submitted) {
     return (
@@ -80,6 +86,7 @@ export default function SubmitPage() {
             {uploadedUrl ? (
               <div className="relative w-full">
                 <img src={uploadedUrl} alt="Preview" className="w-full max-h-64 md:max-h-72 object-cover rounded-[1.5rem]" />
+                <input type="hidden" name="photoUrl" value={uploadedUrl} />
                 <div className="absolute top-3 right-3 md:top-4 md:right-4">
                   <button 
                     type="button" 
@@ -89,7 +96,7 @@ export default function SubmitPage() {
                     Remove
                   </button>
                 </div>
-                <input type="hidden" name="url" value={uploadedUrl} />
+                <input type="hidden" name="phoroUrl" value={uploadedUrl} />
               </div>
             ) : (
               <UploadButton<OurFileRouter, "imageUploader">
