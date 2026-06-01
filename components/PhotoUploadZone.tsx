@@ -67,18 +67,17 @@ export default function AdminUploadForm() {
              <CheckCircle2 size={32} className="mx-auto mb-2" /> Image Uploaded!
            </div>
         ) : (
-        <UploadButton<OurFileRouter, any>
+       <UploadButton<OurFileRouter, any>
   endpoint="imageUploader"
   onClientUploadComplete={(res) => {
+    // Your logic here (e.g., calling your API to save the URL)
     if (res && res[0]) {
-      setUploadedUrl(res[0].url);
+      console.log("Upload successful:", res[0].url);
+      // Example: saveToDatabase(res[0].url);
     }
   }}
   onUploadError={(error: Error) => {
     alert(`ERROR! ${error.message}`);
-  }}
-  appearance={{
-    button: "bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-xl transition-all",
   }}
 />
         )}
