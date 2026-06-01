@@ -1,25 +1,24 @@
+/* eslint-disable @next/next/no-html-link-for-pages */
 "use client";
 
 import { useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { CheckCircle2, MapPin, User, Camera, Tag } from "lucide-react";
 import { CATEGORIES } from "@/data/photos";
-// NEW IMPORTS FOR UPLOADTHING
 import { UploadButton } from "@uploadthing/react";
 import { OurFileRouter } from "@/app/api/uploadthing/core";
+import { moderateImageUrl } from "@/app/actions/moderation";
 
 export default function SubmitPage() {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  // REPLACED OLD FILE STATE WITH URL STATE
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     
-    // We still use FormData, but now it will contain the text 'url' instead of a raw file
     const formData = new FormData(e.currentTarget);
     
     const res = await fetch("/api/photos/upload", { 
@@ -58,7 +57,6 @@ export default function SubmitPage() {
   }
 
   return (
-    /* pt-24 ensures it clears your header safely on both phones and desktops */
     <div className="min-h-screen pt-24 md:pt-28 pb-16 px-4 md:px-6 bg-[#080808]">
       <div className="max-w-xl mx-auto">
         <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-red-500/70 mb-2">Open Showcase</p>
@@ -78,8 +76,6 @@ export default function SubmitPage() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          
-          {/* UPLOADTHING DROP ZONE */}
           <div className="w-full relative overflow-hidden rounded-[1.75rem] border-2 border-dashed border-white/10 bg-white/[0.02] p-4 flex flex-col items-center justify-center min-h-[220px] md:min-h-[250px]">
             {uploadedUrl ? (
               <div className="relative w-full">
@@ -93,15 +89,23 @@ export default function SubmitPage() {
                     Remove
                   </button>
                 </div>
-                {/* CRITICAL: This hidden input passes the URL to your database */}
                 <input type="hidden" name="url" value={uploadedUrl} />
               </div>
             ) : (
               <UploadButton<OurFileRouter, "imageUploader">
                 endpoint="imageUploader"
-                onClientUploadComplete={(res) => {
+                onClientUploadComplete={async (res) => {
                   if (res && res[0]) {
-                    setUploadedUrl(res[0].url);
+                    setLoading(true);
+                    const result = await moderateImageUrl(res[0].url);
+                    
+                    if (result.nudity.safe > 0.8 && result.weapon.none > 0.9) {
+                      setUploadedUrl(res[0].url);
+                    } else {
+                      alert("Upload rejected: Content does not meet safety guidelines.");
+                      setUploadedUrl(null);
+                    }
+                    setLoading(false);
                   }
                 }}
                 onUploadError={(error: Error) => {
@@ -115,7 +119,6 @@ export default function SubmitPage() {
             )}
           </div>
 
-          {/* Regular Inputs */}
           <div className="relative mt-4">
             <User size={13} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
             <input 
@@ -137,7 +140,6 @@ export default function SubmitPage() {
             />
           </div>
 
-          {/* RESPONSIBLY SPLIT GRID: Stacks vertically on phone screen viewports, pairs up side-by-side on computers */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-3">
             <div className="relative">
               <MapPin size={13} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
