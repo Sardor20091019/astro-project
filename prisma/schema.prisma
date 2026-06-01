@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PhotoStatus {
+  PENDING
+  APPROVED
+}
+
+enum PhotoCategory {
+  ASTROPHOTOGRAPHY
+  NATURE
+  SKY
+  MOON
+  WARM
+  STREET
+  ABSTRACT
+  OTHER
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  customImage   String?
+  accounts      Account[]
+  sessions      Session[]
+  ratings       Rating[]
+  likes         Like[]
+  comments      Comment[]
+  photos        Photo[]
+  followers     Follow[]  @relation("UserFollowing")
+  following     Follow[]  @relation("UserFollowers")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Photo {
+  id          Int           @id @default(autoincrement())
+  url         String
+  title       String
+  location    String?
+  coordinates String?
+  camera      String?
+  iso         Int?
+  aperture    String?
+  shutter     String?
+  focalLength String?
+  authorName  String?
+  category    PhotoCategory @default(OTHER)
+  status      PhotoStatus   @default(APPROVED)
+  userId      String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
+  ratings     Rating[]
+  likes       Like[]
+  comments    Comment[]
+  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Follow {
+  id          Int      @id @default(autoincrement())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower    User     @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+model Rating {
+  id             Int      @id @default(autoincrement())
+  photoId        Int
+  userId         String?
+  anonymousToken String?
+  value          Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  photo          Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([photoId, userId])
+  @@unique([photoId, anonymousToken])
+  @@index([photoId])
+}
+
+model Like {
+  id             Int      @id @default(autoincrement())
+  photoId        Int
+  userId         String?
+  anonymousToken String?
+  createdAt      DateTime @default(now())
+  photo          Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([photoId, userId])
+  @@unique([photoId, anonymousToken])
+  @@index([photoId])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  photoId   Int
+  userId    String
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+  photo     Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([photoId])
+  @@index([userId])
+}

@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:15
+    container_name: astro_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: sardor_09
+      POSTGRES_DB: astrospectrum
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
