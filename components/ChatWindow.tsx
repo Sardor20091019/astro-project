@@ -64,8 +64,8 @@ export default function ChatWindow({ currentUserId, receiverId, receiverName }: 
 
     pusherClient.bind("new-message", handleNewMessage);
     return () => { 
-      pusherClient.unsubscribe(channelName); 
-      pusherClient.unbind("new-message", handleNewMessage); 
+      pusherClient?.unsubscribe(channelName); 
+      pusherClient?.unbind("new-message", handleNewMessage); 
     };
   }, [currentUserId, receiverId]);
 
