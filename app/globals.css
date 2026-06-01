@@ -238,11 +238,17 @@ footer {
   z-index: 10;
 }
 
-/* Forces browsers to respect EXIF orientation data */
-img, 
-canvas {
-  image-orientation: from-image;
- transform: rotate(180deg); 
- 
+/* Use this instead */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  /* This prevents the "leaning" by ensuring the browser calculates 
+     the aspect ratio correctly before rendering */
+  object-fit: cover; 
 }
 
+/* If you need to force EXIF orientation support */
+canvas {
+  display: block;
+}

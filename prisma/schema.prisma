@@ -49,6 +49,11 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id               String            @id @default(cuid())
   name             String?
@@ -62,7 +67,7 @@ model User {
   likes            Like[]
   comments         Comment[]
   photos           Photo[]
-  
+    role Role @default(USER)
   // Follow System Relations
   following        Follows[]         @relation("follower")
   followers        Follows[]         @relation("following")

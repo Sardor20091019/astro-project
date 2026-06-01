@@ -5,8 +5,14 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/client", "pg"],
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "**" },
-      { protocol: "http",  hostname: "localhost" },
+      {
+        protocol: "https",
+        hostname: "utfs.io", // Specifically for UploadThing
+      },
+      {
+        protocol: "https",
+        hostname: "uploadthing.com", // Official UploadThing domain
+      },
     ],
   },
 };
