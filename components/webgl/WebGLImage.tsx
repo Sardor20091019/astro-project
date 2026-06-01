@@ -156,6 +156,7 @@ export default function WebGLImage({ src, alt, className, style, fill }: Props) 
     const lerpState = { hover: 0, vel: 0, mx: 0.5, my: 0.5 };
 
     function render() {
+      if (!gl) return;
       if (!glRef.current || !progRef.current) return;
       const s = stateRef.current;
       lerpState.hover = lerp(lerpState.hover, s.hover, 0.06);
