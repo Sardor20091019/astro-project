@@ -9,16 +9,16 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
     // Read the text image URL passed from your SubmitPage
-    const url = formData.get("url") as string | null;
+    const photoUrl = formData.get("photoUrl") as string | null;
 
-    if (!url) {
+    if (!photoUrl) {
       return NextResponse.json({ error: "No image URL provided" }, { status: 400 });
     }
 
     // Save directly to Neon Database
     const newPhoto = await prisma.photo.create({
       data: {
-        url: url,
+        url: photoUrl,
         title: String(formData.get("title") || "Untitled frame").trim(),
         location: String(formData.get("location") || "").trim() || null,
         coordinates: String(formData.get("coordinates") || "").trim() || null,

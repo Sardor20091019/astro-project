@@ -9,16 +9,16 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
     // 1. READ THE TEXT URL SENT BY UPLOADTHING
-    const url = formData.get("url") as string | null;
+    const photoUrl = formData.get("photoUrl") as string | null;
 
-    if (!url) {
+    if (!photoUrl) {
       return NextResponse.json({ error: "No image URL provided" }, { status: 400 });
     }
 
     // 2. SAVE DIRECTLY TO NEON DATABASE
     const newPhoto = await prisma.photo.create({
       data: {
-        url: url, // Directly uses the secure UploadThing link
+        url: photoUrl, // Directly uses the secure UploadThing link
         title: String(formData.get("title") || "Untitled frame").trim(),
         location: String(formData.get("location") || "").trim() || null,
         coordinates: String(formData.get("coordinates") || "").trim() || null,

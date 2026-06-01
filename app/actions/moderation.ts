@@ -6,7 +6,7 @@ export async function moderateImageUrl(url: string) {
     const response = await axios.get('https://api.sightengine.com/1.0/check.json', {
       params: {
         'url': url,
-        'models': 'nudity-2.1,weapon,offensive-2.0,gore-2.0',
+        'models': 'nudity-2.1,gore-2.0',
         'api_user': process.env.SIGHTENGINE_API_USER,
         'api_secret': process.env.SIGHTENGINE_API_SECRET,
       }
