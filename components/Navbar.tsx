@@ -29,7 +29,6 @@ export default function Navbar() {
         {/* Desktop */}
         <div className="hidden md:flex items-center gap-8">
           <Link href="/" className="text-xs uppercase tracking-widest text-[#666] hover:text-white transition-colors font-medium">Gallery</Link>
-          <Link href="/explore" className="text-xs uppercase tracking-widest text-[#666] hover:text-white transition-colors font-medium">Explore</Link>
           <Link href="/submit" className="text-xs uppercase tracking-widest text-[#666] hover:text-white transition-colors font-medium">Submit</Link>
           {admin && (
             <Link href="/admin" className="flex items-center gap-1 text-xs uppercase tracking-widest text-red-500 font-bold">
@@ -62,7 +61,6 @@ export default function Navbar() {
       {open && (
         <div className="md:hidden bg-[#111] border-t border-white/5 px-6 py-4 flex flex-col gap-4">
           <Link href="/" onClick={() => setOpen(false)} className="text-xs uppercase tracking-widest text-[#666] hover:text-white">Gallery</Link>
-          <Link href="/explore" onClick={() => setOpen(false)} className="text-xs uppercase tracking-widest text-[#666] hover:text-white">Explore</Link>
           <Link href="/submit" onClick={() => setOpen(false)} className="text-xs uppercase tracking-widest text-[#666] hover:text-white">Submit</Link>
           {admin && (
             <Link href="/admin" onClick={() => setOpen(false)} className="text-xs uppercase tracking-widest text-red-500">Admin</Link>
