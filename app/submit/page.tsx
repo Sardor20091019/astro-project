@@ -29,7 +29,7 @@ export default function SubmitPage() {
     
     if (res.ok) setSubmitted(true);
     else alert("Upload failed. Please try again.");
-    loading(false);
+    setLoading(false);
   }
 
   if (submitted) {

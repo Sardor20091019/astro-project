@@ -14,6 +14,7 @@ interface Props {
   className?: string;
   style?: React.CSSProperties;
   fill?: boolean;
+  sizes?: string;
 }
 
 const VERT = `
@@ -55,7 +56,7 @@ function compileShader(gl: WebGLRenderingContext, type: number, src: string) {
   return sh;
 }
 
-export default function WebGLImage({ src, alt, className, style, fill }: Props) {
+export default function WebGLImage({ src, alt, className, style, fill, sizes }: Props) {
   const canvasRef  = useRef<HTMLCanvasElement>(null);
   const glRef      = useRef<WebGLRenderingContext | null>(null);
   const progRef    = useRef<WebGLProgram | null>(null);
@@ -185,8 +186,7 @@ export default function WebGLImage({ src, alt, className, style, fill }: Props) 
 
   if (fallback) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={src} alt={alt} className={className} style={style} />
+      <img src={src} alt={alt} className={className} style={style} sizes={sizes} />
     );
   }
 
