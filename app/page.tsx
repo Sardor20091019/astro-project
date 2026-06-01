@@ -30,9 +30,6 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen bg-black text-white">
       <Hero />
-      <div className="max-w-xl mx-auto my-10 px-4">
-        <PhotoUploadZone />
-      </div>
       
       <GallerySection photos={photosWithRatings} />
     </main>
