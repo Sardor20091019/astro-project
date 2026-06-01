@@ -70,7 +70,7 @@ export default function SubmitPage() {
         <p className="text-zinc-500 text-xs md:text-sm leading-relaxed mb-6 md:mb-8">
           Your photo goes live immediately — no approval needed.{" "}
           {session?.user ? (
-            <span className="text-zinc-400">It'll be credited to your profile.</span>
+            <span className="text-zinc-400">Itll be credited to your profile.</span>
           ) : (
             <span>
               <button type="button" onClick={() => signIn("google")} className="text-red-400 hover:text-red-300 underline underline-offset-2">

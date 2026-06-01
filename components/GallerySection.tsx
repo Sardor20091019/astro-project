@@ -274,7 +274,7 @@ export default function GallerySection({ photos }: { photos: Photo[] }) {
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyBetween: "space-between", marginBottom: "20px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
           <span style={{
             fontFamily: "var(--font-mono,'Courier New',monospace)",
             fontSize: "9px", letterSpacing: "0.18em", textTransform: "uppercase",

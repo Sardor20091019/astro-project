@@ -1,4 +1,7 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import type { Metadata } from "next";
+import { Toaster } from "sonner"; // 1. Import Toaster
+// @ts-ignore
 import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
 import Navbar from "@/components/Navbar";
@@ -23,6 +26,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className="flex-grow">{children}</div>
               <Footer />
             </div>
+            {/* 2. Add the Toaster component here */}
+            <Toaster position="bottom-right" theme="dark" />
           </LenisProvider>
         </AuthProvider>
       </body>

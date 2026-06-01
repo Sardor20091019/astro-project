@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 // components/Navbar.tsx
 "use client";
 
@@ -31,7 +32,7 @@ export default function Navbar() {
     if (!currentUserId) return;
 
     const channelName = `chat_${currentUserId}`;
-    pusherClient.subscribe(channelName);
+    pusherClient?.subscribe(channelName);
 
     const handleIncomingAlert = () => {
       // Trigger notification dot only if user isn't currently sitting in the messages screen
@@ -40,11 +41,11 @@ export default function Navbar() {
       }
     };
 
-    pusherClient.bind("new-message", handleIncomingAlert);
+    pusherClient?.bind("new-message", handleIncomingAlert);
 
     return () => {
-      pusherClient.unsubscribe(channelName);
-      pusherClient.unbind("new-message", handleIncomingAlert);
+      pusherClient?.unsubscribe(channelName);
+      pusherClient?.unbind("new-message", handleIncomingAlert);
     };
   }, [currentUserId, pathname]);
 

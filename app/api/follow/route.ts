@@ -14,19 +14,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid target" }, { status: 400 });
   }
 
-  const existing = await prisma.follow.findUnique({
-    where: { followerId_followingId: { followerId: session.user.id, followingId: targetUserId } },
+  // 1. Use 'follows' (plural) to match your schema model 'Follows'
+  const existing = await prisma.follows.findUnique({
+    where: { 
+      followerId_followingId: { 
+        followerId: session.user.id, 
+        followingId: targetUserId 
+      } 
+    },
   });
 
   if (existing) {
-    await prisma.follow.delete({ where: { id: existing.id } });
+    // 2. Fix: Change .follow to .follows
+    await prisma.follows.delete({ 
+      where: { 
+        followerId_followingId: { 
+          followerId: session.user.id, 
+          followingId: targetUserId 
+        } 
+      } 
+    });
   } else {
-    await prisma.follow.create({
+    // 3. Fix: Change .follow to .follows
+    await prisma.follows.create({
       data: { followerId: session.user.id, followingId: targetUserId },
     });
   }
 
-  const followerCount = await prisma.follow.count({ where: { followingId: targetUserId } });
+  const followerCount = await prisma.follows.count({ where: { followingId: targetUserId } });
   return NextResponse.json({ following: !existing, followerCount });
 }
 
@@ -39,15 +54,21 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Missing targetUserId" }, { status: 400 });
   }
 
+  // 4. Fix: Change all instances of .follow to .follows
   const [followerCount, followingCount] = await Promise.all([
-    prisma.follow.count({ where: { followingId: targetUserId } }),
-    prisma.follow.count({ where: { followerId: targetUserId } }),
+    prisma.follows.count({ where: { followingId: targetUserId } }),
+    prisma.follows.count({ where: { followerId: targetUserId } }),
   ]);
 
   let isFollowing = false;
   if (session?.user?.id) {
-    const rel = await prisma.follow.findUnique({
-      where: { followerId_followingId: { followerId: session.user.id, followingId: targetUserId } },
+    const rel = await prisma.follows.findUnique({
+      where: { 
+        followerId_followingId: { 
+          followerId: session.user.id, 
+          followingId: targetUserId 
+        } 
+      },
     });
     isFollowing = Boolean(rel);
   }

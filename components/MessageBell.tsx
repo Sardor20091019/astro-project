@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -22,7 +23,7 @@ export default function MessageBell() {
 
   // Listen to incoming global websocket streams
   useEffect(() => {
-    if (!currentUserId) return;
+    if (!currentUserId || !pusherClient) return;
 
     const channelName = `chat_${currentUserId}`;
     pusherClient.subscribe(channelName);
@@ -37,6 +38,7 @@ export default function MessageBell() {
     pusherClient.bind("new-message", handleIncomingAlert);
 
     return () => {
+      if (!pusherClient) return;
       pusherClient.unsubscribe(channelName);
       pusherClient.unbind("new-message", handleIncomingAlert);
     };

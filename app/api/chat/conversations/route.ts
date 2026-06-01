@@ -27,7 +27,7 @@ export async function GET() {
     // Group items dynamically to extract unique chat counterparts
     const conversationMap = new Map();
 
-    messages.forEach((msg) => {
+    messages.forEach((msg: { senderId: string; receiver: any; sender: any; text: any; createdAt: any; }) => {
       const otherUser = msg.senderId === currentUserId ? msg.receiver : msg.sender;
       
       if (!conversationMap.has(otherUser.id)) {
