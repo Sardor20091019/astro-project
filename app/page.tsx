@@ -3,6 +3,7 @@ import Hero from "@/components/Hero";
 import { prisma } from "@/lib/prisma";
 import GallerySection from "@/components/GallerySection";
 import GalleryFilters from "@/components/GalleryFilters";
+import SearchBar from "@/components/SearchBar";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ interface PageProps {
   searchParams: Promise<{ 
     page?: string;
     sortBy?: string;
+    q?: string;
   }>;
 }
 
@@ -17,15 +19,16 @@ export default async function HomePage({ searchParams }: PageProps) {
   const resolvedParams = await searchParams;
   const currentPage = Number(resolvedParams.page) || 1;
   const sortBy = resolvedParams.sortBy || "latest";
+  const query = resolvedParams.q || ""; // Captures search term
   
   const pageSize = 9;
   const skipAmount = (currentPage - 1) * pageSize;
 
   // 1. Build the dynamic database sort query
-  let orderByQuery: any = { createdAt: "desc" }; // default: latest
+  let orderByQuery: any = { createdAt: "desc" };
 
   if (sortBy === "earliest") {
-    orderByQuery = { createdAt: "asc" }; // Oldest first
+    orderByQuery = { createdAt: "asc" };
   } else if (sortBy === "views") {
     orderByQuery = { views: "desc" };
   } else if (sortBy === "likes") {
@@ -34,12 +37,18 @@ export default async function HomePage({ searchParams }: PageProps) {
     orderByQuery = { comments: { _count: "desc" } };
   }
 
+  // Define Filter
+  const whereFilter = { 
+    status: "APPROVED" as const,
+    title: { contains: query, mode: "insensitive" as const } 
+  };
+
   // 2. Execute database queries
   const isSortingByRating = sortBy === "rated";
 
   const [photos, ratingRows, totalPhotos] = await Promise.all([
     prisma.photo.findMany({
-      where: { status: "APPROVED" },
+      where: whereFilter,
       orderBy: orderByQuery,
       skip: isSortingByRating ? undefined : skipAmount,
       take: isSortingByRating ? undefined : pageSize,
@@ -52,7 +61,7 @@ export default async function HomePage({ searchParams }: PageProps) {
       _avg: { value: true },
     }),
     prisma.photo.count({
-      where: { status: "APPROVED" },
+      where: whereFilter,
     }),
   ]);
 
@@ -75,10 +84,12 @@ export default async function HomePage({ searchParams }: PageProps) {
 
   const totalPages = Math.ceil(totalPhotos / pageSize);
 
+  // Helper to keep existing filters (sort + search) during pagination
   const getPageLink = (targetPage: number) => {
     const params = new URLSearchParams();
     params.set("page", targetPage.toString());
     if (sortBy !== "latest") params.set("sortBy", sortBy);
+    if (query) params.set("q", query);
     return `?${params.toString()}`;
   };
 
@@ -88,6 +99,7 @@ export default async function HomePage({ searchParams }: PageProps) {
         <Hero />
         
         <div className="container mx-auto px-4 py-8">
+          <SearchBar />
           <GalleryFilters />
           <GallerySection photos={photosWithRatings} />
         </div>

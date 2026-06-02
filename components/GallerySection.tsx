@@ -124,20 +124,18 @@ function ParallaxCard({ photo, index, speed }: { photo: Photo; index: number; sp
             )}
 
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              {[
-                { icon: Heart, val: photo._count.likes },
-                { icon: Star, val: photo.avgRating.toFixed(1) },
-                { icon: MessageCircle, val: photo._count.comments },
-              ].map(({ icon: Icon, val }) => (
-                <span key={Icon.toString() + val} style={{
-                  display: "flex", alignItems: "center", gap: "3px",
-                  fontFamily: "var(--font-mono,'Courier New',monospace)",
-                  fontSize: "9px", letterSpacing: "0.1em",
-                  color: "rgba(240,235,225,0.35)",
-                }}>
-                  <Icon size={9} />{val}
-                </span>
-              ))}
+          {[
+  { id: "likes", icon: Heart, val: photo._count.likes },
+  { id: "rating", icon: Star, val: photo.avgRating.toFixed(1) },
+  { id: "comments", icon: MessageCircle, val: photo._count.comments },
+].map(({ id, icon: Icon, val }) => (
+  <span 
+    key={id} 
+    style={{ display: "flex", alignItems: "center", gap: "3px", fontFamily: "var(--font-mono,'Courier New',monospace)", fontSize: "9px", letterSpacing: "0.1em", color: "rgba(240,235,225,0.35)" }}
+  >
+    <Icon size={9} />{val}
+  </span>
+))}
 
               {photo.userId && (
                 <Link
