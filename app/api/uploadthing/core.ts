@@ -52,21 +52,7 @@ export const ourFileRouter = {
         return { isSafe: false, error: "SAFETY_VIOLATION" };
       }
 
-      try {
-        await prisma.photo.create({
-          data: {
-            url: fileUrl,
-            title: "New Photo",
-            userId: metadata.userId,
-          },
-        });
-      } catch (dbError) {
-        console.error("Database save failed:", dbError);
-        await utapi.deleteFiles(file.key).catch(() => {});
-        return { isSafe: false, error: "DATABASE_ERROR" };
-      }
-
-      return { isSafe: true, error: null };
+      return { isSafe: true, error: null, url: fileUrl, userId: metadata.userId };
     }),
 } satisfies FileRouter;
 

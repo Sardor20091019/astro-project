@@ -4,7 +4,7 @@
 import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
 import { Session } from "next-auth";
 import { signIn, useSession } from "next-auth/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Camera, ChevronLeft, ChevronRight, Heart, Loader2, MapPin, MessageCircle, Sparkles, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { submitComment as submitCommentAction } from "@/app/actions/comments";
@@ -246,6 +246,7 @@ function EngagementPanel({
   const [loadingComments, setLoadingComments] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [commentError, setCommentError] = useState("");
+  const submittingRef = useRef(false);
 
   const loadComments = useCallback(async () => {
     setLoadingComments(true);
@@ -311,12 +312,14 @@ const toggleLike = async () => {
   };
 
   const submitComment = async () => {
+    if (submittingRef.current) return;
     if (!comment.trim()) return;
     if (!isLoggedIn) {
       setCommentError("Please sign in before posting a comment.");
       return;
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
     setCommentError("");
     try {
@@ -333,6 +336,7 @@ const toggleLike = async () => {
     } catch {
       setCommentError("Comment submission failed. Please try again.");
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };
