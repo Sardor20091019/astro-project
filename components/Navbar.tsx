@@ -18,7 +18,7 @@ export default function Navbar() {
   const [hasUnread, setHasUnread] = useState(false);
   const [userCount, setUserCount] = useState<number | null>(null);
 
-  // Fetch registered user count from our API route
+
   useEffect(() => {
     fetch('/api/user-count')
       .then((res) => res.json())
@@ -31,6 +31,7 @@ export default function Navbar() {
   useEffect(() => {
     if (pathname === "/messages") setHasUnread(false);
   }, [pathname]);
+
 
   useEffect(() => {
     if (!user?.id) return;
@@ -71,7 +72,7 @@ export default function Navbar() {
             {/* User Count Sticker - Visible on all screen sizes now */}
             {userCount !== null && (
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#666]">
-                <span className="text-[10px]">👤</span>
+                <span className="text-[10px]">registered users:</span>
                 <span className="text-[10px] font-mono font-bold text-white">{userCount.toLocaleString()}</span>
               </div>
             )}
