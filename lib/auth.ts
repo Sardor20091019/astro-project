@@ -10,58 +10,8 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
-   // Inside lib/auth.ts -> providers array
-CredentialsProvider({
-  id: "otp",
-  name: "One-Time Password",
-  credentials: {
-    email: { type: "text" },
-    code: { type: "text" },
-  },
-  async authorize(credentials): Promise<User | null> {
-    if (!credentials?.email || !credentials?.code) return null;
-
-    // Standardize casing to match database records safely
-    const formattedEmail = credentials.email.toLowerCase().trim();
-    const cleanCode = credentials.code.trim();
-
-    // 🔥 FIX: Query 'otpToken' instead of 'verificationToken' to match your generator schema
-    const activeOtp = await prisma.otpToken.findFirst({
-      where: {
-        email: formattedEmail,
-        token: cleanCode,
-        expires: { gte: new Date() }, // Check that token expiration time hasn't passed
-      },
-    });
-
-    if (!activeOtp) {
-      console.error(`OTP AUTH WARNING: No valid or unexpired OTP found for ${formattedEmail}`);
-      throw new Error("Invalid or expired verification pin code.");
-    }
-
-    // Safely remove the token once used so it can't be reused maliciously
-    await prisma.otpToken.delete({
-      where: { id: activeOtp.id },
-    }).catch((err) => console.error("Non-blocking token purge failure:", err));
-
-    // Establish or fetch the verified user record
-    let user = await prisma.user.findUnique({
-      where: { email: formattedEmail },
-    });
-
-    if (!user) {
-      user = await prisma.user.create({
-        data: { 
-          email: formattedEmail,
-          role: "USER", // Maps to your schema's Role enum
-        },
-      });
-    }
-
-    return { id: user.id, email: user.email, name: user.name } as User;
-  },
-}),
-    // 2. OTP/EMAIL CREDENTIALS PROVIDER
+    
+    // 1. OTP CREDENTIALS PROVIDER
     CredentialsProvider({
       id: "otp",
       name: "One-Time Password",
@@ -72,55 +22,126 @@ CredentialsProvider({
       async authorize(credentials): Promise<User | null> {
         if (!credentials?.email || !credentials?.code) return null;
 
-        // Find the active verification token record for this OTP attempt
-        const verificationToken = await prisma.verificationToken.findFirst({
+        const formattedEmail = credentials.email.toLowerCase().trim();
+        const cleanCode = credentials.code.trim();
+
+        // Query custom 'otpToken' table
+        const activeOtp = await prisma.otpToken.findFirst({
           where: {
-            identifier: credentials.email,
-            token: credentials.code,
-            expires: { gte: new Date() }, // Ensure token is not expired
+            email: formattedEmail,
+            token: cleanCode,
+            expires: { gte: new Date() },
           },
         });
 
-        if (!verificationToken) {
-          throw new Error("Invalid or expired OTP verification code.");
+        if (!activeOtp) {
+          throw new Error("Invalid or expired verification pin code.");
         }
 
-        // Delete the token immediately after consumption so it can't be reused
-        // Use deleteMany with the same identifying fields since VerificationToken
-        // may not expose a unique `id` field in the Prisma schema.
-        await prisma.verificationToken.deleteMany({
-          where: {
-            identifier: verificationToken.identifier,
-            token: verificationToken.token,
-          },
-        }).catch(() => {});
+        // Remove token
+        await prisma.otpToken.delete({
+          where: { id: activeOtp.id },
+        }).catch((err) => console.error("Token purge failure:", err));
 
-        // Fetch or establish the database user profile record
+        // Fetch or create user
         let user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: formattedEmail },
         });
 
         if (!user) {
           user = await prisma.user.create({
-            data: { email: credentials.email },
+            data: { 
+              email: formattedEmail,
+              role: "USER",
+            },
           });
         }
 
         return { id: user.id, email: user.email, name: user.name } as User;
       },
     }),
+
+    // 2. TELEGRAM CREDENTIALS PROVIDER
+    CredentialsProvider({
+      id: "telegram",
+      name: "Telegram",
+      credentials: {
+        id: { type: "text" },
+        first_name: { type: "text" },
+        username: { type: "text" },
+        photo_url: { type: "text" },
+        auth_date: { type: "text" },
+        hash: { type: "text" },
+      },
+      async authorize(credentials): Promise<User | null> {
+        if (!credentials?.hash) return null;
+
+        const botToken = process.env.TELEGRAM_BOT_TOKEN;
+        if (!botToken) throw new Error("TELEGRAM_BOT_TOKEN environment variable is missing.");
+
+        const { hash, ...userData } = credentials;
+
+        // Strip NextAuth internal tracking fields before hashing
+        const nextAuthInternalKeys = ["csrfToken", "callbackUrl", "json"];
+        const dataCheckString = Object.keys(userData)
+          .filter((key) => userData[key as keyof typeof userData] && !nextAuthInternalKeys.includes(key))
+          .sort()
+          .map((key) => `${key}=${userData[key as keyof typeof userData]}`)
+          .join("\n");
+
+        const secretKey = crypto.createHash("sha256").update(botToken).digest();
+        const generatedHash = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
+
+        if (generatedHash !== hash) {
+          throw new Error("Invalid Telegram signature.");
+        }
+
+        // Fetch or create Telegram user
+        let user = await prisma.user.findUnique({
+          where: { telegramId: credentials.id },
+        });
+
+        if (!user) {
+          user = await prisma.user.create({
+            data: {
+              telegramId: credentials.id,
+              telegramUsername: credentials.username || null,
+              name: credentials.first_name || "Telegram User",
+              image: credentials.photo_url || null,
+              role: "USER",
+            },
+          });
+        }
+
+        return { id: user.id, name: user.name, image: user.image } as User;
+      },
+    }),
   ],
+  
   secret: process.env.NEXTAUTH_SECRET,
   
-  // FIX: Redirects all native NextAuth fallback/error screens back to your custom login view
+  // 🔥 CRITICAL FOR VERCEL PRODUCTION: Cross-subdomain secure cookie policy
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === "production" ? `__Secure-next-auth.session-token` : `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        // Using "." prefix allows auth state to persist on both "astrospectrum.uz" and "www.astrospectrum.uz"
+        domain: process.env.NODE_ENV === "production" ? ".astrospectrum.uz" : "localhost", 
+      },
+    },
+  },
+
   pages: {
     signIn: "/login",
     error: "/login",
   },
 
-callbacks: {
+  callbacks: {
     async jwt({ token, user, account }) {
-      // 1. Triggered on immediate, fresh sign-in events
       if (user) {
         if (account?.provider === "google") {
           let dbUser = await prisma.user.findUnique({
@@ -138,13 +159,10 @@ callbacks: {
           }
           token.id = dbUser.id;
         } else {
-          // For Telegram and OTP, authorize() returns the verified database record's internal ID
           token.id = user.id;
         }
       } 
       
-      // 2. 🔥 CRITICAL TELEGRAM SESSION FIX:
-      // If NextAuth loses track of the ID on redirect, query by token data to persist the login cookie
       if (!token.id && token.email) {
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email },
@@ -157,7 +175,6 @@ callbacks: {
 
     async session({ session, token }) {
       if (session.user) {
-        // 🔥 Inject the tracked string database ID into the active frontend session object
         session.user.id = token.id as string;
       }
       return session;

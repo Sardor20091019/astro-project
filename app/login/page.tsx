@@ -85,7 +85,7 @@ export default function LoginPage() {
           initial={{ opacity: 0, y: 28, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ type: "spring", stiffness: 90, damping: 18 }}
-          className="w-full max-w-md rounded-[2rem] border border-white/10 bg-white/[0.07] p-8 shadow-2xl backdrop-blur-2xl"
+          className="w-full max-w-md rounded-4xl border border-white/10 bg-white/[0.07] p-8 shadow-2xl backdrop-blur-2xl"
         >
           <div className="mb-6 flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-500 text-white shadow-lg shadow-red-500/25">

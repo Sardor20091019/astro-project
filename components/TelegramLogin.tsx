@@ -9,18 +9,23 @@ export default function TelegramLogin() {
 
   useEffect(() => {
     (window as any).onTelegramAuth = async (user: any) => {
+      // Explicitly map properties as strings so NextAuth credentials provider doesn't choke on numbers
       const result = await signIn("telegram", {
         redirect: false,
-        ...user,
+        id: user.id?.toString(),
+        first_name: user.first_name || "",
+        username: user.username || "",
+        photo_url: user.photo_url || "",
+        auth_date: user.auth_date?.toString(),
+        hash: user.hash,
+        callbackUrl: "/",
       });
 
       if (result?.error) {
         console.error("Auth error:", result.error);
-        alert("Authentication failed.");
-        console.error("Full NextAuth Error:", result); 
-  alert(`Login failed: ${result.error}`);
+        alert(`Login failed: ${result.error}`);
       } else {
-       
+        // Force the browser to refresh the state and route back home immediately
         window.location.href = "/";
       }
     };
@@ -33,7 +38,11 @@ export default function TelegramLogin() {
     script.setAttribute("data-request-access", "write");
     script.async = true;
 
-    containerRef.current?.appendChild(script);
+    // Clear previous scripts to prevent duplicates if component remounts
+    if (containerRef.current) {
+      containerRef.current.innerHTML = "";
+      containerRef.current.appendChild(script);
+    }
   }, []);
 
   return <div ref={containerRef} />;
