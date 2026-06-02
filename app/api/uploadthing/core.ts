@@ -1,8 +1,6 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
-import { getServerSession } from "next-auth/next";
-import type { Session } from "next-auth";
+import { getToken } from "next-auth/jwt"; // Direct JWT decryption tool
 import { prisma } from "@/lib/prisma";
-import { authOptions } from "@/lib/auth"
 import { UTApi } from "uploadthing/server";
 import { moderateImageUrl } from "@/lib/moderation";
 
@@ -13,38 +11,68 @@ export const ourFileRouter = {
   imageUploader: f({ 
     image: { maxFileSize: "4MB", maxFileCount: 1 } 
   })
-    .middleware(async () => {
-      const session = (await getServerSession(authOptions)) as Session | null;
-      if (!session?.user?.id) throw new Error("Unauthorized");
-
-      const photoCount = await prisma.photo.count({
-        where: { userId: session.user.id },
+    // 1. Pass the underlying NextRequest wrapper object from UploadThing
+    .middleware(async ({ req }) => {
+      
+      // 2. Decode the session token directly from the request cookies manually
+      const token = await getToken({ 
+        req, 
+        secret: process.env.NEXTAUTH_SECRET 
       });
 
-      if (photoCount >= 30) throw new Error("Upload limit reached.");
+      // 3. Extract your synced database CUID from the token payload
+      const userId = token?.id as string | undefined;
 
-      return { userId: session.user.id };
+      if (!userId) {
+        console.error("UT MIDDLEWARE: Extraction failed. No active token found.");
+        throw new Error("Unauthorized: Invalid or missing session token.");
+      }
+
+      console.log("UT MIDDLEWARE: Decrypted token successfully for User CUID:", userId);
+
+      // 4. Run your database validation rules
+      const userExists = await prisma.user.findUnique({
+        where: { id: userId }
+      });
+
+      if (!userExists) {
+        throw new Error("Unauthorized: User profile missing from database.");
+      }
+
+      const photoCount = await prisma.photo.count({
+        where: { userId },
+      });
+
+      if (photoCount >= 30) {
+        throw new Error("Upload limit reached.");
+      }
+
+      // Return metadata payload to pass down to .onUploadComplete
+      return { userId };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      const moderation = await moderateImageUrl(file.url);
+      const fileUrl = file.ufsUrl ?? file.url;
+      const moderation = await moderateImageUrl(fileUrl);
 
       if (!moderation.isSafe) {
         console.log("CRITICAL: Flagged content block executed. Key:", file.key);
-        // Wipe file out of cloud storage immediately
         await utapi.deleteFiles(file.key).catch(() => {});
-        
-        // Return JSON error state to client instead of breaking the pipeline
         return { isSafe: false, error: "SAFETY_VIOLATION" };
       }
 
-      // Safe image: Persist to DB
-      await prisma.photo.create({
-        data: {
-          url: file.url,
-          title: "New Photo",
-          userId: metadata.userId,
-        },
-      });
+      try {
+        await prisma.photo.create({
+          data: {
+            url: fileUrl,
+            title: "New Photo",
+            userId: metadata.userId,
+          },
+        });
+      } catch (dbError) {
+        console.error("Database save failed:", dbError);
+        await utapi.deleteFiles(file.key).catch(() => {});
+        return { isSafe: false, error: "DATABASE_ERROR" };
+      }
 
       return { isSafe: true, error: null };
     }),

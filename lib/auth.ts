@@ -1,35 +1,15 @@
-import { NextAuthOptions, User } from "next-auth";
+import { NextAuthOptions, User, getServerSession } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { getServerSession } from "next-auth/next";
 import CredentialsProvider from "next-auth/providers/credentials";
-import crypto from "crypto"; // Native Node module to safely verify Telegram signatures
+import crypto from "crypto";
+import { prisma } from "@/lib/prisma";
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    // 1. YOUR WORKING OTP PROVIDER (Keep your exact current authorize logic here)
-    CredentialsProvider({
-      id: "credentials",
-      name: "OTP",
-      credentials: {
-        email: { type: "text" },
-        otp: { type: "text" },
-        token: { type: "text" },
-      },
-      async authorize(credentials, req) {
-        // Keep your existing database check for the OTP token here
-        if (!credentials?.email) return null;
-        // Example return (replace with your actual database user object return):
-        return { id: "user-id", email: credentials.email };
-      },
-    }),
-
-    // 2. GOOGLE PROVIDER (Must pass explicit environmental variables)
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
-
-    // 3. TELEGRAM PROVIDER (Custom implementation for the Telegram Widget)
     CredentialsProvider({
       id: "telegram",
       name: "Telegram",
@@ -40,69 +20,83 @@ export const authOptions: NextAuthOptions = {
         auth_date: { type: "text" },
         hash: { type: "text" },
       },
-      async authorize(credentials, req): Promise<User | null> {
+      async authorize(credentials): Promise<User | null> {
         if (!credentials?.hash || !process.env.TELEGRAM_BOT_TOKEN) return null;
 
-        const { hash } = credentials;
-
-        // Official fields that Telegram transmits. Anything else is ignored.
-        const telegramFields = ["id", "first_name", "last_name", "username", "photo_url", "auth_date"];
-
-        // Filter data entries to eliminate NextAuth's background parameters (csrfToken, callbackUrl)
-        const dataCheckArr = Object.entries(credentials)
-          .filter(([key]) => telegramFields.includes(key))
+        const { hash, ...others } = credentials;
+        const secretKey = crypto.createHash("sha256").update(process.env.TELEGRAM_BOT_TOKEN).digest();
+        const dataCheckString = Object.entries(others)
+          .filter(([_, value]) => value !== undefined)
           .map(([key, value]) => `${key}=${value}`)
-          .sort();
-          
-        const dataCheckString = dataCheckArr.join("\n");
+          .sort()
+          .join("\n");
 
-        // Execute cryptographic validation against the bot token
-        const secretKey = crypto
-          .createHash("sha256")
-          .update(process.env.TELEGRAM_BOT_TOKEN)
-          .digest();
-          
-        const hashCheck = crypto
-          .createHmac("sha256", secretKey)
-          .update(dataCheckString)
-          .digest("hex");
+        const hashCheck = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
 
-        // Reject authentication if data signatures mismatch
-        if (hashCheck !== hash) {
-          throw new Error("Telegram authentication signature mismatch.");
-        }
+        if (hashCheck !== hash) throw new Error("Invalid signature.");
 
-        // Successfully return authorized Telegram user details matching NextAuth's User type schema
-        return {
-          id: credentials.id,
-          name: credentials.first_name,
-          image: credentials.username ? `https://t.me/${credentials.username}` : undefined,
-        } as User;
+        const user = await prisma.user.upsert({
+          where: { telegramId: credentials.id },
+          update: { name: credentials.first_name, telegramUsername: credentials.username },
+          create: {
+            telegramId: credentials.id,
+            name: credentials.first_name,
+            telegramUsername: credentials.username,
+          },
+        });
+
+        // This returns the genuine internal CUID database ID for Telegram sign-ins
+        return { id: user.id, name: user.name } as User;
       },
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
-  pages: {
-    signIn: "/login", // Locks NextAuth to your custom styled UI
-  },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      // Direct trigger on initial user sign-in event
       if (user) {
-        token.id = user.id;
+        if (account?.provider === "google") {
+          // Find or create the user row in your PostgreSQL DB for Google accounts
+          let dbUser = await prisma.user.findUnique({
+            where: { email: user.email ?? "" },
+          });
+
+          if (!dbUser) {
+            dbUser = await prisma.user.create({
+              data: {
+                email: user.email,
+                name: user.name,
+                image: user.image,
+              },
+            });
+          }
+          token.id = dbUser.id; // Inject the true database CUID into the JWT payload
+        } else {
+          // For Telegram, authorize() already handles the sync and returned the database record id
+          token.id = user.id;
+        }
+      } else if (token.id && typeof token.id === "string" && token.id.length > 25) {
+        // Fallback catch-all: If token contains an unmodified external profile ID string instead of a CUID, 
+        // attempt an emergency database query recovery by current associated email profile parameters
+        const numericCheck = /^\d+$/.test(token.id);
+        if (numericCheck && token.email) {
+          const matchedUser = await prisma.user.findUnique({
+            where: { email: token.email },
+          });
+          if (matchedUser) token.id = matchedUser.id;
+        }
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token) {
-        // @ts-ignore
-        session.user.id = token.id;
+      if (session.user) {
+        session.user.id = token.id as string;
       }
       return session;
     },
   },
 };
 
-// Server-side context helper function
 export async function getCurrentUser() {
   const session = await getServerSession(authOptions);
   return session?.user;
