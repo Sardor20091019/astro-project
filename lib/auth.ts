@@ -25,7 +25,6 @@ export const authOptions: NextAuthOptions = {
         const formattedEmail = credentials.email.toLowerCase().trim();
         const cleanCode = credentials.code.trim();
 
-        // Query custom 'otpToken' table
         const activeOtp = await prisma.otpToken.findFirst({
           where: {
             email: formattedEmail,
@@ -34,27 +33,13 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
-        if (!activeOtp) {
-          throw new Error("Invalid or expired verification pin code.");
-        }
+        if (!activeOtp) throw new Error("Invalid or expired verification pin code.");
 
-        // Remove token
-        await prisma.otpToken.delete({
-          where: { id: activeOtp.id },
-        }).catch((err) => console.error("Token purge failure:", err));
+        await prisma.otpToken.delete({ where: { id: activeOtp.id } }).catch(() => {});
 
-        // Fetch or create user
-        let user = await prisma.user.findUnique({
-          where: { email: formattedEmail },
-        });
-
+        let user = await prisma.user.findUnique({ where: { email: formattedEmail } });
         if (!user) {
-          user = await prisma.user.create({
-            data: { 
-              email: formattedEmail,
-              role: "USER",
-            },
-          });
+          user = await prisma.user.create({ data: { email: formattedEmail, role: "USER" } });
         }
 
         return { id: user.id, email: user.email, name: user.name } as User;
@@ -77,30 +62,26 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.hash) return null;
 
         const botToken = process.env.TELEGRAM_BOT_TOKEN;
-        if (!botToken) throw new Error("TELEGRAM_BOT_TOKEN environment variable is missing.");
+        if (!botToken) throw new Error("TELEGRAM_BOT_TOKEN is missing.");
 
-        const { hash, ...userData } = credentials;
-
-        // Strip NextAuth internal tracking fields before hashing
-        const nextAuthInternalKeys = ["csrfToken", "callbackUrl", "json"];
-        const dataCheckString = Object.keys(userData)
-          .filter((key) => userData[key as keyof typeof userData] && !nextAuthInternalKeys.includes(key))
-          .sort()
-          .map((key) => `${key}=${userData[key as keyof typeof userData]}`)
+        // Define the specific fields Telegram expects for signature verification
+        const fields = ["id", "first_name", "username", "photo_url", "auth_date"];
+        
+        const dataCheckString = fields
+          .map((key) => ({ key, value: credentials[key as keyof typeof credentials] }))
+          .filter((item) => item.value !== undefined && item.value !== null && item.value !== "")
+          .sort((a, b) => a.key.localeCompare(b.key))
+          .map((item) => `${item.key}=${item.value}`)
           .join("\n");
 
         const secretKey = crypto.createHash("sha256").update(botToken).digest();
         const generatedHash = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
 
-        if (generatedHash !== hash) {
+        if (generatedHash !== credentials.hash) {
           throw new Error("Invalid Telegram signature.");
         }
 
-        // Fetch or create Telegram user
-        let user = await prisma.user.findUnique({
-          where: { telegramId: credentials.id },
-        });
-
+        let user = await prisma.user.findUnique({ where: { telegramId: credentials.id } });
         if (!user) {
           user = await prisma.user.create({
             data: {
@@ -120,7 +101,6 @@ export const authOptions: NextAuthOptions = {
   
   secret: process.env.NEXTAUTH_SECRET,
   
-  // 🔥 CRITICAL FOR VERCEL PRODUCTION: Cross-subdomain secure cookie policy
   cookies: {
     sessionToken: {
       name: process.env.NODE_ENV === "production" ? `__Secure-next-auth.session-token` : `next-auth.session-token`,
@@ -129,8 +109,7 @@ export const authOptions: NextAuthOptions = {
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
-        // Using "." prefix allows auth state to persist on both "astrospectrum.uz" and "www.astrospectrum.uz"
-        domain: process.env.NODE_ENV === "production" ? ".astrospectrum.uz" : "localhost", 
+        domain: process.env.NODE_ENV === "production" ? ".astrospectrum.uz" : undefined, 
       },
     },
   },
@@ -142,41 +121,11 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async jwt({ token, user, account }) {
-      if (user) {
-        if (account?.provider === "google") {
-          let dbUser = await prisma.user.findUnique({
-            where: { email: user.email ?? "" },
-          });
-
-          if (!dbUser) {
-            dbUser = await prisma.user.create({
-              data: {
-                email: user.email,
-                name: user.name,
-                image: user.image,
-              },
-            });
-          }
-          token.id = dbUser.id;
-        } else {
-          token.id = user.id;
-        }
-      } 
-      
-      if (!token.id && token.email) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: token.email },
-        });
-        if (dbUser) token.id = dbUser.id;
-      }
-      
+      if (user) token.id = user.id;
       return token;
     },
-
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-      }
+      if (session.user) session.user.id = token.id as string;
       return session;
     },
   },
