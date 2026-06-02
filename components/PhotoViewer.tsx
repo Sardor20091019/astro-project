@@ -256,22 +256,35 @@ function EngagementPanel({
     loadComments();
   }, [loadComments]);
 
-  const toggleLike = async () => {
+const toggleLike = async () => {
+    // 1. Optimistic update
     setEngagement((current) => ({
       ...current,
       viewerLiked: !current.viewerLiked,
       likeCount: Math.max(0, current.likeCount + (current.viewerLiked ? -1 : 1)),
     }));
+
     const res = await fetch("/api/likes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ photoId }),
     });
+
     const data = await res.json();
+    
+    // DEBUG: Add this log
+    console.log("API Response received:", data); 
+
     if (res.ok) {
-      setEngagement((current) => ({ ...current, viewerLiked: data.liked, likeCount: data.likeCount }));
+      setEngagement((current) => ({ 
+        ...current, 
+        viewerLiked: data.liked, 
+        likeCount: data.likeCount 
+      }));
+    } else {
+      console.error("API failed, reverting state...");
     }
-  };
+};
 
   const ratePhoto = async (value: number) => {
     setEngagement((current) => ({ ...current, viewerRating: value }));
