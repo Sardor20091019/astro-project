@@ -3,49 +3,59 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: Request) {
-  const { photoId } = await req.json();
-  const parsedPhotoId = Number(photoId);
+  try {
+    const { photoId } = await req.json();
+    const parsedPhotoId = Number(photoId);
 
-  if (!Number.isInteger(parsedPhotoId)) {
-    return NextResponse.json({ error: "Invalid photo id" }, { status: 400 });
-  }
+    if (!Number.isInteger(parsedPhotoId)) {
+      return NextResponse.json({ error: "Invalid photo id" }, { status: 400 });
+    }
 
-  const [session, cookieStore] = await Promise.all([getServerSession(authOptions), cookies()]);
-  const anonymousToken = cookieStore.get("astro_guest")?.value ?? randomUUID();
-  const shouldSetGuestCookie = !cookieStore.get("astro_guest");
+    const cookieStore = await cookies();
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
+    
+    const anonymousToken = cookieStore.get("astro_guest")?.value ?? randomUUID();
+    const shouldSetGuestCookie = !cookieStore.get("astro_guest");
 
-  const existing = session?.user?.id
-    ? await prisma.like.findUnique({
-        where: { photoId_userId: { photoId: parsedPhotoId, userId: session.user.id } },
-      })
-    : await prisma.like.findUnique({
-        where: { photoId_anonymousToken: { photoId: parsedPhotoId, anonymousToken } },
+    // 1. Identify existing like record
+    const whereCondition = userId
+      ? { photoId_userId: { photoId: parsedPhotoId, userId } }
+      : { photoId_anonymousToken: { photoId: parsedPhotoId, anonymousToken } };
+
+    const existing = await prisma.like.findUnique({ where: whereCondition });
+
+    // 2. Toggle Like (Delete or Create)
+    if (existing) {
+      await prisma.like.delete({ where: { id: existing.id } });
+    } else {
+      await prisma.like.create({
+        data: {
+          photoId: parsedPhotoId,
+          userId: userId || null,
+          anonymousToken: userId ? null : anonymousToken,
+        },
       });
+    }
 
-  if (existing) {
-    await prisma.like.delete({ where: { id: existing.id } });
-  } else {
-    await prisma.like.create({
-      data: {
-        photoId: parsedPhotoId,
-        userId: session?.user?.id,
-        anonymousToken: session?.user?.id ? null : anonymousToken,
-      },
-    });
+    // 3. Return updated count
+    const likeCount = await prisma.like.count({ where: { photoId: parsedPhotoId } });
+    const response = NextResponse.json({ liked: !existing, likeCount });
+    
+    if (shouldSetGuestCookie) {
+      response.cookies.set("astro_guest", anonymousToken, {
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 31536000,
+        path: "/",
+      });
+    }
+    return response;
+  } catch (error) {
+    console.error("Like Error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
-
-  const likeCount = await prisma.like.count({ where: { photoId: parsedPhotoId } });
-  const response = NextResponse.json({ liked: !existing, likeCount });
-  if (shouldSetGuestCookie) {
-    response.cookies.set("astro_guest", anonymousToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 365,
-      path: "/",
-    });
-  }
-  return response;
 }
