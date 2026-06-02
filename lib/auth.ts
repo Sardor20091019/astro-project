@@ -118,8 +118,9 @@ CredentialsProvider({
     error: "/login",
   },
 
-  callbacks: {
+callbacks: {
     async jwt({ token, user, account }) {
+      // 1. Triggered on immediate, fresh sign-in events
       if (user) {
         if (account?.provider === "google") {
           let dbUser = await prisma.user.findUnique({
@@ -137,23 +138,26 @@ CredentialsProvider({
           }
           token.id = dbUser.id;
         } else {
-          // For both Telegram and OTP credentials, authorize() passes the true internal DB CUID
+          // For Telegram and OTP, authorize() returns the verified database record's internal ID
           token.id = user.id;
         }
-      } else if (token.id && typeof token.id === "string" && token.id.length > 25) {
-        // Recovery fallback for existing sessions holding raw Google strings
-        const numericCheck = /^\d+$/.test(token.id);
-        if (numericCheck && token.email) {
-          const matchedUser = await prisma.user.findUnique({
-            where: { email: token.email },
-          });
-          if (matchedUser) token.id = matchedUser.id;
-        }
+      } 
+      
+      // 2. 🔥 CRITICAL TELEGRAM SESSION FIX:
+      // If NextAuth loses track of the ID on redirect, query by token data to persist the login cookie
+      if (!token.id && token.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email },
+        });
+        if (dbUser) token.id = dbUser.id;
       }
+      
       return token;
     },
+
     async session({ session, token }) {
       if (session.user) {
+        // 🔥 Inject the tracked string database ID into the active frontend session object
         session.user.id = token.id as string;
       }
       return session;
