@@ -1,72 +1,73 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import CredentialsProvider from "next-auth/providers/credentials";
+import CredentialsProvider, { CredentialInput } from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
 
 export const authOptions = {
   adapter: PrismaAdapter(prisma),
-  // Force JWT sessions so credentials login behaves perfectly with the Prisma Adapter setup
-  session: {
-    strategy: "jwt" as const,
-  },
-  pages: {
-    signIn: "/login",
-  },
+  session: { strategy: "jwt" as const },
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
     }),
-    CredentialsProvider({
-      name: "OTP",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        token: { label: "OTP Code", type: "text" },
-      },
-      async authorize(
-        credentials: Record<"email" | "token", string> | undefined,
-        req: any
-      ): Promise<any> {
-        if (!credentials?.email || !credentials?.token) return null;
+    CredentialsProvider<Record<string, CredentialInput>>({
+      id: "telegram",
+      name: "Telegram",
+      credentials: {} as Record<string, CredentialInput>,
+      async authorize(credentials: Record<string, string> | undefined, req: any) {
+        if (!credentials) return null;
 
-        // 1. Fetch the most recent token matching this email structure
-     const otpRecord = await prisma.otpToken.findFirst({
-  where: {
-    email: credentials.email,
-    token: credentials.token,
-  },
-  orderBy: {
-    createdAt: "desc",
-  },
-});
-        // 2. Security checkpoints: Verification checks
-        if (!otpRecord || otpRecord.expires < new Date()) {
-          throw new Error("Invalid or expired verification code.");
+        const { hash, ...data } = credentials;
+        const botToken = process.env.TELEGRAM_BOT_TOKEN;
+        if (!botToken) throw new Error("Bot token missing");
+
+        // 1. Whitelist fields signed by Telegram to prevent HMAC mismatch
+        const allowedFields = ['id', 'first_name', 'last_name', 'username', 'photo_url', 'auth_date'];
+        
+        const filteredData = Object.keys(data)
+          .filter(key => allowedFields.includes(key))
+          .sort()
+          .reduce((acc: any, key) => {
+            acc[key] = data[key];
+            return acc;
+          }, {});
+
+        // 2. Create the exact data string for HMAC verification
+        const dataCheckString = Object.keys(filteredData)
+          .map((key) => `${key}=${filteredData[key]}`)
+          .join("\n");
+
+        // 3. Perform HMAC SHA256 verification
+        const secret = crypto.createHash("sha256").update(botToken).digest();
+        const hmac = crypto.createHmac("sha256", secret).update(dataCheckString).digest("hex");
+
+        if (hmac !== hash) {
+          throw new Error("Invalid authentication hash");
         }
 
-        // 3. Purge the token instantly so it can never be used again
-      await prisma.otpToken.delete({
-  where: { id: otpRecord.id },
-});
-
-        // 4. Find the user profile or build a new record if they are signing up
-        let user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+        // 4. Database User Sync
+        const user = await prisma.user.upsert({
+          where: { telegramId: data.id.toString() },
+          update: {
+            telegramUsername: data.username,
+            image: data.photo_url || null,
+            name: [data.first_name, data.last_name].filter(Boolean).join(" "),
+          },
+          create: {
+            telegramId: data.id.toString(),
+            telegramUsername: data.username,
+            image: data.photo_url || null,
+            name: [data.first_name, data.last_name].filter(Boolean).join(" "),
+            role: "USER",
+          },
         });
 
-        if (!user) {
-          user = await prisma.user.create({
-            data: {
-              email: credentials.email,
-              name: credentials.email.split("@")[0],
-              role: "USER",
-            },
-          });
-        }
-
-        return { id: user.id, email: user.email, name: user.name };
+        // 5. Return user for JWT/Session callbacks
+        return { id: user.id, name: user.name, email: user.telegramUsername, role: user.role } as any;
       },
     }),
   ],
@@ -74,7 +75,7 @@ export const authOptions = {
     async jwt({ token, user }: any) {
       if (user) {
         token.id = user.id;
-        token.role = user.role ?? "USER";
+        token.role = user.role || "USER";
       }
       return token;
     },
@@ -87,7 +88,6 @@ export const authOptions = {
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: process.env.NODE_ENV === "development",
 };
 
 const handler = NextAuth(authOptions as any);

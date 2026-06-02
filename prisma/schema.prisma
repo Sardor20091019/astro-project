@@ -69,7 +69,8 @@ model User {
   likes         Like[]
   comments      Comment[]
   photos        Photo[]
-  
+  telegramId       String?   @unique
+  telegramUsername String?
   following     Follows[] @relation("follower")
   followers     Follows[] @relation("following")
   

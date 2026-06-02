@@ -6,6 +6,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Chrome, Sparkles, Mail, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
+import TelegramLogin from "@/components/TelegramLogin"; // <--- Add this import
 
 export default function LoginPage() {
   const router = useRouter();
@@ -186,14 +187,19 @@ export default function LoginPage() {
             <div className="h-px w-full bg-white/10" />
           </div>
 
-          <button
-            type="button"
-            onClick={() => signIn("google", { callbackUrl: "/" })}
-            className="group flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white px-5 py-4 text-sm font-black uppercase tracking-[0.18em] text-black transition-all hover:-translate-y-0.5 hover:bg-red-500 hover:text-white hover:shadow-2xl hover:shadow-red-500/25"
-          >
-            <Chrome size={18} />
-            Continue with Google
-          </button>
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => signIn("google", { callbackUrl: "/" })}
+              className="group flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white px-5 py-4 text-sm font-black uppercase tracking-[0.18em] text-black transition-all hover:-translate-y-0.5 hover:bg-red-500 hover:text-white hover:shadow-2xl hover:shadow-red-500/25"
+            >
+              <Chrome size={18} />
+              Continue with Google
+            </button>
+            
+            {/* Telegram Login added here */}
+            <TelegramLogin />
+          </div>
 
           <p className="mt-6 text-center text-[11px] uppercase tracking-[0.22em] text-white/35">
             Secure Platform Authorization
