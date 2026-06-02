@@ -86,8 +86,13 @@ CredentialsProvider({
         }
 
         // Delete the token immediately after consumption so it can't be reused
-        await prisma.verificationToken.delete({
-          where: { id: verificationToken.id },
+        // Use deleteMany with the same identifying fields since VerificationToken
+        // may not expose a unique `id` field in the Prisma schema.
+        await prisma.verificationToken.deleteMany({
+          where: {
+            identifier: verificationToken.identifier,
+            token: verificationToken.token,
+          },
         }).catch(() => {});
 
         // Fetch or establish the database user profile record
