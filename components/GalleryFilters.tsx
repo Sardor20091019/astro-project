@@ -10,6 +10,7 @@ export default function GalleryFilters() {
 
   const filterTabs = [
     { id: "latest", label: "Latest", icon: Clock },
+    { id: "earliest", label: "Earliest", icon: Clock },
     { id: "views", label: "Most Viewed", icon: Eye },
     { id: "likes", label: "Most Liked", icon: Heart },
     { id: "comments", label: "Most Commented", icon: MessageSquare },
