@@ -32,7 +32,7 @@ export default function LoginPage() {
       const res = await fetch("/api/otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email.toLowerCase().trim() }),
       });
       const data = await res.json();
 
@@ -57,13 +57,13 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    // FIXED: Passing both fields ensures compatibility whether your authorization 
-    // backend schema searches for credentials.otp or credentials.token
-    const res = await signIn("credentials", {
-      email,
-      otp, 
-      token: otp, 
+    // 🔥 FIXED: Targets the exact custom "otp" credentials block inside lib/auth.ts
+    // 🔥 FIXED: Forces an explicit callbackUrl string to drop the looping browser parameters completely
+    const res = await signIn("otp", {
+      email: email.toLowerCase().trim(),
+      code: otp.trim(), 
       redirect: false,
+      callbackUrl: "/", 
     });
 
     if (res?.error) {

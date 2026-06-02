@@ -10,53 +10,113 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
+   // Inside lib/auth.ts -> providers array
+CredentialsProvider({
+  id: "otp",
+  name: "One-Time Password",
+  credentials: {
+    email: { type: "text" },
+    code: { type: "text" },
+  },
+  async authorize(credentials): Promise<User | null> {
+    if (!credentials?.email || !credentials?.code) return null;
+
+    // Standardize casing to match database records safely
+    const formattedEmail = credentials.email.toLowerCase().trim();
+    const cleanCode = credentials.code.trim();
+
+    // 🔥 FIX: Query 'otpToken' instead of 'verificationToken' to match your generator schema
+    const activeOtp = await prisma.otpToken.findFirst({
+      where: {
+        email: formattedEmail,
+        token: cleanCode,
+        expires: { gte: new Date() }, // Check that token expiration time hasn't passed
+      },
+    });
+
+    if (!activeOtp) {
+      console.error(`OTP AUTH WARNING: No valid or unexpired OTP found for ${formattedEmail}`);
+      throw new Error("Invalid or expired verification pin code.");
+    }
+
+    // Safely remove the token once used so it can't be reused maliciously
+    await prisma.otpToken.delete({
+      where: { id: activeOtp.id },
+    }).catch((err) => console.error("Non-blocking token purge failure:", err));
+
+    // Establish or fetch the verified user record
+    let user = await prisma.user.findUnique({
+      where: { email: formattedEmail },
+    });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: { 
+          email: formattedEmail,
+          role: "USER", // Maps to your schema's Role enum
+        },
+      });
+    }
+
+    return { id: user.id, email: user.email, name: user.name } as User;
+  },
+}),
+    // 2. OTP/EMAIL CREDENTIALS PROVIDER
     CredentialsProvider({
-      id: "telegram",
-      name: "Telegram",
+      id: "otp",
+      name: "One-Time Password",
       credentials: {
-        id: { type: "text" },
-        first_name: { type: "text" },
-        username: { type: "text" },
-        auth_date: { type: "text" },
-        hash: { type: "text" },
+        email: { type: "text" },
+        code: { type: "text" },
       },
       async authorize(credentials): Promise<User | null> {
-        if (!credentials?.hash || !process.env.TELEGRAM_BOT_TOKEN) return null;
+        if (!credentials?.email || !credentials?.code) return null;
 
-        const { hash, ...others } = credentials;
-        const secretKey = crypto.createHash("sha256").update(process.env.TELEGRAM_BOT_TOKEN).digest();
-        const dataCheckString = Object.entries(others)
-          .filter(([_, value]) => value !== undefined)
-          .map(([key, value]) => `${key}=${value}`)
-          .sort()
-          .join("\n");
-
-        const hashCheck = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
-
-        if (hashCheck !== hash) throw new Error("Invalid signature.");
-
-        const user = await prisma.user.upsert({
-          where: { telegramId: credentials.id },
-          update: { name: credentials.first_name, telegramUsername: credentials.username },
-          create: {
-            telegramId: credentials.id,
-            name: credentials.first_name,
-            telegramUsername: credentials.username,
+        // Find the active verification token record for this OTP attempt
+        const verificationToken = await prisma.verificationToken.findFirst({
+          where: {
+            identifier: credentials.email,
+            token: credentials.code,
+            expires: { gte: new Date() }, // Ensure token is not expired
           },
         });
 
-        // This returns the genuine internal CUID database ID for Telegram sign-ins
-        return { id: user.id, name: user.name } as User;
+        if (!verificationToken) {
+          throw new Error("Invalid or expired OTP verification code.");
+        }
+
+        // Delete the token immediately after consumption so it can't be reused
+        await prisma.verificationToken.delete({
+          where: { id: verificationToken.id },
+        }).catch(() => {});
+
+        // Fetch or establish the database user profile record
+        let user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+        });
+
+        if (!user) {
+          user = await prisma.user.create({
+            data: { email: credentials.email },
+          });
+        }
+
+        return { id: user.id, email: user.email, name: user.name } as User;
       },
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
+  
+  // FIX: Redirects all native NextAuth fallback/error screens back to your custom login view
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
+
   callbacks: {
     async jwt({ token, user, account }) {
-      // Direct trigger on initial user sign-in event
       if (user) {
         if (account?.provider === "google") {
-          // Find or create the user row in your PostgreSQL DB for Google accounts
           let dbUser = await prisma.user.findUnique({
             where: { email: user.email ?? "" },
           });
@@ -70,14 +130,13 @@ export const authOptions: NextAuthOptions = {
               },
             });
           }
-          token.id = dbUser.id; // Inject the true database CUID into the JWT payload
+          token.id = dbUser.id;
         } else {
-          // For Telegram, authorize() already handles the sync and returned the database record id
+          // For both Telegram and OTP credentials, authorize() passes the true internal DB CUID
           token.id = user.id;
         }
       } else if (token.id && typeof token.id === "string" && token.id.length > 25) {
-        // Fallback catch-all: If token contains an unmodified external profile ID string instead of a CUID, 
-        // attempt an emergency database query recovery by current associated email profile parameters
+        // Recovery fallback for existing sessions holding raw Google strings
         const numericCheck = /^\d+$/.test(token.id);
         if (numericCheck && token.email) {
           const matchedUser = await prisma.user.findUnique({
