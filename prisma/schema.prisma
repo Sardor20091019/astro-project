@@ -146,11 +146,15 @@ model Rating {
   value          Int
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  
+  // Relations
   photo          Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  // 'onDelete: SetNull' is crucial here to prevent constraint violations
   user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  @@unique([photoId, userId])
-  @@unique([photoId, anonymousToken])
+  // Use composite unique constraints that handle nulls correctly
+  @@unique([photoId, userId], name: "photoId_userId_unique")
+  @@unique([photoId, anonymousToken], name: "photoId_anonymousToken_unique")
   @@index([photoId])
 }
 
@@ -160,11 +164,14 @@ model Like {
   userId         String?
   anonymousToken String?
   createdAt      DateTime @default(now())
+  
+  // Relations
   photo          Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
   user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  @@unique([photoId, userId])
-  @@unique([photoId, anonymousToken])
+  // Use composite unique constraints that handle nulls correctly
+  @@unique([photoId, userId], name: "photoId_userId_unique")
+  @@unique([photoId, anonymousToken], name: "photoId_anonymousToken_unique")
   @@index([photoId])
 }
 
