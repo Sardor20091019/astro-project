@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin";
 import AdminPhotoList from "@/components/AdminPhotoList";
