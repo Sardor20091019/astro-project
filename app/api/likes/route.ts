@@ -5,6 +5,8 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     const { photoId } = await req.json();
@@ -17,18 +19,13 @@ export async function POST(req: Request) {
     const cookieStore = await cookies();
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
-    
     const anonymousToken = cookieStore.get("astro_guest")?.value ?? randomUUID();
     const shouldSetGuestCookie = !cookieStore.get("astro_guest");
 
-    // 1. Identify existing like record
-    const whereCondition = userId
-      ? { photoId_userId: { photoId: parsedPhotoId, userId } }
-      : { photoId_anonymousToken: { photoId: parsedPhotoId, anonymousToken } };
+    const existing = userId
+      ? await prisma.like.findUnique({ where: { photoId_userId: { photoId: parsedPhotoId, userId } } })
+      : await prisma.like.findUnique({ where: { photoId_anonymousToken: { photoId: parsedPhotoId, anonymousToken } } });
 
-    const existing = await prisma.like.findUnique({ where: whereCondition });
-
-    // 2. Toggle Like (Delete or Create)
     if (existing) {
       await prisma.like.delete({ where: { id: existing.id } });
     } else {
@@ -41,10 +38,9 @@ export async function POST(req: Request) {
       });
     }
 
-    // 3. Return updated count
     const likeCount = await prisma.like.count({ where: { photoId: parsedPhotoId } });
     const response = NextResponse.json({ liked: !existing, likeCount });
-    
+
     if (shouldSetGuestCookie) {
       response.cookies.set("astro_guest", anonymousToken, {
         httpOnly: true,
@@ -55,7 +51,6 @@ export async function POST(req: Request) {
     }
     return response;
   } catch (error) {
-    console.error("Like Error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

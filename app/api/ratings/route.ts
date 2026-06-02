@@ -5,6 +5,8 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     const { photoId, value } = await req.json();
@@ -18,18 +20,15 @@ export async function POST(req: Request) {
     const cookieStore = await cookies();
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
-    
     const anonymousToken = cookieStore.get("astro_guest")?.value ?? randomUUID();
     const shouldSetGuestCookie = !cookieStore.get("astro_guest");
 
-    // 1. Identify existing rating record
-    const whereCondition = userId 
-      ? { photoId_userId: { photoId: parsedPhotoId, userId } }
-      : { photoId_anonymousToken: { photoId: parsedPhotoId, anonymousToken } };
+    // Find existing
+    const existing = userId
+      ? await prisma.rating.findUnique({ where: { photoId_userId: { photoId: parsedPhotoId, userId } } })
+      : await prisma.rating.findUnique({ where: { photoId_anonymousToken: { photoId: parsedPhotoId, anonymousToken } } });
 
-    const existing = await prisma.rating.findUnique({ where: whereCondition });
-
-    // 2. Perform Create or Update manually
+    // Manual Update/Create logic
     if (existing) {
       await prisma.rating.update({
         where: { id: existing.id },
@@ -37,16 +36,15 @@ export async function POST(req: Request) {
       });
     } else {
       await prisma.rating.create({
-        data: { 
-          photoId: parsedPhotoId, 
+        data: {
+          photoId: parsedPhotoId,
           value: parsedValue,
           userId: userId || null,
-          anonymousToken: userId ? null : anonymousToken 
+          anonymousToken: userId ? null : anonymousToken,
         },
       });
     }
 
-    // 3. Aggregate Stats
     const stats = await prisma.rating.aggregate({
       where: { photoId: parsedPhotoId },
       _avg: { value: true },
@@ -69,7 +67,6 @@ export async function POST(req: Request) {
     }
     return response;
   } catch (error) {
-    console.error("Rating Error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
