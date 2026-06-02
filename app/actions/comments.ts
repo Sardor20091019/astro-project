@@ -9,14 +9,14 @@ export async function submitComment(photoId: number, body: string) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    throw new Error("Unauthorized");
+    return { ok: false as const, error: "UNAUTHORIZED" };
   }
 
   const parsedPhotoId = Number(photoId);
   const cleanBody = String(body ?? "").trim();
 
   if (!Number.isInteger(parsedPhotoId) || cleanBody.length < 2) {
-    throw new Error("Invalid comment");
+    return { ok: false as const, error: "INVALID_COMMENT" };
   }
 
   const comment = await prisma.comment.create({
@@ -39,6 +39,7 @@ export async function submitComment(photoId: number, body: string) {
   revalidatePath(`/photos/${parsedPhotoId}`);
 
   return {
+    ok: true as const,
     comment: {
       ...comment,
       createdAt: comment.createdAt.toISOString(),

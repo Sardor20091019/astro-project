@@ -1,8 +1,9 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
-import { getToken } from "next-auth/jwt"; // Direct JWT decryption tool
+import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
-import { UTApi } from "uploadthing/server";
+import { UTApi, UploadThingError } from "uploadthing/server";
 import { moderateImageUrl } from "@/lib/moderation";
+import { authOptions } from "@/lib/auth";
 
 const f = createUploadthing();
 const utapi = new UTApi();
@@ -11,32 +12,24 @@ export const ourFileRouter = {
   imageUploader: f({ 
     image: { maxFileSize: "4MB", maxFileCount: 1 } 
   })
-    // 1. Pass the underlying NextRequest wrapper object from UploadThing
-    .middleware(async ({ req }) => {
-      
-      // 2. Decode the session token directly from the request cookies manually
-      const token = await getToken({ 
-        req, 
-        secret: process.env.NEXTAUTH_SECRET 
-      });
-
-      // 3. Extract your synced database CUID from the token payload
-      const userId = token?.id as string | undefined;
+    .middleware(async () => {
+      const session = await getServerSession(authOptions);
+      console.log("UT MIDDLEWARE SESSION:", JSON.stringify(session, null, 2));
+      const userId = session?.user?.id;
 
       if (!userId) {
-        console.error("UT MIDDLEWARE: Extraction failed. No active token found.");
-        throw new Error("Unauthorized: Invalid or missing session token.");
+        console.error("UT MIDDLEWARE: Unauthorized. Missing session.user.id.");
+        throw new UploadThingError({ code: "FORBIDDEN", message: "Unauthorized" });
       }
 
-      console.log("UT MIDDLEWARE: Decrypted token successfully for User CUID:", userId);
+      console.log("UT MIDDLEWARE: Authorized User CUID:", userId);
 
-      // 4. Run your database validation rules
       const userExists = await prisma.user.findUnique({
         where: { id: userId }
       });
 
       if (!userExists) {
-        throw new Error("Unauthorized: User profile missing from database.");
+        throw new UploadThingError({ code: "FORBIDDEN", message: "Unauthorized" });
       }
 
       const photoCount = await prisma.photo.count({
@@ -44,10 +37,9 @@ export const ourFileRouter = {
       });
 
       if (photoCount >= 30) {
-        throw new Error("Upload limit reached.");
+        throw new UploadThingError({ code: "BAD_REQUEST", message: "Upload limit reached." });
       }
 
-      // Return metadata payload to pass down to .onUploadComplete
       return { userId };
     })
     .onUploadComplete(async ({ metadata, file }) => {

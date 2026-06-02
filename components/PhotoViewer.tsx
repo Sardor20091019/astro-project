@@ -7,6 +7,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Camera, ChevronLeft, ChevronRight, Heart, Loader2, MapPin, MessageCircle, Sparkles, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { submitComment as submitCommentAction } from "@/app/actions/comments";
 import StarRating from "./StarRating";
 import StarDisplay from "./StarDisplay";
 
@@ -51,27 +52,23 @@ export default function PhotoViewer({
   photos,
   initialId,
   stats,
+  initialEngagement,
   session,
 }: {
   photos: GalleryPhoto[];
   initialId: number;
   stats: { avg: number; total: number; likes?: number; comments?: number };
+  initialEngagement: Engagement;
   session: Session | null;
 }) {
   const router = useRouter();
-  const { data: liveSession } = useSession();
-  const authSession = liveSession ?? session;
+  const { data: liveSession, status: sessionStatus } = useSession({ required: false });
+  const authSession = sessionStatus === "loading" ? session : liveSession ?? session;
+  const isAuthLoading = sessionStatus === "loading" && !session;
   const initialIndex = useMemo(() => photos.findIndex((photo) => photo.id === initialId), [photos, initialId]);
   const [index, setIndex] = useState(initialIndex >= 0 ? initialIndex : 0);
   const [direction, setDirection] = useState(0);
-  const [engagement, setEngagement] = useState<Engagement>({
-    ratingAverage: stats.avg,
-    ratingCount: stats.total,
-    viewerRating: null,
-    likeCount: stats.likes ?? 0,
-    viewerLiked: false,
-    commentCount: stats.comments ?? 0,
-  });
+  const [engagement, setEngagement] = useState<Engagement>(initialEngagement);
   const photo = photos[index];
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-250, 0, 250], [-2.5, 0, 2.5]);
@@ -102,11 +99,16 @@ export default function PhotoViewer({
 
   useEffect(() => {
     if (!photo) return;
+    if (photo.id === initialId) {
+      setEngagement(initialEngagement);
+      return;
+    }
+
     fetch(`/api/photos/${photo.id}/engagement`)
       .then((res) => res.json())
       .then((data) => setEngagement(data))
       .catch(() => undefined);
-  }, [photo]);
+  }, [photo, initialId, initialEngagement]);
 
   if (!photo) {
     return <div className="p-8 text-white">Photo not found.</div>;
@@ -218,6 +220,7 @@ export default function PhotoViewer({
             engagement={engagement}
             setEngagement={setEngagement}
             isLoggedIn={Boolean(authSession)}
+            isAuthLoading={isAuthLoading}
           />
         </motion.section>
       </div>
@@ -230,16 +233,19 @@ function EngagementPanel({
   engagement,
   setEngagement,
   isLoggedIn,
+  isAuthLoading,
 }: {
   photoId: number;
   engagement: Engagement;
   setEngagement: (engagement: Engagement | ((current: Engagement) => Engagement)) => void;
   isLoggedIn: boolean;
+  isAuthLoading: boolean;
 }) {
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [comment, setComment] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [commentError, setCommentError] = useState("");
 
   const loadComments = useCallback(async () => {
     setLoadingComments(true);
@@ -306,22 +312,26 @@ const toggleLike = async () => {
 
   const submitComment = async () => {
     if (!comment.trim()) return;
+    if (!isLoggedIn) {
+      setCommentError("Please sign in before posting a comment.");
+      return;
+    }
+
     setSubmitting(true);
+    setCommentError("");
     try {
-      const res = await fetch("/api/comments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ photoId, body: comment }),
-      });
-      if (res.status === 401) {
-        signIn("google", { callbackUrl: window.location.pathname });
+      const result = await submitCommentAction(photoId, comment);
+
+      if (!result.ok) {
+        setCommentError(result.error === "UNAUTHORIZED" ? "Please sign in before posting a comment." : "Please write a longer comment.");
         return;
       }
-      if (res.ok) {
-        setComment("");
-        await loadComments();
-        setEngagement((current) => ({ ...current, commentCount: current.commentCount + 1 }));
-      }
+
+      setComment("");
+      setComments((current) => [result.comment, ...current]);
+      setEngagement((current) => ({ ...current, commentCount: result.commentCount }));
+    } catch {
+      setCommentError("Comment submission failed. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -362,7 +372,9 @@ const toggleLike = async () => {
           <span className="text-xs text-white/35">{engagement.commentCount}</span>
         </div>
 
-        {isLoggedIn ? (
+        {isAuthLoading ? (
+          <div className="h-11 rounded-2xl border border-white/10 bg-white/[0.04]" />
+        ) : isLoggedIn ? (
           <div className="flex gap-2">
             <input
               value={comment}
@@ -388,6 +400,10 @@ const toggleLike = async () => {
             Sign in to write a comment
           </button>
         )}
+
+        {commentError ? (
+          <p className="mt-2 text-xs font-medium text-red-300">{commentError}</p>
+        ) : null}
 
         <div className="mt-4 max-h-36 space-y-3 overflow-y-auto pr-1">
           {loadingComments ? (

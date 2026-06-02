@@ -1,12 +1,15 @@
 import PhotoViewer from "@/components/PhotoViewer";
 import { prisma } from "@/lib/prisma";
+import { authOptions } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function PhotoPage({ params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
+  const cookieStore = await cookies();
   const { id } = await params;
   const photoId = Number(id);
 
@@ -22,7 +25,15 @@ export default async function PhotoPage({ params }: { params: Promise<{ id: stri
 
   if (!currentPhoto) notFound();
 
-  const [ratingStats, likes, comments] = await Promise.all([
+  const userId = session?.user?.id;
+  const anonymousToken = cookieStore.get("astro_guest")?.value;
+  const viewerWhere = userId
+    ? { photoId_userId_unique: { photoId, userId } }
+    : anonymousToken
+      ? { photoId_anonymousToken_unique: { photoId, anonymousToken } }
+      : null;
+
+  const [ratingStats, likes, comments, viewerRating, viewerLike] = await Promise.all([
     prisma.rating.aggregate({
       where: { photoId },
       _avg: { value: true },
@@ -30,6 +41,18 @@ export default async function PhotoPage({ params }: { params: Promise<{ id: stri
     }),
     prisma.like.count({ where: { photoId } }),
     prisma.comment.count({ where: { photoId } }),
+    viewerWhere
+      ? prisma.rating.findUnique({
+          where: viewerWhere,
+          select: { value: true },
+        })
+      : Promise.resolve(null),
+    viewerWhere
+      ? prisma.like.findUnique({
+          where: viewerWhere,
+          select: { id: true },
+        })
+      : Promise.resolve(null),
   ]);
 
   return (
@@ -38,10 +61,18 @@ export default async function PhotoPage({ params }: { params: Promise<{ id: stri
         photos={allPhotos}
         initialId={photoId}
         stats={{
-          avg: ratingStats._avg.value || 0,
+          avg: ratingStats._avg.value ? Number(ratingStats._avg.value.toFixed(1)) : 0,
           total: ratingStats._count.id,
           likes,
           comments,
+        }}
+        initialEngagement={{
+          ratingAverage: ratingStats._avg.value ? Number(ratingStats._avg.value.toFixed(1)) : 0,
+          ratingCount: ratingStats._count.id,
+          viewerRating: viewerRating?.value ?? null,
+          likeCount: likes,
+          viewerLiked: Boolean(viewerLike),
+          commentCount: comments,
         }}
         session={session}
       />

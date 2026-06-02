@@ -5,6 +5,10 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 
 export const authOptions: NextAuthOptions = {
+  session: {
+    strategy: "jwt",
+  },
+
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -88,17 +92,54 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async jwt({ token, user, account }) {
-      // Persist the user ID to the token immediately upon login
-      if (user) {
-        token.id = user.id;
+      if (account?.provider === "google" && token.email) {
+        const dbUser = await prisma.user.upsert({
+          where: { email: token.email },
+          update: {
+            name: token.name ?? undefined,
+            image: token.picture ?? undefined,
+          },
+          create: {
+            email: token.email,
+            name: token.name ?? undefined,
+            image: token.picture ?? undefined,
+            role: "USER",
+          },
+          select: { id: true },
+        });
+
+        token.id = dbUser.id;
+        return token;
       }
+
+      if (user?.id) {
+        token.id = user.id;
+        return token;
+      }
+
+      if (!token.id && token.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email },
+          select: { id: true },
+        });
+
+        if (dbUser) {
+          token.id = dbUser.id;
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.id) {
-        session.user.id = token.id as string;
+      if (session.user && typeof token.id === "string") {
+        session.user.id = token.id;
       }
       return session;
     },
   },
 };
+
+export async function getCurrentUser() {
+  const session = await getServerSession(authOptions);
+  return session?.user;
+}
