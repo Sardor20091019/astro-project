@@ -11,30 +11,19 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
     
-    // 1. OTP CREDENTIALS PROVIDER
     CredentialsProvider({
       id: "otp",
       name: "One-Time Password",
-      credentials: {
-        email: { type: "text" },
-        code: { type: "text" },
-      },
+      credentials: { email: { type: "text" }, code: { type: "text" } },
       async authorize(credentials): Promise<User | null> {
         if (!credentials?.email || !credentials?.code) return null;
 
         const formattedEmail = credentials.email.toLowerCase().trim();
-        const cleanCode = credentials.code.trim();
-
         const activeOtp = await prisma.otpToken.findFirst({
-          where: {
-            email: formattedEmail,
-            token: cleanCode,
-            expires: { gte: new Date() },
-          },
+          where: { email: formattedEmail, token: credentials.code.trim(), expires: { gte: new Date() } },
         });
 
         if (!activeOtp) throw new Error("Invalid or expired verification pin code.");
-
         await prisma.otpToken.delete({ where: { id: activeOtp.id } }).catch(() => {});
 
         let user = await prisma.user.findUnique({ where: { email: formattedEmail } });
@@ -46,30 +35,20 @@ export const authOptions: NextAuthOptions = {
       },
     }),
 
-    // 2. TELEGRAM CREDENTIALS PROVIDER
     CredentialsProvider({
       id: "telegram",
       name: "Telegram",
-      credentials: {
-        id: { type: "text" },
-        first_name: { type: "text" },
-        username: { type: "text" },
-        photo_url: { type: "text" },
-        auth_date: { type: "text" },
-        hash: { type: "text" },
-      },
+      credentials: { id: { type: "text" }, first_name: { type: "text" }, username: { type: "text" }, photo_url: { type: "text" }, auth_date: { type: "text" }, hash: { type: "text" } },
       async authorize(credentials): Promise<User | null> {
         if (!credentials?.hash) return null;
 
         const botToken = process.env.TELEGRAM_BOT_TOKEN;
         if (!botToken) throw new Error("TELEGRAM_BOT_TOKEN is missing.");
 
-        // Define the specific fields Telegram expects for signature verification
         const fields = ["id", "first_name", "username", "photo_url", "auth_date"];
-        
         const dataCheckString = fields
           .map((key) => ({ key, value: credentials[key as keyof typeof credentials] }))
-          .filter((item) => item.value !== undefined && item.value !== null && item.value !== "")
+          .filter((item) => item.value)
           .sort((a, b) => a.key.localeCompare(b.key))
           .map((item) => `${item.key}=${item.value}`)
           .join("\n");
@@ -77,23 +56,14 @@ export const authOptions: NextAuthOptions = {
         const secretKey = crypto.createHash("sha256").update(botToken).digest();
         const generatedHash = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
 
-        if (generatedHash !== credentials.hash) {
-          throw new Error("Invalid Telegram signature.");
-        }
+        if (generatedHash !== credentials.hash) throw new Error("Invalid Telegram signature.");
 
         let user = await prisma.user.findUnique({ where: { telegramId: credentials.id } });
         if (!user) {
           user = await prisma.user.create({
-            data: {
-              telegramId: credentials.id,
-              telegramUsername: credentials.username || null,
-              name: credentials.first_name || "Telegram User",
-              image: credentials.photo_url || null,
-              role: "USER",
-            },
+            data: { telegramId: credentials.id, telegramUsername: credentials.username, name: credentials.first_name, image: credentials.photo_url, role: "USER" },
           });
         }
-
         return { id: user.id, name: user.name, image: user.image } as User;
       },
     }),
@@ -109,29 +79,26 @@ export const authOptions: NextAuthOptions = {
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
-        domain: process.env.NODE_ENV === "production" ? ".astrospectrum.uz" : undefined, 
+        // REMOVED domain to fix production cookie rejection
       },
     },
   },
 
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
+  pages: { signIn: "/login", error: "/login" },
 
   callbacks: {
     async jwt({ token, user, account }) {
-      if (user) token.id = user.id;
+      // Persist the user ID to the token immediately upon login
+      if (user) {
+        token.id = user.id;
+      }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) session.user.id = token.id as string;
+      if (session.user && token.id) {
+        session.user.id = token.id as string;
+      }
       return session;
     },
   },
 };
-
-export async function getCurrentUser() {
-  const session = await getServerSession(authOptions);
-  return session?.user;
-}
