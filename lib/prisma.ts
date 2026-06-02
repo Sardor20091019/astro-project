@@ -2,13 +2,19 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
-// Explicitly use your working local PostgreSQL credentials as a structural fallback
-const connectionString = 
-  process.env.DATABASE_URL || 
-  "postgresql://postgres:sardor_09@localhost:5432/astrospectrum?schema=public";
+// 1. Get the connection string safely
+const connectionString = process.env.DATABASE_URL;
 
-const pool = new Pool({ 
+if (!connectionString) {
+  throw new Error("DATABASE_URL is not defined in environment variables");
+}
+
+// 2. Configure the Pool with explicit SSL settings
+const pool = new Pool({
   connectionString,
+  ssl: {
+    rejectUnauthorized: false, // Required for most managed DBs like Neon
+  },
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 150000,
@@ -24,7 +30,7 @@ export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    log: ["error"], // Keep logs clean in production
   });
 
 if (process.env.NODE_ENV !== "production") {
