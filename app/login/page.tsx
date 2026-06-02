@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,7 +5,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Chrome, Sparkles, Mail, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
-import TelegramLogin from "@/components/TelegramLogin"; // <--- Add this import
+import TelegramLogin from "@/components/TelegramLogin";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,8 +41,12 @@ export default function LoginPage() {
       }
       
       setStep(2);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -54,9 +57,12 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
+    // FIXED: Passing both fields ensures compatibility whether your authorization 
+    // backend schema searches for credentials.otp or credentials.token
     const res = await signIn("credentials", {
       email,
-      token: otp,
+      otp, 
+      token: otp, 
       redirect: false,
     });
 
@@ -70,7 +76,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white overflow-hidden relative">
+    <main className="relative min-h-screen overflow-hidden bg-black text-white">
       <div className="absolute inset-0 bg-[url('/hero.jpg')] bg-cover bg-center opacity-50" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(230,48,39,0.24),transparent_34%),linear-gradient(to_bottom,rgba(0,0,0,0.25),#000_82%)]" />
 
@@ -101,7 +107,7 @@ export default function LoginPage() {
             <motion.div 
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-center text-xs font-mono text-red-400 tracking-wide"
+              className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-center text-xs font-mono tracking-wide text-red-400"
             >
               {error}
             </motion.div>
@@ -146,7 +152,7 @@ export default function LoginPage() {
                 onSubmit={handleVerifyOtp}
                 className="space-y-3"
               >
-                <p className="text-[11px] uppercase tracking-wider text-white/40 mb-1 text-center font-mono">
+                <p className="mb-1 font-mono text-[11px] uppercase tracking-wider text-white/40 text-center">
                   Enter verification token dispatched to {email.toLowerCase()}
                 </p>
                 <div className="relative flex items-center">
@@ -158,7 +164,7 @@ export default function LoginPage() {
                     onChange={(e) => setOtp(e.target.value)}
                     maxLength={6}
                     required
-                    className="w-full rounded-2xl border border-white/10 bg-black/40 py-4 pl-12 pr-4 text-center text-sm font-mono tracking-[0.3em] font-bold text-white outline-none transition-all focus:border-red-500/50 focus:bg-black/60"
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 py-4 pl-12 pr-4 text-center text-sm font-mono font-bold tracking-[0.3em] text-white outline-none transition-all focus:border-red-500/50 focus:bg-black/60"
                   />
                 </div>
 
@@ -173,7 +179,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="flex items-center justify-center gap-1.5 mx-auto text-[10px] uppercase tracking-widest text-white/40 hover:text-white pt-2 transition-colors"
+                  className="mx-auto flex items-center justify-center gap-1.5 pt-2 text-[10px] uppercase tracking-widest text-white/40 transition-colors hover:text-white"
                 >
                   <ArrowLeft size={10} /> Change email address
                 </button>
@@ -183,7 +189,7 @@ export default function LoginPage() {
 
           <div className="my-6 flex items-center justify-between gap-4">
             <div className="h-px w-full bg-white/10" />
-            <span className="text-[10px] font-mono tracking-widest text-white/20 uppercase whitespace-nowrap">OR</span>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-white/20 whitespace-nowrap">OR</span>
             <div className="h-px w-full bg-white/10" />
           </div>
 
@@ -197,7 +203,6 @@ export default function LoginPage() {
               Continue with Google
             </button>
             
-            {/* Telegram Login added here */}
             <TelegramLogin />
           </div>
 

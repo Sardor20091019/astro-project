@@ -1,4 +1,3 @@
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import PhotoViewer from "@/components/PhotoViewer";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
@@ -7,7 +6,7 @@ import { notFound } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export default async function PhotoPage({ params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession();
   const { id } = await params;
   const photoId = Number(id);
 

@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || "587"),
+  port: parseInt(process.env.SMTP_PORT || "587", 10),
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -11,12 +11,19 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function generateAndSendOtp(email: string) {
+  const cleanEmail = email.toLowerCase().trim();
   const token = Math.floor(100000 + Math.random() * 900000).toString();
-  const expires = new Date(Date.now() + 5 * 60 * 1000);
+  const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 Minutes lifespan
 
+  // Clean out any old remaining tokens for this email to prevent DB unique index pollution
+  await prisma.otpToken.deleteMany({
+    where: { email: cleanEmail },
+  }).catch(() => {});
+
+  // Write new authorization row
   await prisma.otpToken.create({
     data: {
-      email,
+      email: cleanEmail,
       token,
       expires,
     },
@@ -24,7 +31,7 @@ export async function generateAndSendOtp(email: string) {
 
   const mailOptions = {
     from: `"Astrospectrum" <${process.env.SMTP_USER}>`,
-    to: email,
+    to: cleanEmail,
     subject: "Your Astrospectrum Verification Code",
     text: `Your login code is: ${token}. It expires in 5 minutes.`,
     html: `
