@@ -1,24 +1,33 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useSession, signOut } from "next-auth/react"; // Official NextAuth hook
-import { Menu, X, MessageSquare } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
+import { MessageSquare } from "lucide-react";
 import { pusherClient } from "@/lib/pusher";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
-  const user = session?.user as any; // Cast to access custom fields like 'role'
+  const user = session?.user as any;
   
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
+  const [userCount, setUserCount] = useState<number | null>(null);
 
-  // Pusher and Scroll logic remains unchanged
+  // Fetch registered user count from our API route
+  useEffect(() => {
+    fetch('/api/user-count')
+      .then((res) => res.json())
+      .then((data) => {
+        if (typeof data.count === 'number') setUserCount(data.count);
+      })
+      .catch((err) => console.error("Failed to fetch user count:", err));
+  }, []);
+
   useEffect(() => {
     if (pathname === "/messages") setHasUnread(false);
   }, [pathname]);
@@ -58,34 +67,44 @@ export default function Navbar() {
             Astro<span className="text-red-500">spectrum</span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-xs uppercase tracking-widest text-[#666] hover:text-white">Gallery</Link>
-            <Link href="/submit" className="text-xs uppercase tracking-widest text-[#666] hover:text-white">Submit</Link>
-            
-            {status === "authenticated" && (
-              <Link href="/messages" className="text-xs uppercase tracking-widest text-[#666] hover:text-white flex items-center gap-1.5 relative">
-                <MessageSquare size={11} /> Messages
-                {hasUnread && <span className="absolute -top-1 -right-2 h-2 w-2 bg-red-500 rounded-full animate-pulse" />}
-              </Link>
-            )}
-
-            {admin && (
-              <Link href="/admin" className="text-red-500 text-xs uppercase tracking-widest font-bold">Admin</Link>
-            )}
-
-            {status === "loading" ? (
-              <span className="text-[10px] text-[#666] uppercase">Loading...</span>
-            ) : user ? (
-              <div className="flex items-center gap-3">
-                <Link href={`/profile/${user.id}`} className="flex items-center gap-2">
-                  {user.image && <img src={user.image} className="h-7 w-7 rounded-full object-cover" alt="Profile" />}
-                  <span className="text-xs text-[#888]">{user.name}</span>
-                </Link>
-                <button onClick={() => signOut()} className="text-[10px] text-[#666] hover:text-white uppercase">Sign out</button>
+          <div className="flex items-center gap-8">
+            {/* User Count Sticker - Visible on all screen sizes now */}
+            {userCount !== null && (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#666]">
+                <span className="text-[10px]">👤</span>
+                <span className="text-[10px] font-mono font-bold text-white">{userCount.toLocaleString()}</span>
               </div>
-            ) : (
-              <Link href="/login" className="bg-white text-black px-4 py-1.5 text-[10px] uppercase font-bold rounded hover:bg-gray-200">Sign in</Link>
             )}
+
+            <div className="hidden md:flex items-center gap-8">
+              <Link href="/" className="text-xs uppercase tracking-widest text-[#666] hover:text-white">Gallery</Link>
+              <Link href="/submit" className="text-xs uppercase tracking-widest text-[#666] hover:text-white">Submit</Link>
+              
+              {status === "authenticated" && (
+                <Link href="/messages" className="text-xs uppercase tracking-widest text-[#666] hover:text-white flex items-center gap-1.5 relative">
+                  <MessageSquare size={11} /> Messages
+                  {hasUnread && <span className="absolute -top-1 -right-2 h-2 w-2 bg-red-500 rounded-full animate-pulse" />}
+                </Link>
+              )}
+
+              {admin && (
+                <Link href="/admin" className="text-red-500 text-xs uppercase tracking-widest font-bold">Admin</Link>
+              )}
+
+              {status === "loading" ? (
+                <span className="text-[10px] text-[#666] uppercase">Loading...</span>
+              ) : user ? (
+                <div className="flex items-center gap-3">
+                  <Link href={`/profile/${user.id}`} className="flex items-center gap-2">
+                    {user.image && <img src={user.image} className="h-7 w-7 rounded-full object-cover" alt="Profile" />}
+                    <span className="text-xs text-[#888]">{user.name}</span>
+                  </Link>
+                  <button onClick={() => signOut()} className="text-[10px] text-[#666] hover:text-white uppercase">Sign out</button>
+                </div>
+              ) : (
+                <Link href="/login" className="bg-white text-black px-4 py-1.5 text-[10px] uppercase font-bold rounded hover:bg-gray-200">Sign in</Link>
+              )}
+            </div>
           </div>
         </div>
       </nav>
