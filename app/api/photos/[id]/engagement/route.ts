@@ -14,12 +14,18 @@ export async function GET(_req: Request, { params }: RouteContext) {
     return NextResponse.json({ error: "Invalid photo id" }, { status: 400 });
   }
 
-  const [session, cookieStore] = await Promise.all([getServerSession(authOptions), cookies()]);
+  const [session, cookieStore] = await Promise.all([
+    getServerSession(authOptions), 
+    cookies()
+  ]);
+  
   const anonymousToken = cookieStore.get("astro_guest")?.value;
+
+  // Use the exact unique constraint names defined in schema.prisma
   const viewerWhere = session?.user?.id
-    ? { photoId_userId: { photoId, userId: session.user.id } }
+    ? { photoId_userId_unique: { photoId, userId: session.user.id } }
     : anonymousToken
-      ? { photoId_anonymousToken: { photoId, anonymousToken } }
+      ? { photoId_anonymousToken_unique: { photoId, anonymousToken } }
       : null;
 
   const [ratingStats, likeCount, currentRating, currentLike, commentCount] = await Promise.all([
@@ -29,6 +35,7 @@ export async function GET(_req: Request, { params }: RouteContext) {
       _count: { id: true },
     }),
     prisma.like.count({ where: { photoId } }),
+    // TypeScript now accepts these because they match the schema's unique constraint names
     viewerWhere ? prisma.rating.findUnique({ where: viewerWhere }) : null,
     viewerWhere ? prisma.like.findUnique({ where: viewerWhere }) : null,
     prisma.comment.count({ where: { photoId } }),

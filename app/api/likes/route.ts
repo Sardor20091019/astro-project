@@ -22,9 +22,17 @@ export async function POST(req: Request) {
     const anonymousToken = cookieStore.get("astro_guest")?.value ?? randomUUID();
     const shouldSetGuestCookie = !cookieStore.get("astro_guest");
 
-    const existing = userId
-      ? await prisma.like.findUnique({ where: { photoId_userId: { photoId: parsedPhotoId, userId } } })
-      : await prisma.like.findUnique({ where: { photoId_anonymousToken: { photoId: parsedPhotoId, anonymousToken } } });
+const existing = userId
+  ? await prisma.like.findUnique({ 
+      where: { 
+        photoId_userId_unique: { photoId: parsedPhotoId, userId } 
+      } 
+    })
+  : await prisma.like.findUnique({ 
+      where: { 
+        photoId_anonymousToken_unique: { photoId: parsedPhotoId, anonymousToken } 
+      } 
+    });
 
     if (existing) {
       await prisma.like.delete({ where: { id: existing.id } });

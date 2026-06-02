@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     }
 
     await prisma.rating.upsert({
-      where: { photoId_userId: { photoId: parsedPhotoId, userId: session.user.id } },
+    where: { photoId_userId_unique: { photoId: parsedPhotoId, userId: session.user.id } },
       update: { value: parsedRating },
       create: {
         photoId: parsedPhotoId,

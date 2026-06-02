@@ -23,10 +23,18 @@ export async function POST(req: Request) {
     const anonymousToken = cookieStore.get("astro_guest")?.value ?? randomUUID();
     const shouldSetGuestCookie = !cookieStore.get("astro_guest");
 
-    // Find existing
-    const existing = userId
-      ? await prisma.rating.findUnique({ where: { photoId_userId: { photoId: parsedPhotoId, userId } } })
-      : await prisma.rating.findUnique({ where: { photoId_anonymousToken: { photoId: parsedPhotoId, anonymousToken } } });
+// Update this section in app/api/ratings/route.ts
+const existing = userId
+  ? await prisma.rating.findUnique({ 
+      where: { 
+        photoId_userId_unique: { photoId: parsedPhotoId, userId } 
+      } 
+    })
+  : await prisma.rating.findUnique({ 
+      where: { 
+        photoId_anonymousToken_unique: { photoId: parsedPhotoId, anonymousToken } 
+      } 
+    });
 
     // Manual Update/Create logic
     if (existing) {

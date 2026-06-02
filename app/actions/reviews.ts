@@ -1,11 +1,12 @@
 "use server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/lib/auth";
 
 export async function submitReview(formData: FormData) {
   const session = await getServerSession(authOptions) as { user?: { id?: string } } | null;
   const user = session?.user;
+  
   if (!user || !user.id) {
     throw new Error("Unauthorized");
   }
@@ -19,9 +20,18 @@ export async function submitReview(formData: FormData) {
   }
 
   await prisma.rating.upsert({
-    where: { photoId_userId: { photoId, userId: user.id } },
+    where: { 
+      photoId_userId_unique: { 
+        photoId, 
+        userId: user.id 
+      } 
+    },
     update: { value: rating },
-    create: { photoId, value: rating, userId: user.id },
+    create: { 
+      photoId, 
+      value: rating, 
+      userId: user.id 
+    },
   });
 
   if (comment) {
