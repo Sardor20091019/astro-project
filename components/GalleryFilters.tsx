@@ -1,50 +1,71 @@
-"use client";
+import Link from "next/link";
+import { Clock, Eye, Heart, MessageSquare, Star } from "lucide-react";
+import type { PhotoCategory } from "@/data/photos";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, Heart, MessageSquare, Clock, Star } from "lucide-react";
+interface GalleryFiltersProps {
+  currentSort: string;
+  activeCategory: PhotoCategory | "ALL";
+  query: string;
+}
 
-export default function GalleryFilters() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const currentSort = searchParams.get("sortBy") || "latest";
+const FILTER_TABS = [
+  { id: "latest", label: "Latest", icon: Clock },
+  { id: "earliest", label: "Earliest", icon: Clock },
+  { id: "views", label: "Most Viewed", icon: Eye },
+  { id: "likes", label: "Most Liked", icon: Heart },
+  { id: "comments", label: "Most Commented", icon: MessageSquare },
+  { id: "rated", label: "Highest Rated", icon: Star },
+];
 
-  const filterTabs = [
-    { id: "latest", label: "Latest", icon: Clock },
-    { id: "earliest", label: "Earliest", icon: Clock },
-    { id: "views", label: "Most Viewed", icon: Eye },
-    { id: "likes", label: "Most Liked", icon: Heart },
-    { id: "comments", label: "Most Commented", icon: MessageSquare },
-    { id: "rated", label: "Highest Rated", icon: Star },
-  ];
+function buildSortHref({
+  sortBy,
+  activeCategory,
+  query,
+}: {
+  sortBy: string;
+  activeCategory: PhotoCategory | "ALL";
+  query: string;
+}) {
+  const params = new URLSearchParams();
+  if (sortBy !== "latest") params.set("sortBy", sortBy);
+  if (activeCategory !== "ALL") params.set("category", activeCategory);
+  if (query.trim()) params.set("q", query.trim());
 
-  const applySortFilter = (id: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("sortBy", id);
-    params.set("page", "1"); // Force reset to page one on filter change
-    router.push(`/?${params.toString()}`);
-  };
+  const queryString = params.toString();
+  return queryString ? `/?${queryString}#gallery` : "/#gallery";
+}
 
+export default function GalleryFilters({
+  currentSort,
+  activeCategory,
+  query,
+}: GalleryFiltersProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2 mb-8 justify-center sm:justify-start">
-      {filterTabs.map((tab) => {
+    <nav
+      aria-label="Gallery sort order"
+      className="mb-8 flex flex-wrap items-center justify-center gap-2 sm:justify-start"
+    >
+      {FILTER_TABS.map((tab) => {
         const Icon = tab.icon;
         const isActive = currentSort === tab.id;
-        
+
         return (
-          <button
+          <Link
             key={tab.id}
-            onClick={() => applySortFilter(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono tracking-wider uppercase border transition-all duration-200 ${
+            href={buildSortHref({ sortBy: tab.id, activeCategory, query })}
+            aria-current={isActive ? "page" : undefined}
+            className={[
+              "inline-flex min-h-[44px] min-w-[44px] items-center gap-2 border px-3.5 py-2.5 text-[10px] uppercase tracking-[0.14em] transition-colors",
               isActive
-                ? "bg-red-500 border-red-500 text-white shadow-lg shadow-red-500/25"
-                : "bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800"
-            }`}
+                ? "border-[#E8421A] bg-[#E8421A] text-white"
+                : "border-white/[0.08] bg-[#080808] text-white/45 hover:border-white/20 hover:text-white/75",
+            ].join(" ")}
           >
-            <Icon size={13} className={isActive ? "text-white" : "text-zinc-500"} />
+            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
             {tab.label}
-          </button>
+          </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }

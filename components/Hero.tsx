@@ -1,7 +1,9 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { useLenis } from "@/hooks/useLenis";
+import heroImage from "@/public/hero.jpg";
 
 export default function Hero() {
   const bgRef   = useRef<HTMLDivElement>(null);
@@ -51,11 +53,20 @@ export default function Hero() {
       <div
         ref={bgRef}
         style={{
-          position: "absolute", inset: "-12% 0", backgroundImage: "url('/hero.jpg')",
-          backgroundSize: "cover", backgroundPosition: "center",
+          position: "absolute", inset: "-12% 0",
           willChange: "transform",
         }}
-      />
+      >
+        <Image
+          src={heroImage}
+          alt=""
+          fill
+          priority
+          placeholder="blur"
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="object-cover"
+        />
+      </div>
       {/* Gradient scrim */}
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(5,5,5,0.55) 0%, transparent 40%, #050505 100%)" }} />
 
@@ -102,6 +113,7 @@ export default function Hero() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px" }}>
           <a
             href="#gallery"
+            className="min-h-[44px] min-w-[44px]"
             style={{
               display: "inline-flex", alignItems: "center", gap: "8px",
               padding: "13px 28px", borderRadius: "2px",
@@ -118,6 +130,7 @@ export default function Hero() {
           </a>
           <Link
             href="/submit"
+            className="min-h-[44px] min-w-[44px]"
             style={{
               display: "inline-flex", alignItems: "center",
               padding: "12px 28px", borderRadius: "2px",

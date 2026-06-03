@@ -32,6 +32,9 @@ export function useLenis(cb?: ScrollCallback) {
 
     async function init() {
       if (!mounted) return;
+      if (typeof window === "undefined") return;
+      if (!window.matchMedia("(min-width: 768px) and (pointer: fine)").matches) return;
+
       if (!lenisInstance) {
         const { default: Lenis } = await import("lenis");
         lenisInstance = new Lenis({

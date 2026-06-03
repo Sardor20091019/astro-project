@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
@@ -12,7 +11,7 @@ import { pusherClient } from "@/lib/pusher";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
-  const user = session?.user as any;
+  const user = session?.user;
   
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
@@ -67,7 +66,7 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-6 h-[72px] flex items-center justify-between">
           
           {/* Brand Logo */}
-          <Link href="/" className="text-sm font-black tracking-[0.2em] uppercase text-white transition-opacity hover:opacity-80">
+          <Link href="/" className="inline-flex min-h-[44px] min-w-[44px] items-center text-sm font-black uppercase tracking-[0.2em] text-white transition-opacity hover:opacity-80">
             Astro<span className="text-red-500">spectrum</span>
           </Link>
 
@@ -86,18 +85,18 @@ export default function Navbar() {
               
               <UserSearch />
 
-              <Link href="/" className="text-xs uppercase tracking-widest text-neutral-400 hover:text-white transition-colors duration-200">
+              <Link href="/" className="inline-flex min-h-[44px] min-w-[44px] items-center text-xs uppercase tracking-widest text-neutral-400 transition-colors duration-200 hover:text-white">
                 Gallery
               </Link>
               
-              <Link href="/submit" className="text-xs uppercase tracking-widest text-neutral-400 hover:text-white transition-colors duration-200">
+              <Link href="/submit" className="inline-flex min-h-[44px] min-w-[44px] items-center text-xs uppercase tracking-widest text-neutral-400 transition-colors duration-200 hover:text-white">
                 Submit
               </Link>
               
               {status === "authenticated" && (
                 <Link 
                   href="/messages" 
-                  className="text-xs uppercase tracking-widest text-neutral-400 hover:text-white transition-colors duration-200 flex items-center gap-1.5 relative"
+                  className="relative flex min-h-[44px] min-w-[44px] items-center gap-1.5 text-xs uppercase tracking-widest text-neutral-400 transition-colors duration-200 hover:text-white"
                 >
                   <MessageSquare size={14} className="opacity-80" /> 
                   <span>Messages</span>
@@ -108,7 +107,7 @@ export default function Navbar() {
               )}
 
               {admin && (
-                <Link href="/admin" className="text-red-500 text-xs uppercase tracking-widest font-bold hover:text-red-400 transition-colors duration-200">
+                <Link href="/admin" className="inline-flex min-h-[44px] min-w-[44px] items-center text-xs font-bold uppercase tracking-widest text-red-500 transition-colors duration-200 hover:text-red-400">
                   Admin
                 </Link>
               )}
@@ -119,7 +118,7 @@ export default function Navbar() {
                   <span className="text-[10px] text-neutral-500 uppercase tracking-widest animate-pulse">Loading...</span>
                 ) : user ? (
                   <div className="flex items-center gap-4">
-                    <Link href={`/profile/${user.id}`} className="flex items-center gap-2.5 group">
+                    <Link href={`/profile/${user.id}`} className="group flex min-h-[44px] min-w-[44px] items-center gap-2.5">
                       {user.image && (
                         <img 
                           src={user.image} 
@@ -133,7 +132,7 @@ export default function Navbar() {
                     </Link>
                     <button 
                       onClick={() => signOut()} 
-                      className="text-[10px] text-neutral-500 hover:text-red-400 uppercase tracking-widest transition-colors duration-200"
+                      className="min-h-[44px] min-w-[44px] text-[10px] uppercase tracking-widest text-neutral-500 transition-colors duration-200 hover:text-red-400"
                     >
                       Sign out
                     </button>
@@ -141,7 +140,7 @@ export default function Navbar() {
                 ) : (
                   <Link 
                     href="/login" 
-                    className="bg-white text-black px-5 py-2 text-[10px] uppercase tracking-widest font-bold rounded-md hover:bg-neutral-200 hover:shadow-lg transition-all duration-200 active:scale-95"
+                    className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md bg-white px-5 py-2 text-[10px] font-bold uppercase tracking-widest text-black transition-all duration-200 hover:bg-neutral-200 hover:shadow-lg active:scale-95"
                   >
                     Sign in
                   </Link>

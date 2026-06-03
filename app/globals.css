@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap');
 @import "tailwindcss";
 
 /* ─── Spectral Void Design Tokens ─── */
@@ -22,13 +21,18 @@
   --border:      var(--ghost);
   --border-hover:var(--ghost-2);
 
-  --font-serif: 'Editorial New', 'DM Serif Display', 'Georgia', serif;
-  --font-mono:  'Söhne Mono', 'DM Mono', 'Courier New', monospace;
+  --font-serif: 'Editorial New', var(--font-dm-serif), 'Georgia', serif;
+  --font-mono:  var(--font-dm-mono), 'Courier New', monospace;
 }
 
 /* ─── Global reset ─── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: auto; }
+
+:where(a, button, [role="button"]) {
+  min-height: 44px;
+  min-width: 44px;
+}
 
 body {
   background: var(--void);

@@ -1,382 +1,294 @@
-"use client";
-import { useMemo, useRef, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
-import { Heart, MapPin, MessageCircle, Star, X, MessageSquare } from "lucide-react";
-import { CATEGORIES } from "@/data/photos";
-import { useLenis } from "@/hooks/useLenis";
-import WebGLImage from "@/components/webgl/WebGLImage";
+import { Heart, MapPin, MessageCircle, Star } from "lucide-react";
+import { CATEGORIES, type PhotoCategory } from "@/data/photos";
 
-type Photo = {
+export interface GalleryPhoto {
   id: number;
   url: string;
   title: string;
-  location?: string | null;
-  category?: string | null;
-  authorName?: string | null;
-  userId?: string | null;
+  location: string | null;
+  category: PhotoCategory | "OTHER";
+  authorName: string | null;
+  userId: string | null;
+  camera: string | null;
+  iso: number | null;
+  aperture: string | null;
+  shutter: string | null;
+  focalLength: string | null;
   avgRating: number;
-  _count: { likes: number; comments: number; ratings: number };
-};
-
-interface GallerySectionProps {
-  photos: Photo[];
-  totalPhotos: number;
-  categoryCounts: Record<string, number>;
+  likeCount: number;
+  commentCount: number;
+  ratingCount: number;
 }
 
-const PARALLAX_SPEEDS = [0.02, 0.04, 0.01, 0.03, 0.05, 0.02, 0.03, 0.01, 0.04];
+interface GallerySectionProps {
+  photos: GalleryPhoto[];
+  totalPhotos: number;
+  categoryCounts: Record<PhotoCategory | "ALL", number>;
+  activeCategory: PhotoCategory | "ALL";
+  currentPage: number;
+  sortBy: string;
+  query: string;
+}
+
 const PAGE_SIZE = 9;
+const BLUR_DATA_URL =
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMTYnIGhlaWdodD0nMTInIHZpZXdCb3g9JzAgMCAxNiAxMicgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cmVjdCB3aWR0aD0nMTYnIGhlaWdodD0nMTInIGZpbGw9JyMwODA4MDgnLz48cmVjdCB4PScxJyB5PScxJyB3aWR0aD0nMTQnIGhlaWdodD0nMTAnIGZpbGw9JyMwZjBmMGYnLz48L3N2Zz4=";
 
-function ParallaxCard({ photo, index, speed }: { photo: Photo; index: number; speed: number }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const offsetRef = useRef(0);
+function buildGalleryHref({
+  page,
+  category,
+  sortBy,
+  query,
+}: {
+  page: number;
+  category: PhotoCategory | "ALL";
+  sortBy: string;
+  query: string;
+}) {
+  const params = new URLSearchParams();
 
-  useLenis(({ y }) => {
-    if (!cardRef.current) return;
-    offsetRef.current = y * speed * 0.15;
-    cardRef.current.style.transform = `translateY(${offsetRef.current}px)`;
-  });
+  if (page > 1) params.set("page", String(page));
+  if (sortBy && sortBy !== "latest") params.set("sortBy", sortBy);
+  if (query.trim()) params.set("q", query.trim());
+  if (category !== "ALL") params.set("category", category);
+
+  const queryString = params.toString();
+  return queryString ? `/?${queryString}#gallery` : "/#gallery";
+}
+
+function formatMetric(value: number) {
+  if (value < 1000) return String(value);
+  if (value < 1000000) return `${(value / 1000).toFixed(value < 10000 ? 1 : 0)}k`;
+  return `${(value / 1000000).toFixed(1)}m`;
+}
+
+function GalleryCard({ photo, index }: { photo: GalleryPhoto; index: number }) {
+  const title = photo.title.trim() || "Untitled frame";
+  const exifLine = [photo.camera, photo.focalLength, photo.aperture, photo.shutter]
+    .filter((value): value is string => Boolean(value))
+    .join(" / ");
 
   return (
-    <div
-      ref={cardRef}
-      style={{ willChange: "transform", height: "auto" }}
-      className="group relative overflow-hidden border border-white/[0.07] bg-[#0A0A0A] transition-all duration-500 hover:border-[rgba(232,66,26,0.28)] hover:shadow-[0_24px_80px_rgba(0,0,0,0.65)] rounded-xl"
-    >
-      <div className="relative overflow-hidden bg-zinc-950 aspect-[4/3] w-full">
-        <Link href={`/photos/${photo.id}`} className="absolute inset-0 z-0 block w-full h-full">
-          <WebGLImage
+    <article className="group relative overflow-hidden border border-white/[0.07] bg-[#080808]">
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#0D0D0D] sm:aspect-[3/4] lg:aspect-[4/3]">
+        <Link
+          href={`/photos/${photo.id}`}
+          className="absolute inset-0 z-0 block focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#E8421A]"
+          aria-label={`Open ${title}`}
+        >
+          <Image
             src={photo.url}
-            alt={photo.title}
+            alt={title}
             fill
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-            style={{ transform: "scaleY(-1)", transformOrigin: "center" }}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            priority={index < 2}
+            loading={index < 2 ? "eager" : "lazy"}
+            placeholder="blur"
+            blurDataURL={BLUR_DATA_URL}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 360px"
+            className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.025] motion-reduce:transition-none"
           />
-          <div style={{
-            position: "absolute", inset: 0,
-            background: "linear-gradient(to top, rgba(5,5,5,0.92) 0%, rgba(5,5,5,0.1) 50%, transparent 100%)",
-          }} />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-transparent opacity-90" />
         </Link>
 
-        {/* Top Floating Badges */}
-        <div style={{ position: "absolute", top: "16px", left: "16px", right: "16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", zIndex: 10 }}>
+        <div className="absolute left-3 right-3 top-3 z-10 flex items-start justify-between gap-3 sm:left-4 sm:right-4 sm:top-4">
           {photo.userId ? (
             <Link
               href={`/profile/${photo.userId}`}
-              style={{
-                fontFamily: "var(--font-mono,'Courier New',monospace)",
-                fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase",
-                color: "rgba(240,235,225,0.5)", background: "rgba(5,5,5,0.55)",
-                backdropFilter: "blur(12px)", border: "1px solid rgba(240,235,225,0.07)",
-                padding: "5px 10px", transition: "color .2s",
-              }}
-              onMouseEnter={e => (e.currentTarget.style.color = "#F0EBE1")}
-              onMouseLeave={e => (e.currentTarget.style.color = "rgba(240,235,225,0.5)")}
+              className="max-w-[70%] truncate border border-white/[0.08] bg-black/55 px-2.5 py-1 text-[9px] uppercase tracking-[0.18em] text-white/55 backdrop-blur-sm transition-colors hover:text-white"
             >
-              {photo.authorName || "—"}
+              {photo.authorName || "Unknown artist"}
             </Link>
           ) : (
-            <span style={{
-              fontFamily: "var(--font-mono,'Courier New',monospace)",
-              fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase",
-              color: "rgba(240,235,225,0.35)", background: "rgba(5,5,5,0.55)",
-              backdropFilter: "blur(12px)", border: "1px solid rgba(240,235,225,0.07)",
-              padding: "5px 10px",
-            }}>
-              {photo.authorName || "—"}
+            <span className="max-w-[70%] truncate border border-white/[0.08] bg-black/55 px-2.5 py-1 text-[9px] uppercase tracking-[0.18em] text-white/40 backdrop-blur-sm">
+              {photo.authorName || "Unknown artist"}
             </span>
           )}
-
-          <span style={{ fontFamily: "var(--font-mono,'Courier New',monospace)", fontSize: "9px", letterSpacing: "0.12em", color: "rgba(240,235,225,0.25)" }}>
-            {String(index + 1).padStart(3, "0")}
+          <span className="font-mono text-[9px] tracking-[0.14em] text-white/25">
+            {String(index + 1).padStart(2, "0")}
           </span>
         </div>
 
-        {/* Bottom Metadata Layer */}
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "20px", zIndex: 10 }}>
-          <h3 style={{
-            fontFamily: "'Editorial New','Times New Roman',Georgia,serif",
-            fontSize: "clamp(16px, 2.2vw, 22px)", fontWeight: 200,
-            letterSpacing: "-0.02em", color: "#F0EBE1", lineHeight: 1.1, marginBottom: "10px",
-          }}>
-            {photo.title}
-          </h3>
-
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
-            {photo.location && (
-              <span style={{
-                display: "flex", alignItems: "center", gap: "5px",
-                fontFamily: "var(--font-mono,'Courier New',monospace)",
-                fontSize: "9px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8421A",
-              }}>
-                <MapPin size={9} />{photo.location}
+        <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            {photo.location ? (
+              <span className="inline-flex min-w-0 items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-[#E8421A]">
+                <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
+                <span className="truncate">{photo.location}</span>
+              </span>
+            ) : (
+              <span className="text-[10px] uppercase tracking-[0.16em] text-white/25">
+                Location withheld
               </span>
             )}
-
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              {[
-                { id: "likes", icon: Heart, val: photo._count.likes },
-                { id: "rating", icon: Star, val: photo.avgRating.toFixed(1) },
-                { id: "comments", icon: MessageCircle, val: photo._count.comments },
-              ].map(({ id, icon: Icon, val }) => (
-                <span key={id} style={{ display: "flex", alignItems: "center", gap: "3px", fontFamily: "var(--font-mono,'Courier New',monospace)", fontSize: "9px", letterSpacing: "0.1em", color: "rgba(240,235,225,0.35)" }}>
-                  <Icon size={9} />{val}
-                </span>
-              ))}
-
-              {photo.userId && (
-                <Link
-                  href={`/chat?id=${photo.userId}`}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "4px",
-                    fontFamily: "var(--font-mono,'Courier New',monospace)",
-                    fontSize: "9px", letterSpacing: "0.05em", textTransform: "uppercase",
-                    color: "#F0EBE1", background: "rgba(232,66,26,0.15)",
-                    border: "1px solid rgba(232,66,26,0.3)", padding: "2px 6px",
-                    borderRadius: "3px", transition: "all 0.2s ease",
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = "#E8421A";
-                    e.currentTarget.style.borderColor = "#E8421A";
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = "rgba(232,66,26,0.15)";
-                    e.currentTarget.style.borderColor = "rgba(232,66,26,0.3)";
-                  }}
-                  title="Message Artist"
-                >
-                  <MessageSquare size={8} />
-                  <span>Chat</span>
-                </Link>
-              )}
-            </div>
+            <span className="shrink-0 text-[10px] uppercase tracking-[0.16em] text-white/30">
+              {photo.category.toLowerCase()}
+            </span>
           </div>
+          <h3 className="line-clamp-2 text-[1.45rem] leading-[0.95] text-[#F0EBE1] sm:text-[1.6rem]">
+            {title}
+          </h3>
+          {exifLine && (
+            <p className="mt-3 truncate text-[10px] uppercase tracking-[0.14em] text-white/35">
+              {exifLine}
+            </p>
+          )}
         </div>
       </div>
-    </div>
+
+      <div className="grid grid-cols-3 border-t border-white/[0.07] text-[10px] uppercase tracking-[0.14em] text-white/45">
+        <span className="inline-flex items-center justify-center gap-1.5 border-r border-white/[0.07] px-2 py-3">
+          <Heart className="h-3 w-3" aria-hidden="true" />
+          {formatMetric(photo.likeCount)}
+        </span>
+        <span className="inline-flex items-center justify-center gap-1.5 border-r border-white/[0.07] px-2 py-3">
+          <Star className="h-3 w-3" aria-hidden="true" />
+          {photo.avgRating.toFixed(1)}
+        </span>
+        <span className="inline-flex items-center justify-center gap-1.5 px-2 py-3">
+          <MessageCircle className="h-3 w-3" aria-hidden="true" />
+          {formatMetric(photo.commentCount)}
+        </span>
+      </div>
+    </article>
   );
 }
 
-export default function GallerySection({ photos, totalPhotos, categoryCounts }: GallerySectionProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const sectionRef = useRef<HTMLDivElement>(null);
-
-  const activeCategory = searchParams.get("category") || "ALL";
-  const currentPage = Number(searchParams.get("page")) || 1;
-  const totalPages = Math.ceil(totalPhotos / PAGE_SIZE) || 1;
-
-useEffect(() => {
-  const page = searchParams.get("page");
-  const category = searchParams.get("category");
-
-  // Only scroll down if the user is on Page 2+, or looking at a specific filter category
-  const userIsFilteringOrPaging = (page && page !== "1") || (category && category !== "ALL");
-
-  if (sectionRef.current && userIsFilteringOrPaging) {
-    const topOffset = sectionRef.current.getBoundingClientRect().top + window.scrollY - 60;
-    setTimeout(() => {
-      window.scrollTo({ top: topOffset, behavior: "smooth" });
-    }, 50);
-  }
-}, [searchParams]);
-
-  // Modifed parameter logic to strip out redundant page=1 values entirely
-  const updateURLParams = (newParams: Record<string, string>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    
-    Object.entries(newParams).forEach(([key, value]) => {
-      if (key === "page" && value === "1") {
-        params.delete(key); // If it defaults back to page 1, pull it out of the query string completely
-      } else if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
-    });
-
-    const queryString = params.toString();
-    router.push(queryString ? `/?${queryString}` : "/");
-  };
+export default function GallerySection({
+  photos,
+  totalPhotos,
+  categoryCounts,
+  activeCategory,
+  currentPage,
+  sortBy,
+  query,
+}: GallerySectionProps) {
+  const totalPages = Math.max(1, Math.ceil(totalPhotos / PAGE_SIZE));
+  const previousHref = buildGalleryHref({
+    page: Math.max(1, currentPage - 1),
+    category: activeCategory,
+    sortBy,
+    query,
+  });
+  const nextHref = buildGalleryHref({
+    page: Math.min(totalPages, currentPage + 1),
+    category: activeCategory,
+    sortBy,
+    query,
+  });
 
   return (
-    <section id="gallery" ref={sectionRef} style={{ padding: "40px 0 100px" }}>
-      <div style={{ maxWidth: "1440px", margin: "0 auto", padding: "0 clamp(20px, 4vw, 56px)" }}>
-        
-        {/* Gallery Headers */}
-        <div style={{ marginBottom: "48px", display: "flex", flexDirection: "column", gap: "6px" }}>
-          <span style={{ fontFamily: "var(--font-mono,'Courier New',monospace)", fontSize: "10px", letterSpacing: "0.32em", textTransform: "uppercase", color: "rgba(232,66,26,0.7)" }}>
-            Open gallery · {totalPhotos} frames
-          </span>
-          <h2 style={{ fontFamily: "'Editorial New','Times New Roman',Georgia,serif", fontSize: "clamp(40px, 6vw, 80px)", fontWeight: 200, letterSpacing: "-0.04em", color: "#F0EBE1", lineHeight: 0.95 }}>
-            Recent frames
-          </h2>
+    <section id="gallery" className="bg-[#080808] py-10 text-[#F0EBE1] sm:py-14 lg:py-20">
+      <div className="mx-auto w-full max-w-[1440px] px-0 sm:px-4 lg:px-8">
+        <div className="border-y border-white/[0.07] px-4 py-6 sm:px-0 sm:py-8">
+          <p className="text-[10px] uppercase tracking-[0.32em] text-[#E8421A]/75">
+            Open gallery / {totalPhotos} frames
+          </p>
+          <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <h2 className="max-w-3xl text-5xl leading-[0.9] text-[#F0EBE1] sm:text-6xl lg:text-7xl">
+              Recent frames
+            </h2>
+            <p className="max-w-md text-xs leading-6 tracking-[0.08em] text-white/40">
+              Server-rendered image cards with stable aspect ratios, blur placeholders, and mobile-first source sizing.
+            </p>
+          </div>
         </div>
 
-        {/* Categories Navbar */}
-        <div style={{ marginBottom: "32px", overflowX: "auto", paddingBottom: "4px" }} className="scrollbar-none">
-          <div style={{ display: "flex", gap: "6px", minWidth: "max-content" }}>
-            {CATEGORIES.map(cat => {
-              const count = categoryCounts[cat.value] || 0;
-              const isActive = activeCategory === cat.value;
+        <nav
+          className="scrollbar-none overflow-x-auto border-b border-white/[0.07] px-4 py-3 sm:px-0"
+          aria-label="Gallery categories"
+        >
+          <div className="flex min-w-max gap-2">
+            {CATEGORIES.map((category) => {
+              const isActive = activeCategory === category.value;
+              const href = buildGalleryHref({
+                page: 1,
+                category: category.value,
+                sortBy,
+                query,
+              });
+
               return (
-                <button
-                  key={cat.value}
-                  onClick={() => updateURLParams({ category: cat.value, page: "1" })}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px",
-                    border: `1px solid ${isActive ? "#E8421A" : "rgba(240,235,225,0.08)"}`,
-                    background: isActive ? "#E8421A" : "transparent",
-                    color: isActive ? "#F0EBE1" : "rgba(240,235,225,0.4)",
-                    fontFamily: "var(--font-mono,'Courier New',monospace)",
-                    fontSize: "9px", letterSpacing: "0.16em", textTransform: "uppercase",
-                    cursor: "pointer", whiteSpace: "nowrap", transition: "all .2s",
-                  }}
+                <Link
+                  key={category.value}
+                  href={href}
+                  aria-current={isActive ? "page" : undefined}
+                  className={[
+                    "inline-flex items-center gap-2 border px-3 py-2 text-[10px] uppercase tracking-[0.16em] transition-colors",
+                    isActive
+                      ? "border-[#E8421A] bg-[#E8421A] text-[#F0EBE1]"
+                      : "border-white/[0.08] bg-transparent text-white/42 hover:border-white/20 hover:text-white/75",
+                  ].join(" ")}
                 >
-                  <span>{cat.icon}</span>
-                  <span>{cat.label}</span>
-                  <span style={{ background: isActive ? "rgba(240,235,225,0.2)" : "rgba(240,235,225,0.06)", padding: "2px 6px", fontSize: "8px" }}>
-                    {count}
+                  <span>{category.label}</span>
+                  <span className={isActive ? "text-white/70" : "text-white/25"}>
+                    {categoryCounts[category.value] ?? 0}
                   </span>
-                </button>
+                </Link>
               );
             })}
           </div>
-        </div>
+        </nav>
 
-        {/* Framing Filter States */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
-          <span style={{ fontFamily: "var(--font-mono,'Courier New',monospace)", fontSize: "9px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,225,0.2)" }}>
-            Showing {photos.length} of {totalPhotos} frames
-          </span>
+        <div className="flex items-center justify-between px-4 py-4 sm:px-0">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-white/30">
+            Showing {photos.length} of {totalPhotos}
+          </p>
           {activeCategory !== "ALL" && (
-            <button
-              onClick={() => updateURLParams({ category: "ALL", page: "1" })}
-              style={{ display: "flex", alignItems: "center", gap: "4px", fontFamily: "var(--font-mono,'Courier New',monospace)", fontSize: "9px", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(240,235,225,0.3)", background: "none", border: "none", cursor: "pointer" }}
+            <Link
+              href={buildGalleryHref({ page: 1, category: "ALL", sortBy, query })}
+              className="text-[10px] uppercase tracking-[0.18em] text-white/35 transition-colors hover:text-white"
             >
-              <X size={9} /> Clear
-            </button>
+              Clear
+            </Link>
           )}
         </div>
 
-        {/* Grid Render Output */}
         {photos.length === 0 ? (
-          <div style={{ border: "1px dashed rgba(240,235,225,0.08)", padding: "80px 24px", textAlign: "center", fontFamily: "var(--font-mono,'Courier New',monospace)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,225,0.2)" }}>
+          <div className="mx-4 border border-dashed border-white/[0.1] px-6 py-20 text-center text-[10px] uppercase tracking-[0.18em] text-white/25 sm:mx-0">
             No frames found in this category
           </div>
         ) : (
-          <>
-            <div>
-              <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                <AnimatePresence mode="popLayout">
-                  {photos.map((photo, i) => (
-                    <motion.div
-                      key={photo.id}
-                      layout
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.35, ease: "easeOut" }}
-                    >
-                      <ParallaxCard
-                        photo={photo}
-                        index={i}
-                        speed={PARALLAX_SPEEDS[i % PARALLAX_SPEEDS.length]}
-                      />
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </motion.div>
-            </div>
+          <div className="grid grid-cols-1 gap-px bg-white/[0.07] sm:grid-cols-2 lg:grid-cols-3">
+            {photos.map((photo, index) => (
+              <GalleryCard key={photo.id} photo={photo} index={index} />
+            ))}
+          </div>
+        )}
 
-            {/* CINEMATIC PAGINATION CONTROLS */}
-            {totalPages > 1 && (
-              <div style={{ marginTop: "64px", display: "flex", justifyContent: "center", alignItems: "center", gap: "16px", background: "rgba(10, 10, 10, 0.4)", backdropFilter: "blur(8px)", border: "1px solid rgba(240, 235, 225, 0.04)", padding: "12px 24px", borderRadius: "100px", width: "fit-content", margin: "64px auto 0" }}>
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => updateURLParams({ page: String(currentPage - 1) })}
-                  style={{
-                    padding: "10px 20px",
-                    background: currentPage === 1 ? "transparent" : "rgba(240, 235, 225, 0.03)",
-                    border: `1px solid ${currentPage === 1 ? "rgba(240, 235, 225, 0.05)" : "rgba(240, 235, 225, 0.12)"}`,
-                    color: currentPage === 1 ? "rgba(240, 235, 225, 0.15)" : "#F0EBE1",
-                    fontFamily: "var(--font-mono, 'Courier New', monospace)",
-                    fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase", borderRadius: "100px",
-                    cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                    transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                  }}
-                  onMouseEnter={e => {
-                    if (currentPage !== 1) {
-                      const b = e.currentTarget;
-                      b.style.background = "#E8421A";
-                      b.style.borderColor = "#E8421A";
-                      b.style.boxShadow = "0 0 20px rgba(232, 66, 26, 0.35)";
-                      b.style.transform = "translateY(-1px)";
-                    }
-                  }}
-                  onMouseLeave={e => {
-                    if (currentPage !== 1) {
-                      const b = e.currentTarget;
-                      b.style.background = "rgba(240, 235, 225, 0.03)";
-                      b.style.borderColor = "rgba(240, 235, 225, 0.12)";
-                      b.style.boxShadow = "none";
-                      b.style.transform = "translateY(0)";
-                    }
-                  }}
-                >
-                  ← Prev
-                </button>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 8px" }}>
-                  <span style={{ fontFamily: "var(--font-mono, 'Courier New', monospace)", fontSize: "10px", color: "#E8421A", fontWeight: "600" }}>
-                    {String(currentPage).padStart(2, '0')}
-                  </span>
-                  <span style={{ fontFamily: "var(--font-mono, 'Courier New', monospace)", fontSize: "10px", color: "rgba(240, 235, 225, 0.2)" }}>/</span>
-                  <span style={{ fontFamily: "var(--font-mono, 'Courier New', monospace)", fontSize: "10px", color: "rgba(240, 235, 225, 0.4)" }}>
-                    {String(totalPages).padStart(2, '0')}
-                  </span>
-                </div>
-
-                <button
-                  disabled={currentPage === totalPages}
-                  onClick={() => updateURLParams({ page: String(currentPage + 1) })}
-                  style={{
-                    padding: "10px 20px",
-                    background: currentPage === totalPages ? "transparent" : "rgba(240, 235, 225, 0.03)",
-                    border: `1px solid ${currentPage === totalPages ? "rgba(240, 235, 225, 0.05)" : "rgba(240, 235, 225, 0.12)"}`,
-                    color: currentPage === totalPages ? "rgba(240, 235, 225, 0.15)" : "#F0EBE1",
-                    fontFamily: "var(--font-mono, 'Courier New', monospace)",
-                    fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase", borderRadius: "100px",
-                    cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-                    transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                  }}
-                  onMouseEnter={e => {
-                    if (currentPage !== totalPages) {
-                      const b = e.currentTarget;
-                      b.style.background = "#E8421A";
-                      b.style.borderColor = "#E8421A";
-                      b.style.boxShadow = "0 0 20px rgba(232, 66, 26, 0.35)";
-                      b.style.transform = "translateY(-1px)";
-                    }
-                  }}
-                  onMouseLeave={e => {
-                    if (currentPage !== totalPages) {
-                      const b = e.currentTarget;
-                      b.style.background = "rgba(240, 235, 225, 0.03)";
-                      b.style.borderColor = "rgba(240, 235, 225, 0.12)";
-                      b.style.boxShadow = "none";
-                      b.style.transform = "translateY(0)";
-                    }
-                  }}
-                >
-                  Next →
-                </button>
-              </div>
+        {totalPages > 1 && (
+          <div className="mx-4 mt-8 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:mx-0 sm:mt-10">
+            {currentPage > 1 ? (
+              <Link
+                href={previousHref}
+                className="border border-white/[0.1] px-4 py-3 text-center text-[10px] uppercase tracking-[0.16em] text-white/65 transition-colors hover:border-[#E8421A] hover:text-white"
+              >
+                Prev
+              </Link>
+            ) : (
+              <span className="border border-white/[0.05] px-4 py-3 text-center text-[10px] uppercase tracking-[0.16em] text-white/15">
+                Prev
+              </span>
             )}
-          </>
+
+            <span className="px-2 text-[10px] uppercase tracking-[0.18em] text-white/35">
+              {String(currentPage).padStart(2, "0")} / {String(totalPages).padStart(2, "0")}
+            </span>
+
+            {currentPage < totalPages ? (
+              <Link
+                href={nextHref}
+                className="border border-white/[0.1] px-4 py-3 text-center text-[10px] uppercase tracking-[0.16em] text-white/65 transition-colors hover:border-[#E8421A] hover:text-white"
+              >
+                Next
+              </Link>
+            ) : (
+              <span className="border border-white/[0.05] px-4 py-3 text-center text-[10px] uppercase tracking-[0.16em] text-white/15">
+                Next
+              </span>
+            )}
+          </div>
         )}
       </div>
     </section>

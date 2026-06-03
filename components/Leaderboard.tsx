@@ -1,15 +1,32 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
+interface LeaderboardUser {
+  id: string;
+  name: string | null;
+  image: string | null;
+  _count: {
+    followers: number;
+  };
+}
+
 export default async function Leaderboard() {
-  const topUsers = await prisma.user.findMany({
-    take: 5,
-    orderBy: { followers: { _count: "desc" } },
-    select: { 
-      id: true, name: true, image: true, 
-      _count: { select: { followers: true } } 
-    }
-  });
+  let topUsers: LeaderboardUser[];
+
+  try {
+    topUsers = await prisma.user.findMany({
+      take: 5,
+      orderBy: { followers: { _count: "desc" } },
+      select: {
+        id: true,
+        name: true,
+        image: true,
+        _count: { select: { followers: true } },
+      },
+    });
+  } catch {
+    topUsers = [];
+  }
 
   return (
     <div className="bg-zinc-900/30 border border-white/6 rounded-2xl p-6">
