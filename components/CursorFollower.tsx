@@ -7,100 +7,110 @@ export default function CursorFollower() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    // Only on pointer devices
     if (window.matchMedia("(pointer: coarse)").matches) return;
 
     const dot  = dotRef.current;
     const ring = ringRef.current;
     if (!dot || !ring) return;
 
-    // Get handles on the two inner twin dots
     const innerDots = dot.children as HTMLCollectionOf<HTMLDivElement>;
     const leftDot = innerDots[0];
     const rightDot = innerDots[1];
 
     let mx = -100, my = -100;
     let rx = -100, ry = -100;
+    let targetScale = 1;
+    let currentScale = 1;
     let rafId = 0;
+
+    function lerp(a: number, b: number, t: number) { 
+      return a + (b - a) * t; 
+    }
 
     function onMove(e: MouseEvent) {
       mx = e.clientX;
       my = e.clientY;
-      // Snap center anchor position immediately
-      dot!.style.transform = `translate(${mx}px,${my}px)`;
+      // Hardware-accelerated 3D layer mapping
+      dot!.style.transform = `translate3d(${mx}px, ${my}px, 0)`;
     }
-
-    function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
 
     function tick() {
       rx = lerp(rx, mx, 0.12);
       ry = lerp(ry, my, 0.12);
-      ring!.style.transform = `translate(${rx}px,${ry}px) translate(-50%,-50%)`;
+      currentScale = lerp(currentScale, targetScale, 0.12);
+      
+      // Combines tracking and scale transformations onto a single GPU layer layout
+      ring!.style.transform = `translate3d(${rx}px, ${ry}px, 0) translate(-50%, -50%) scale(${currentScale})`;
       rafId = requestAnimationFrame(tick);
     }
 
     function onEnterInteractive() {
-      // 1. Keep your original outer ring scaling behavior
-      ring!.style.width  = "56px";
-      ring!.style.height = "56px";
+      // Scale from base 36px to 56px using composite scaling factors (56 / 36 = 1.5556)
+      targetScale = 1.5556;
       ring!.style.borderColor = "rgba(240,235,225,0.7)";
       ring!.style.mixBlendMode = "difference";
 
-      // 2. FIX: Slide the twin dots out to the left and right sides of the center
       if (leftDot && rightDot) {
-        leftDot.style.transform = "translate(calc(-50% - 6px), -50%)";
-        rightDot.style.transform = "translate(calc(-50% + 6px), -50%)";
+        leftDot.style.transform = "translate3d(calc(-50% - 6px), -50%, 0)";
+        rightDot.style.transform = "translate3d(calc(-50% + 6px), -50%, 0)";
       }
     }
 
     function onLeaveInteractive() {
-      // 1. Restore your original outer ring dimensions
-      ring!.style.width  = "36px";
-      ring!.style.height = "36px";
+      targetScale = 1;
       ring!.style.borderColor = "rgba(240,235,225,0.35)";
       ring!.style.mixBlendMode = "normal";
 
-      // 2. FIX: Merge the twin dots back together seamlessly in the absolute center
       if (leftDot && rightDot) {
-        leftDot.style.transform = "translate(-50%, -50%)";
-        rightDot.style.transform = "translate(-50%, -50%)";
+        leftDot.style.transform = "translate3d(-50%, -50%, 0)";
+        rightDot.style.transform = "translate3d(-50%, -50%, 0)";
       }
     }
 
-    function attachMagnetic(el: Element) {
-      el.addEventListener("mouseenter", onEnterInteractive);
-      el.addEventListener("mouseleave", onLeaveInteractive);
+    // High Performance Event Delegation: Captures interactions globally across elements automatically
+    function handleMouseOver(e: MouseEvent) {
+      const target = (e.target as HTMLElement).closest("a, button, [data-mag], .cursor-pointer");
+      if (target) {
+        onEnterInteractive();
+      }
     }
 
-    // Observe newly added interactive elements too
-    const observer = new MutationObserver(() => {
-      document.querySelectorAll("a,button,[data-mag],.cursor-pointer").forEach(attachMagnetic);
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    document.querySelectorAll("a,button,[data-mag],.cursor-pointer").forEach(attachMagnetic);
+    function handleMouseOut(e: MouseEvent) {
+      const target = (e.target as HTMLElement).closest("a, button, [data-mag], .cursor-pointer");
+      if (target) {
+        const relatedTarget = e.relatedTarget as HTMLElement;
+        if (!relatedTarget || !relatedTarget.closest("a, button, [data-mag], .cursor-pointer")) {
+          onLeaveInteractive();
+        }
+      }
+    }
 
+    // Attaching singular window execution anchors
     document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseover", handleMouseOver);
+    document.addEventListener("mouseout", handleMouseOut);
+    
     rafId = requestAnimationFrame(tick);
     document.documentElement.style.cursor = "none";
 
     return () => {
       document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseover", handleMouseOver);
+      document.removeEventListener("mouseout", handleMouseOut);
       cancelAnimationFrame(rafId);
-      observer.disconnect();
       document.documentElement.style.cursor = "";
     };
   }, []);
 
   return (
     <>
-      {/* Absolute global suppression of standard browser hand cursors */}
       <style jsx global>{`
         body, button, a, [role='button'], .cursor-pointer, * {
           cursor: none !important;
         }
       `}</style>
 
-      {/* Primary Center Anchor (0x0 container tracking mouse coordinates) */}
+      {/* Primary Center Anchor */}
       <div
         ref={dotRef}
         style={{
@@ -114,7 +124,7 @@ export default function CursorFollower() {
           style={{
             position: "absolute", width: "6px", height: "6px", borderRadius: "50%",
             background: "#E8421A", transition: "transform .2s cubic-bezier(0.25, 1, 0.5, 1)",
-            transform: "translate(-50%, -50%)", willChange: "transform",
+            transform: "translate3d(-50%, -50%, 0)", willChange: "transform",
           }}
         />
         {/* Right Twin Dot */}
@@ -122,7 +132,7 @@ export default function CursorFollower() {
           style={{
             position: "absolute", width: "6px", height: "6px", borderRadius: "50%",
             background: "#E8421A", transition: "transform .2s cubic-bezier(0.25, 1, 0.5, 1)",
-            transform: "translate(-50%, -50%)", willChange: "transform",
+            transform: "translate3d(-50%, -50%, 0)", willChange: "transform",
           }}
         />
       </div>
@@ -135,7 +145,7 @@ export default function CursorFollower() {
           width: "36px", height: "36px", borderRadius: "50%",
           border: "1px solid rgba(240,235,225,0.35)",
           pointerEvents: "none",
-          transition: "width .25s ease, height .25s ease, border-color .25s ease",
+          transition: "border-color .25s ease",
           willChange: "transform",
         }}
       />

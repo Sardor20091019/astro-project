@@ -14,8 +14,8 @@
 
   --bg:          var(--void);
   --text:        var(--bone);
-  --text-dim:    rgba(240,235,225,0.35);
-  --text-muted:  rgba(240,235,225,0.18);
+--text-dim:    rgba(240,235,225,0.55);
+  --text-muted:  rgba(240,235,225,0.32); 
   --accent:      var(--ember);
   --accent-soft: var(--ember-soft);
   --border:      var(--ghost);
@@ -44,21 +44,21 @@ body {
   overflow-x: hidden;
 }
 
-/* ─── Film grain overlay ─── */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 99990;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='1'/%3E%3C/svg%3E");
-  opacity: 0.032;
-  mix-blend-mode: overlay;
-  background-size: 256px 256px;
+
+@media (min-width: 1024px) {
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 99990;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='1'/%3E%3C/svg%3E");
+    opacity: 0.032;
+    mix-blend-mode: overlay;
+    background-size: 256px 256px;
+  }
 }
 
-/* ─── Responsive Touch Scrollbar ─── */
-/* Thickens the tracker slightly on mobile so dragging through huge gallery sets doesn't clip */
 ::-webkit-scrollbar         { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track   { background: transparent; }
 ::-webkit-scrollbar-thumb   { background: rgba(240,235,225,0.15); border-radius: 999px; }

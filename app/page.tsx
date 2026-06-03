@@ -29,15 +29,15 @@ export default function HomePage({ searchParams }: PageProps) {
         <HomeUserGreeting />
       </Suspense>
 
-      <div className="w-full grow">
+      <div className="w-full grow px-4 sm:px-6 md:px-8">
         <Hero />
         <Suspense fallback={<HomeGallerySkeleton />}>
           <HomeGallery searchParams={searchParams} />
         </Suspense>
       </div>
 
-      <footer className="mt-auto w-full border-t border-zinc-900 bg-black py-6 text-center text-zinc-600">
-        <p>(c) {new Date().getFullYear()} Astrospectrum. All rights reserved.</p>
+      <footer className="mt-auto w-full border-t border-zinc-900 bg-black py-6 text-center text-zinc-600 px-4">
+        <p>&copy; {new Date().getFullYear()} Astrospectrum. All rights reserved.</p>
       </footer>
     </div>
   );
