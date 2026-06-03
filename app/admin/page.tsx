@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin";
 import AdminPhotoList from "@/components/AdminPhotoList";
+import DeleteUserButton from "@/components/DeleteUserButton";
 import { prisma } from "@/lib/prisma";
 import { Shield } from "lucide-react";
 
@@ -17,9 +18,10 @@ export default async function AdminPage() {
     redirect("/");
   }
 
-  const photos = await prisma.photo.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  const [photos, users] = await Promise.all([
+    prisma.photo.findMany({ orderBy: { createdAt: "desc" } }),
+    prisma.user.findMany({ orderBy: { name: "asc" } })
+  ]);
 
   return (
     <div className="min-h-screen bg-[#080808] text-white pt-20">
@@ -30,27 +32,32 @@ export default async function AdminPage() {
               <Shield size={10} /> AstroSpectrum
             </p>
             <h1 className="text-4xl font-black tracking-tighter uppercase">Admin Panel</h1>
-            <p className="text-zinc-600 mt-1.5 text-xs">{photos.length} total photos · Full deletion rights</p>
-          </div>
-          <div className="hidden md:flex items-center gap-4 text-right">
-            <div className="text-xs text-zinc-500">
-              <p className="text-white font-bold">{user?.name}</p>
-              <p className="text-[10px] uppercase tracking-widest text-red-500 font-bold">Admin</p>
-            </div>
-            {user?.image && (
-              <img src={user.image} alt="" className="w-9 h-9 rounded-full border border-white/10 object-cover" />
-            )}
+            <p className="text-zinc-600 mt-1.5 text-xs">{photos.length} photos · {users.length} users</p>
           </div>
         </header>
 
-        <div className="mb-6 bg-red-500/5 border border-red-500/15 rounded-2xl p-4 text-xs text-zinc-400 leading-relaxed">
-          <span className="text-red-400 font-black uppercase tracking-widest">Admin powers — </span>
-          You can delete any photo on the platform. All photos are published immediately without approval.
-          Regular users can only delete their own photos from their profile page.
+        {/* Photos Section */}
+        <div className="mb-12">
+          <h2 className="text-sm font-bold uppercase tracking-widest mb-4">Manage Photos</h2>
+          <div className="bg-zinc-900/30 border border-white/6 rounded-2xl p-6">
+            <AdminPhotoList initialPhotos={photos} />
+          </div>
         </div>
 
-        <div className="bg-zinc-900/30 border border-white/6 rounded-2xl p-6">
-          <AdminPhotoList initialPhotos={photos} />
+        {/* Users Section */}
+        <div>
+          <h2 className="text-sm font-bold uppercase tracking-widest mb-4">Manage Users</h2>
+          <div className="bg-zinc-900/30 border border-white/6 rounded-2xl p-6">
+            {users.map((u) => (
+              <div key={u.id} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
+                <div className="text-xs">
+                  <p className="font-bold">{u.name}</p>
+                  <p className="text-zinc-500">{u.email}</p>
+                </div>
+                {u.id !== user.id && <DeleteUserButton userId={u.id} userName={u.name || "User"} />}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

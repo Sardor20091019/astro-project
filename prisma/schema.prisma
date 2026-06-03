@@ -108,7 +108,7 @@ model Photo {
   ratings     Rating[]
   likes       Like[]
   comments    Comment[]
-  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user        User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Follows {
@@ -150,7 +150,7 @@ model Rating {
   // Relations
   photo          Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
   // 'onDelete: SetNull' is crucial here to prevent constraint violations
-  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Use composite unique constraints that handle nulls correctly
   @@unique([photoId, userId], name: "photoId_userId_unique")
@@ -167,7 +167,7 @@ model Like {
   
   // Relations
   photo          Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
-  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Use composite unique constraints that handle nulls correctly
   @@unique([photoId, userId], name: "photoId_userId_unique")
