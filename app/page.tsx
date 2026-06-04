@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import Hero from "@/components/Hero";
 import HomeGallery, { HomeGallerySkeleton } from "@/components/HomeGallery";
 import HomeUserGreeting from "@/components/HomeUserGreeting";
-import user from "pusher-js/types/src/core/user";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +24,8 @@ function UserGreetingSkeleton() {
 
 export default function HomePage({ searchParams }: PageProps) {
   return (
-    <div className="flex min-h-screen flex-col justify-between bg-black text-white">
+    // Removed bg-black/text-white. Now it inherits from the layout/globals.
+    <div className="flex min-h-screen flex-col justify-between">
       <Suspense fallback={<UserGreetingSkeleton />}>
         <HomeUserGreeting />
       </Suspense>
@@ -37,7 +37,8 @@ export default function HomePage({ searchParams }: PageProps) {
         </Suspense>
       </div>
 
-      <footer className="mt-auto w-full border-t border-zinc-900 bg-black py-6 text-center text-zinc-600 px-4">
+      {/* Footer is now World-Aware */}
+      <footer className="mt-auto w-full border-t border-[var(--border)] bg-[var(--surface)] py-6 text-center text-[var(--text-muted)] px-4">
         <p>&copy; {new Date().getFullYear()} Astrospectrum. All rights reserved.</p>
       </footer>
     </div>

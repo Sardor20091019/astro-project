@@ -12,6 +12,12 @@
 --card-border: 1px solid var(--border);
   --card-shadow: none;
   --transition-speed: 0.3s;
+  --btn-style: 0.5rem; /* Default rounded */
+  --footer-padding: 2rem;
+  --image-viewer-shadow: none;
+  --btn-radius: 8px;
+  --btn-border: 1px solid var(--text);
+  --btn-shadow: none;
 }
 
 /* 🌎 WORLD 1: THE VOID (Default Cinematic) */
@@ -67,6 +73,13 @@
   --shadow-btn:  4px 4px 0px #000000;
   --glass-blur:  blur(0px);
   letter-spacing: -0.05em;
+  --btn-style: 0px; /* Sharp */
+  --footer-padding: 4rem;
+  --image-viewer-shadow: 10px 10px 0px #000;
+
+  --btn-radius: 0px;
+  --btn-border: 3px solid var(--text);
+  --btn-shadow: 4px 4px 0px var(--text);
 }
 
 /* 🌎 WORLD 3: GLASSMORPHISM (The Ethereal) */
@@ -80,7 +93,7 @@
 --card-border: 1px solid rgba(255,255,255,0.15);
   --card-shadow: 0 8px 32px rgba(0,0,0,0.4);
   
-  --text:        #FFFFFF;
+  --text:        #ffffff;
   --text-dim:    rgba(255,255,255,0.6);
   --text-muted:  rgba(255,255,255,0.3); 
   
@@ -97,6 +110,28 @@
   --shadow-btn:  0 4px 24px rgba(0,0,0,0.4);
   --glass-blur:  blur(16px);
   letter-spacing: 0.1em;
+
+  --btn-style: 1.5rem; /* Very rounded */
+  --footer-padding: 2rem;
+  --image-viewer-shadow: 0 20px 50px rgba(0,0,0,0.5);
+
+  --btn-radius: 9999px;
+  --btn-border: 1px solid rgba(255, 255, 255, 0.2);
+  --btn-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+[data-theme="glass"] footer {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+.world-card {
+  background: var(--surface);
+  border: var(--card-border);
+  box-shadow: var(--card-shadow);
+  border-radius: var(--radius-md);
+  
+  /* Apply the blur only if you want the frosted look */
+  backdrop-filter: var(--glass-blur);
 }
 
 /* ─── Global reset ─── */
@@ -117,7 +152,8 @@ body {
   overflow-x: hidden;
   background-color: var(--bg);
   color: var(--text);
-  transition: background-color 0.3s ease, color 0.3s ease;
+transition: background-color 0.5s ease, color 0.5s ease;
+  min-height: 100vh;
 }
 
 

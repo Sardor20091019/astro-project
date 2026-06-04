@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Chrome, Sparkles, Mail, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
 import TelegramLogin from "@/components/TelegramLogin";
+import WorldButton from "@/components/WorldButton"; // Use your new button
 
 export default function LoginPage() {
   const router = useRouter();
@@ -57,8 +58,6 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    // 🔥 FIXED: Targets the exact custom "otp" credentials block inside lib/auth.ts
-    // 🔥 FIXED: Forces an explicit callbackUrl string to drop the looping browser parameters completely
     const res = await signIn("otp", {
       email: email.toLowerCase().trim(),
       code: otp.trim(), 
@@ -76,30 +75,32 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-black text-white">
-      <div className="absolute inset-0 bg-[url('/hero.jpg')] bg-cover bg-center opacity-50" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(230,48,39,0.24),transparent_34%),linear-gradient(to_bottom,rgba(0,0,0,0.25),#000_82%)]" />
+    <main className="relative min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text)] transition-colors duration-500">
+      {/* Background imagery stays, but the page container now adapts */}
+      <div className="absolute inset-0 bg-[url('/hero.jpg')] bg-cover bg-center opacity-30" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,var(--accent-soft),transparent_34%),linear-gradient(to_bottom,transparent,var(--bg)_82%)]" />
 
       <section className="relative z-10 flex min-h-screen items-center justify-center px-6 py-24">
         <motion.div
           initial={{ opacity: 0, y: 28, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ type: "spring", stiffness: 90, damping: 18 }}
-          className="w-full max-w-md rounded-4xl border border-white/10 bg-white/[0.07] p-8 shadow-2xl backdrop-blur-2xl"
+          // Applying world-card here makes the container transform per theme
+          className="world-card w-full max-w-md p-8 shadow-2xl"
         >
           <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-500 text-white shadow-lg shadow-red-500/25">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent)] text-[var(--bg)] shadow-lg shadow-[var(--accent)]/25">
               <Sparkles size={18} />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.28em] text-white/45">Welcome to</p>
+              <p className="text-xs uppercase tracking-[0.28em] text-[var(--text-muted)]">Welcome to</p>
               <h1 className="text-2xl font-black uppercase tracking-tight">
-                Astro<span className="text-red-500">spectrum</span>
+                Astro<span className="text-[var(--accent)]">spectrum</span>
               </h1>
             </div>
           </div>
 
-          <p className="mb-6 text-sm leading-6 text-white/60">
+          <p className="mb-6 text-sm leading-6 text-[var(--text-dim)]">
             Sign in to write comments, keep your ratings synced, and carry your gallery presence across devices.
           </p>
 
@@ -107,7 +108,7 @@ export default function LoginPage() {
             <motion.div 
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-center text-xs font-mono tracking-wide text-red-400"
+              className="mb-4 rounded-xl border border-[var(--accent)]/20 bg-[var(--accent)]/10 p-3 text-center text-xs font-mono tracking-wide text-[var(--accent)]"
             >
               {error}
             </motion.div>
@@ -124,24 +125,20 @@ export default function LoginPage() {
                 className="space-y-3"
               >
                 <div className="relative flex items-center">
-                  <Mail size={16} className="absolute left-4 text-white/45" />
+                  <Mail size={16} className="absolute left-4 text-[var(--text-muted)]" />
                   <input
                     type="email"
                     placeholder="ENTER YOUR EMAIL"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full rounded-2xl border border-white/10 bg-black/40 py-4 pl-12 pr-4 text-xs font-mono uppercase tracking-wider text-white outline-none transition-all focus:border-red-500/50 focus:bg-black/60"
+                    className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-4 pl-12 pr-4 text-xs font-mono uppercase tracking-wider text-[var(--text)] outline-none transition-all focus:border-[var(--accent)] focus:bg-[var(--surface)]"
                   />
                 </div>
                 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-500 py-4 text-sm font-black uppercase tracking-[0.18em] text-white transition-all hover:-translate-y-0.5 hover:bg-red-600 disabled:opacity-50 disabled:hover:translate-y-0"
-                >
+                <WorldButton type="submit" disabled={loading} className="w-full bg-[var(--accent)] text-[var(--bg)] py-4 font-black uppercase tracking-[0.18em]">
                   {loading ? <Loader2 size={16} className="animate-spin" /> : "SEND SECURITY PIN"}
-                </button>
+                </WorldButton>
               </motion.form>
             ) : (
               <motion.form
@@ -152,11 +149,11 @@ export default function LoginPage() {
                 onSubmit={handleVerifyOtp}
                 className="space-y-3"
               >
-                <p className="mb-1 font-mono text-[11px] uppercase tracking-wider text-white/40 text-center">
-                  Enter verification token dispatched to {email.toLowerCase()}
+                <p className="mb-1 font-mono text-[11px] uppercase tracking-wider text-[var(--text-muted)] text-center">
+                  Enter token sent to {email.toLowerCase()}
                 </p>
                 <div className="relative flex items-center">
-                  <ShieldCheck size={16} className="absolute left-4 text-white/45" />
+                  <ShieldCheck size={16} className="absolute left-4 text-[var(--text-muted)]" />
                   <input
                     type="text"
                     placeholder="6-DIGIT PIN"
@@ -164,22 +161,18 @@ export default function LoginPage() {
                     onChange={(e) => setOtp(e.target.value)}
                     maxLength={6}
                     required
-                    className="w-full rounded-2xl border border-white/10 bg-black/40 py-4 pl-12 pr-4 text-center text-sm font-mono font-bold tracking-[0.3em] text-white outline-none transition-all focus:border-red-500/50 focus:bg-black/60"
+                    className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-4 pl-12 pr-4 text-center text-sm font-mono font-bold tracking-[0.3em] text-[var(--text)] outline-none transition-all focus:border-[var(--accent)]"
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-500 py-4 text-sm font-black uppercase tracking-[0.18em] text-white transition-all hover:-translate-y-0.5 hover:bg-red-600 disabled:opacity-50 disabled:hover:translate-y-0"
-                >
+                <WorldButton type="submit" disabled={loading} className="w-full bg-[var(--accent)] text-[var(--bg)] py-4 font-black uppercase tracking-[0.18em]">
                   {loading ? <Loader2 size={16} className="animate-spin" /> : "VERIFY & LOGIN"}
-                </button>
+                </WorldButton>
 
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="mx-auto flex items-center justify-center gap-1.5 pt-2 text-[10px] uppercase tracking-widest text-white/40 transition-colors hover:text-white"
+                  className="mx-auto flex items-center justify-center gap-1.5 pt-2 text-[10px] uppercase tracking-widest text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
                 >
                   <ArrowLeft size={10} /> Change email address
                 </button>
@@ -188,27 +181,23 @@ export default function LoginPage() {
           </AnimatePresence>
 
           <div className="my-6 flex items-center justify-between gap-4">
-            <div className="h-px w-full bg-white/10" />
-            <span className="font-mono text-[10px] uppercase tracking-widest text-white/20 whitespace-nowrap">OR</span>
-            <div className="h-px w-full bg-white/10" />
+            <div className="h-px w-full bg-[var(--border)]" />
+            <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)] whitespace-nowrap">OR</span>
+            <div className="h-px w-full bg-[var(--border)]" />
           </div>
 
           <div className="space-y-3">
-            <button
+            <WorldButton
               type="button"
               onClick={() => signIn("google", { callbackUrl: "/" })}
-              className="group flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white px-5 py-4 text-sm font-black uppercase tracking-[0.18em] text-black transition-all hover:-translate-y-0.5 hover:bg-red-500 hover:text-white hover:shadow-2xl hover:shadow-red-500/25"
+              className="flex w-full items-center justify-center gap-3 bg-[var(--surface)] text-[var(--text)] border-[var(--border)]"
             >
               <Chrome size={18} />
               Continue with Google
-            </button>
+            </WorldButton>
             
             <TelegramLogin />
           </div>
-
-          <p className="mt-6 text-center text-[11px] uppercase tracking-[0.22em] text-white/35">
-            Secure Platform Authorization
-          </p>
         </motion.div>
       </section>
     </main>
