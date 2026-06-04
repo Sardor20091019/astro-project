@@ -16,28 +16,58 @@ export const authOptions: NextAuthOptions = {
     }),
     
     CredentialsProvider({
-      id: "otp",
-      name: "One-Time Password",
-      credentials: { email: { type: "text" }, code: { type: "text" } },
-      async authorize(credentials): Promise<User | null> {
-        if (!credentials?.email || !credentials?.code) return null;
+  id: "otp",
+  name: "One-Time Password",
+  credentials: { email: { type: "text" }, code: { type: "text" } },
+  async authorize(credentials): Promise<User | null> {
+    if (!credentials?.email || !credentials?.code) return null;
 
-        const formattedEmail = credentials.email.toLowerCase().trim();
-        const activeOtp = await prisma.otpToken.findFirst({
-          where: { email: formattedEmail, token: credentials.code.trim(), expires: { gte: new Date() } },
-        });
+    const formattedEmail = credentials.email.toLowerCase().trim();
+    const inputToken = credentials.code.trim();
 
-        if (!activeOtp) throw new Error("Invalid or expired verification pin code.");
-        await prisma.otpToken.delete({ where: { id: activeOtp.id } }).catch(() => {});
+    // 1. Find the current token record
+    const tokenRecord = await prisma.otpToken.findFirst({
+      where: { email: formattedEmail },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, email: true, token: true, expires: true, createdAt: true, failedAttempts: true },
+    });
 
-        let user = await prisma.user.findUnique({ where: { email: formattedEmail } });
-        if (!user) {
-          user = await prisma.user.create({ data: { email: formattedEmail, role: "USER" } });
-        }
+    // 2. Validate existence and expiration
+    if (!tokenRecord) throw new Error("No active code found.");
+    if (new Date() > tokenRecord.expires) {
+      await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
+      throw new Error("Code expired.");
+    }
 
-        return { id: user.id, email: user.email, name: user.name } as User;
-      },
-    }),
+    // 3. Check for match
+    if (tokenRecord.token !== inputToken) {
+      // INCREMENT LOGIC
+      const newCount = (tokenRecord.failedAttempts ?? 0) + 1;
+      
+      if (newCount >= 5) {
+        await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
+        throw new Error("Too many attempts. Code invalidated.");
+      }
+
+      await prisma.otpToken.update({
+        where: { id: tokenRecord.id },
+        data: { failedAttempts: newCount },
+      });
+
+      throw new Error(`Invalid code. (${5 - newCount} attempts remaining)`);
+    }
+
+    // 4. If code is correct, cleanup and proceed
+    await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
+
+    let user = await prisma.user.findUnique({ where: { email: formattedEmail } });
+    if (!user) {
+      user = await prisma.user.create({ data: { email: formattedEmail, role: "USER" } });
+    }
+
+    return { id: user.id, email: user.email, name: user.name } as User;
+  },
+}),
 
     CredentialsProvider({
       id: "telegram",

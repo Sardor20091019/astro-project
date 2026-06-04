@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -196,7 +197,7 @@ model OtpToken {
   createdAt      DateTime @default(now())
   failedAttempts Int      @default(0)
   ipAddress      String?
-  
+
   @@unique([email, token])
   @@map("otptoken")
 }

@@ -87,52 +87,37 @@ export async function generateAndSendOtp(email: string, ip: string) {
 export async function verifyOtp(email: string, inputToken: string) {
   const cleanEmail = email.toLowerCase().trim();
   
-  // Grab the absolute newest active token for this user path
+  // 1. Fetch the record
   const tokenRecord = await prisma.otpToken.findFirst({
     where: { email: cleanEmail },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      email: true,
-      expires: true,
-      token: true,
-      failedAttempts: true,
-    },
+    orderBy: { createdAt: "desc" }, // Always get the latest
   });
 
   if (!tokenRecord) throw new Error("No active code found.");
 
-  // Check Expiration State
+  // 2. Check Expiration
   if (new Date() > tokenRecord.expires) {
     await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
     throw new Error("Code expired.");
   }
 
-  // Pre-emptive check against locked states
-  if (tokenRecord.failedAttempts >= 5) {
-    await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
-    throw new Error("Too many failed attempts. This code has been permanently locked.");
-  }
-
-  // Match Assessment
+  // 3. Match Verification
   if (tokenRecord.token === inputToken) {
-    // Clear ALL structural tokens for this email path on success (Clean house)
     await prisma.otpToken.deleteMany({ where: { email: cleanEmail } });
     return { success: true };
   } else {
-    // Update Failure Metrics Atomically
-    const updatedRecord = await prisma.otpToken.update({
+    // 4. THIS IS THE FIX: Increment immediately and explicitly
+    const updated = await prisma.otpToken.update({
       where: { id: tokenRecord.id },
       data: { failedAttempts: { increment: 1 } },
-      select: { failedAttempts: true, id: true },
     });
 
-    // Hard drop the row if this execution hit the strict 5-attempt ceiling
-    if (updatedRecord.failedAttempts >= 5) {
+    // Check if that increment hit the limit
+    if (updated.failedAttempts >= 5) {
       await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
-      throw new Error("Too many attempts. This code has been invalidated.");
+      throw new Error("Too many failed attempts. Code invalidated.");
     }
 
-    throw new Error("Invalid code.");
+    throw new Error(`Invalid code. (${5 - updated.failedAttempts} attempts remaining)`);
   }
 }
