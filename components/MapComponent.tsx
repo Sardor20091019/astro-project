@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import Link from "next/link";
 import { Camera, Heart, Star, MapPin } from "lucide-react";
+// @ts-ignore
 import "leaflet/dist/leaflet.css";
 
 type MapPhoto = {
@@ -38,7 +39,7 @@ export default function MapComponent({ photos }: { photos: MapPhoto[] }) {
 
   if (!mounted) {
     return (
-      <div className="w-full h-[50vh] rounded-[2rem] bg-white/[0.02] border border-white/10 flex items-center justify-center text-zinc-500">
+      <div className="w-full h-[50vh] rounded-4xl bg-white/2 border border-white/10 flex items-center justify-center text-zinc-500">
         <span className="text-xs uppercase tracking-widest font-black">Initializing Cartography...</span>
       </div>
     );
@@ -146,11 +147,11 @@ export default function MapComponent({ photos }: { photos: MapPhoto[] }) {
         ))}
 
         {mappedPhotos.length === 0 && (
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center bg-black/60 backdrop-blur-sm z-[1000]">
-            <div className="bg-zinc-900 border border-white/10 p-6 rounded-2xl text-center max-w-xs shadow-2xl">
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center bg-(--bg)/60 backdrop-blur-sm z-1000">
+            <div className="world-card p-6 text-center max-w-xs">
               <span className="text-xl block mb-2">🗺️</span>
-              <p className="text-xs uppercase tracking-widest font-black text-white mb-1">No Geo-tagged Submissions</p>
-              <p className="text-[10px] text-zinc-500">Publish frames with coordinates to populate this map.</p>
+              <p className="world-text-bold mb-1 tracking-widest">No Geo-tagged Submissions</p>
+              <p className="text-[10px] world-text-muted">Publish frames with coordinates to populate this map.</p>
             </div>
           </div>
         )}

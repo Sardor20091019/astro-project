@@ -26,7 +26,7 @@ export default function Footer() {
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex min-h-[44px] min-w-[44px] items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-white/45 transition hover:-translate-y-0.5 hover:border-red-400/50 hover:text-white"
+              className="group flex min-h-11 min-w-11 items-center gap-2 rounded-full border border-white/10 bg-white/3 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-white/45 transition hover:-translate-y-0.5 hover:border-red-400/50 hover:text-white"
             >
               <Icon size={14} className="transition group-hover:text-red-400" />
               {label}

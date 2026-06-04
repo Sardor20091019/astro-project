@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Hero from "@/components/Hero";
 import HomeGallery, { HomeGallerySkeleton } from "@/components/HomeGallery";
 import HomeUserGreeting from "@/components/HomeUserGreeting";
+import user from "pusher-js/types/src/core/user";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ interface PageProps {
 
 function UserGreetingSkeleton() {
   return (
-    <div className="bg-zinc-900 p-2 text-center text-xs text-zinc-500">
+    <div className="world-card p-2 text-center text-xs world-text-muted">
       <p>hi</p>
     </div>
   );

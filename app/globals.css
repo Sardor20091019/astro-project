@@ -1,28 +1,102 @@
 @import "tailwindcss";
 
-/* ─── Spectral Void Design Tokens ─── */
+/* ─── Base Variables (Shared) ─── */
 :root {
+  --font-serif: 'Editorial New', var(--font-dm-serif), 'Georgia', serif;
+  --font-mono:  var(--font-dm-mono), 'Courier New', monospace;
+  
+  /* Shared Base Colors */
   --void:        #050505;
+  --bone:        #F0EBE1;
+  --ember:       #E8421A;
+--card-border: 1px solid var(--border);
+  --card-shadow: none;
+  --transition-speed: 0.3s;
+}
+
+/* 🌎 WORLD 1: THE VOID (Default Cinematic) */
+:root, [data-theme="void"] {
+  --bg:          var(--void);
   --surface:     #0A0A0A;
   --surface-2:   #0F0F0F;
   --surface-3:   #161616;
-  --bone:        #F0EBE1;
-  --ember:       #E8421A;
-  --ember-soft:  rgba(232, 66, 26, 0.12);
-  --ghost:       rgba(240, 235, 225, 0.06);
-  --ghost-2:     rgba(240, 235, 225, 0.12);
-
-  --bg:          var(--void);
+  
+  --card-border: 1px solid var(--border);
+  --card-shadow: none;
+  
   --text:        var(--bone);
---text-dim:    rgba(240,235,225,0.55);
+  --text-dim:    rgba(240,235,225,0.55);
   --text-muted:  rgba(240,235,225,0.32); 
+  
   --accent:      var(--ember);
-  --accent-soft: var(--ember-soft);
-  --border:      var(--ghost);
-  --border-hover:var(--ghost-2);
+  --accent-soft: rgba(232, 66, 26, 0.12);
+  
+  --border:      rgba(240, 235, 225, 0.06);
+  --border-hover:rgba(240, 235, 225, 0.12);
 
-  --font-serif: 'Editorial New', var(--font-dm-serif), 'Georgia', serif;
-  --font-mono:  var(--font-dm-mono), 'Courier New', monospace;
+  /* Geometry & Textures */
+  --radius-sm:   4px;
+  --radius-md:   12px;
+  --radius-lg:   14px;
+  --shadow-btn:  none;
+  --glass-blur:  blur(0px);
+}
+
+/* 🌎 WORLD 2: NEO-BRUTALIST (The Archive) */
+[data-theme="brutalist"] {
+ --bg: #E8E3D9;
+  --surface:     #E8E3D9;
+  --surface-2:   #DFDACF;
+  --surface-3:   #FFFFFF;
+--card-border: 4px solid var(--text);
+  --card-shadow: 8px 8px 0px var(--text);
+  --text:        var(--void);
+  --text-dim:    rgba(5,5,5,0.7);
+  --text-muted:  rgba(180, 180, 180, 0.5); 
+  
+  --accent:      #000000;
+  --accent-soft: rgba(0, 0, 0, 0.1);
+  
+  --border:      #000000;
+  --border-hover:#000000;
+
+  /* Brutalist Geometry: Sharp corners, heavy borders, harsh shadows */
+  --radius-sm:   0px;
+  --radius-md:   0px;
+  --radius-lg:   0px;
+  --shadow-btn:  4px 4px 0px #000000;
+  --glass-blur:  blur(0px);
+  letter-spacing: -0.05em;
+}
+
+/* 🌎 WORLD 3: GLASSMORPHISM (The Ethereal) */
+[data-theme="glass"] {
+  /* Ambient gradient background */
+  --bg:          radial-gradient(circle at 50% 0%, #1a1a24 0%, #050505 100%);
+  --surface:     rgba(255, 255, 255, 0.02);
+  --surface-2:   rgba(255, 255, 255, 0.04);
+  --surface-3:   rgba(255, 255, 255, 0.06);
+  
+--card-border: 1px solid rgba(255,255,255,0.15);
+  --card-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  
+  --text:        #FFFFFF;
+  --text-dim:    rgba(255,255,255,0.6);
+  --text-muted:  rgba(255,255,255,0.3); 
+  
+  --accent:      #7CA5FF;
+  --accent-soft: rgba(124, 165, 255, 0.15);
+  
+  --border:      rgba(255, 255, 255, 0.08);
+  --border-hover:rgba(255, 255, 255, 0.2);
+
+  /* Organic Geometry: Extreme rounding, soft frosted glass */
+  --radius-sm:   12px;
+  --radius-md:   24px;
+  --radius-lg:   999px; /* Pill shapes */
+  --shadow-btn:  0 4px 24px rgba(0,0,0,0.4);
+  --glass-blur:  blur(16px);
+  letter-spacing: 0.1em;
 }
 
 /* ─── Global reset ─── */
@@ -36,12 +110,14 @@ html { scroll-behavior: auto; }
 
 body {
   background: var(--void);
-  color: var(--bone);
   font-family: var(--font-mono);
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  background-color: var(--bg);
+  color: var(--text);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 
@@ -95,23 +171,25 @@ h1, h2, h3, h4 {
 }
 
 /* ─── Input & Form Fields ─── */
+/* ─── Input & Form Fields ─── */
 .input {
   width: 100%;
   background: var(--surface-3);
-  border: 1px solid var(--ghost);
-  color: var(--bone);
+  border: 1px solid var(--border); /* Changed to dynamic */
+  color: var(--text); /* Changed to dynamic */
   font-family: var(--font-mono);
-  font-size: 1rem; /* Base 16px to prevent system zoom on focus */
-  padding: 0.85rem 1.2rem; /* Enhanced touch target padding */
-  border-radius: 12px; /* Smooth corners matching modern mobile dashboards */
+  font-size: 1rem; 
+  padding: 0.85rem 1.2rem; 
+  border-radius: var(--radius-md); /* Changed to dynamic */
+  backdrop-filter: var(--glass-blur); /* Engages in Glass mode */
   outline: none;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  -webkit-appearance: none; /* Strip native iOS input styles */
+  -webkit-appearance: none; 
 }
 .input:focus { 
-  border-color: var(--ember); 
+  border-color: var(--accent); 
   background: var(--surface-2);
-  box-shadow: 0 0 0 1px var(--ember);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 .input::placeholder { color: var(--text-muted); }
 
@@ -127,39 +205,42 @@ h1, h2, h3, h4 {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 14px; /* Native component curvature */
+  border-radius: var(--radius-lg); /* Changed to dynamic */
   font-family: var(--font-mono);
-  font-size: 0.75rem; /* Highly visible text scale */
+  font-size: 0.75rem; 
   font-weight: 600;
-  padding: 1rem 1.5rem; /* Large touchable button surfaces */
+  padding: 1rem 1.5rem; 
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  width: 100%; /* Force stacking blocks on mobile flows */
+  width: 100%; 
   transition: all .2s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: var(--glass-blur); /* Engages in Glass mode */
 }
 
 @media (min-width: 641px) {
-  .btn-primary, .btn-ghost { width: auto; font-size: 0.68rem; letter-spacing: 0.18em; border-radius: 2px; }
+  .btn-primary, .btn-ghost { width: auto; font-size: 0.68rem; letter-spacing: 0.18em; border-radius: var(--radius-sm); }
 }
 
 .btn-primary {
-  background: var(--bone);
-  color: var(--void);
-  border: 1px solid var(--bone);
+  background: var(--text); /* Changed to dynamic */
+  color: var(--bg); /* Changed to dynamic */
+  border: 2px solid var(--text); /* Changed to dynamic */
+  box-shadow: var(--shadow-btn); /* Triggers in Brutalist mode */
 }
 .btn-primary:active, .btn-primary:hover {
-  background: var(--ember);
-  color: var(--bone);
-  border-color: var(--ember);
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-btn);
 }
 .btn-ghost {
-  border: 1px solid var(--ghost);
+  border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.01);
-  color: rgba(240, 235, 225, 0.6);
+  color: var(--text-dim);
 }
 .btn-ghost:active, .btn-ghost:hover {
-  border-color: var(--ghost-2);
-  color: var(--bone);
+  border-color: var(--border-hover);
+  color: var(--text);
   background: var(--surface-2);
 }
 
@@ -190,7 +271,7 @@ h1, h2, h3, h4 {
 
   .mobile-file-picker {
     @apply flex flex-col items-center justify-center w-full border-2 border-dashed border-white/10 
-           rounded-3xl p-6 text-center cursor-pointer bg-white/[0.01] hover:bg-white/[0.03] transition-all;
+           rounded-3xl p-6 text-center cursor-pointer bg-white/1 hover:bg-white/3 transition-all;
   }
 }
 

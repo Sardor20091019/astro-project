@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { DM_Mono, DM_Serif_Display } from "next/font/google";
 import { Toaster } from "sonner";
+// @ts-ignore
 import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
+import ThemeProvider from "@/components/ThemeProvider"; // Ensure this import is here
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import DesktopEffects from "@/components/DesktopEffects";
@@ -29,24 +31,24 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${dmSerif.variable} ${dmMono.variable}`}>
-      <body>
-        <AuthProvider>
-          <DesktopEffects>
-            <div className="relative flex min-h-screen flex-col">
-              <Navbar />
-
-              {/* Cleaned layout wrapper: Removed grid configurations and the sidebar column */}
-              <div className="mx-auto w-full max-w-[1200px] flex-grow px-4 py-8 lg:px-0">
-                <main className="min-w-0">
-                  {children}
-                </main>
+      {/* ADDED: bg-[var(--bg)] and text-[var(--text)] to the body */}
+      <body className="bg-(--bg) text-(--text) transition-colors duration-300">
+        <ThemeProvider>
+          <AuthProvider>
+            <DesktopEffects>
+              <div className="relative flex min-h-screen flex-col">
+                <Navbar />
+                <div className="mx-auto w-full max-w-300 grow px-4 py-8 lg:px-0">
+                  <main className="min-w-0">
+                    {children}
+                  </main>
+                </div>
+                <Footer />
               </div>
-
-              <Footer />
-            </div>
-            <Toaster position="bottom-right" theme="dark" />
-          </DesktopEffects>
-        </AuthProvider>
+              <Toaster position="bottom-right" theme="dark" />
+            </DesktopEffects>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
