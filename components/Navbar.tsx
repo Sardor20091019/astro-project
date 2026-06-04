@@ -136,16 +136,39 @@ export default function Navbar() {
           </div>
         </div>
 
-        {mobileMenuOpen && (
-          <div className="md:hidden w-full bg-(--bg) border-b border-(--border) px-6 py-6 flex flex-col gap-5">
-            <ThemeToggle />
-            <UserSearch />
-            <Link href="/" className="text-sm uppercase tracking-widest text-(--text)">Gallery</Link>
-            <Link href="/leaderboard" className="text-sm uppercase tracking-widest text-(--text)">Leaderboard</Link>
-            <Link href="/submit" className="text-sm uppercase tracking-widest text-(--text)">Submit</Link>
-            {/* Additional mobile links... */}
-          </div>
-        )}
+      {mobileMenuOpen && (
+  <div className="md:hidden w-full bg-(--bg) border-b border-(--border) px-6 py-6 flex flex-col gap-5">
+    <ThemeToggle />
+    <UserSearch />
+    <Link href="/" className="text-sm uppercase tracking-widest text-(--text)">Gallery</Link>
+    <Link href="/leaderboard" className="text-sm uppercase tracking-widest text-(--text)">Leaderboard</Link>
+    <Link href="/submit" className="text-sm uppercase tracking-widest text-(--text)">Submit</Link>
+    
+    {/* --- ADD THIS AUTH SECTION --- */}
+    <div className="border-t border-(--border) pt-5 flex flex-col gap-4">
+      {status === "loading" ? (
+        <span className="text-xs text-(--text-muted) uppercase tracking-widest animate-pulse">Loading...</span>
+      ) : user ? (
+        <>
+          <Link href={`/profile/${user.id}`} className="text-sm uppercase tracking-widest text-(--text)">
+            Profile
+          </Link>
+          <button 
+            onClick={() => signOut()} 
+            className="text-left text-sm uppercase tracking-widest text-(--accent)"
+          >
+            Sign out
+          </button>
+        </>
+      ) : (
+        <Link href="/login" className="text-sm uppercase tracking-widest text-(--accent)">
+          Sign in
+        </Link>
+      )}
+    </div>
+  </div>
+)}
+        
       </nav>
       <div className="h-18 w-full" />
     </>
