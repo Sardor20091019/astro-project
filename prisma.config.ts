@@ -5,6 +5,6 @@ export default defineConfig({
     seed: "node prisma/seed.mjs",
   },
   datasource: {
-    url: process.env.DATABASE_URL || "postgresql://postgres:sardor_09@localhost:5432/astrospectrum?schema=public",
+    url: process.env.DATABASE_URL, 
   },
 });

@@ -43,29 +43,39 @@ export default function CursorFollower() {
       ring!.style.transform = `translate3d(${rx}px, ${ry}px, 0) translate(-50%, -50%) scale(${currentScale})`;
       rafId = requestAnimationFrame(tick);
     }
+function onEnterInteractive() {
+  targetScale = 1.5556;
+  
+  // The "Pop" effect: Brighter rim, stronger depth, more opaque glass
+  ring!.style.borderColor = "rgba(255, 255, 255, 0.8)";
+  ring!.style.background = "rgba(255, 255, 255, 0.15)";
+  ring!.style.boxShadow = "inset 0 0 20px rgba(255, 255, 255, 0.4), 0 12px 24px rgba(0,0,0,0.3)";
+  
+  // Keep your existing blend mode if you like the "difference" effect, 
+  // but note that it might make the glass color look inverted.
+  ring!.style.mixBlendMode = "difference"; 
 
-    function onEnterInteractive() {
-      // Scale from base 36px to 56px using composite scaling factors (56 / 36 = 1.5556)
-      targetScale = 1.5556;
-      ring!.style.borderColor = "rgba(240,235,225,0.7)";
-      ring!.style.mixBlendMode = "difference";
+  if (leftDot && rightDot) {
+    leftDot.style.transform = "translate3d(calc(-50% - 6px), -50%, 0)";
+    rightDot.style.transform = "translate3d(calc(-50% + 6px), -50%, 0)";
+  }
+}
 
-      if (leftDot && rightDot) {
-        leftDot.style.transform = "translate3d(calc(-50% - 6px), -50%, 0)";
-        rightDot.style.transform = "translate3d(calc(-50% + 6px), -50%, 0)";
-      }
-    }
+function onLeaveInteractive() {
+  targetScale = 1;
+  
+  // Return to "Idle" Glass state
+  ring!.style.borderColor = "rgba(255, 255, 255, 0.4)";
+  ring!.style.background = "rgba(255, 255, 255, 0.05)";
+  ring!.style.boxShadow = "inset 0 0 12px rgba(255, 255, 255, 0.2), 0 8px 16px rgba(0,0,0,0.2)";
+  
+  ring!.style.mixBlendMode = "normal";
 
-    function onLeaveInteractive() {
-      targetScale = 1;
-      ring!.style.borderColor = "rgba(240,235,225,0.35)";
-      ring!.style.mixBlendMode = "normal";
-
-      if (leftDot && rightDot) {
-        leftDot.style.transform = "translate3d(-50%, -50%, 0)";
-        rightDot.style.transform = "translate3d(-50%, -50%, 0)";
-      }
-    }
+  if (leftDot && rightDot) {
+    leftDot.style.transform = "translate3d(-50%, -50%, 0)";
+    rightDot.style.transform = "translate3d(-50%, -50%, 0)";
+  }
+}
 
     // High Performance Event Delegation: Captures interactions globally across elements automatically
     function handleMouseOver(e: MouseEvent) {
@@ -85,7 +95,7 @@ export default function CursorFollower() {
       }
     }
 
-    // Attaching singular window execution anchors
+
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseover", handleMouseOver);
     document.addEventListener("mouseout", handleMouseOut);
@@ -137,18 +147,32 @@ export default function CursorFollower() {
         />
       </div>
 
-      {/* Ambient Trailing Physics Circle */}
-      <div
-        ref={ringRef}
-        style={{
-          position: "fixed", top: 0, left: 0, zIndex: 99998,
-          width: "36px", height: "36px", borderRadius: "50%",
-          border: "1px solid rgba(240,235,225,0.35)",
-          pointerEvents: "none",
-          transition: "border-color .25s ease",
-          willChange: "transform",
-        }}
-      />
+<div
+  ref={ringRef}
+  style={{
+    position: "fixed", top: 0, left: 0, zIndex: 99998,
+    width: "40px", height: "40px", borderRadius: "50%",
+    
+    // 1. The Glass Effect
+    background: "rgba(255, 255, 255, 0.05)",
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    
+    // 2. The 3D "Rim Light" & Depth
+    // A subtle border acts as the edge of the glass, 
+    // and the box-shadow provides the "lift" off the page.
+    border: "1px solid rgba(255, 255, 255, 0.4)",
+    boxShadow: `
+      inset 0 0 12px rgba(255, 255, 255, 0.2), 
+      0 8px 16px rgba(0, 0, 0, 0.2)
+    `,
+    
+    // Physics
+    pointerEvents: "none",
+    transition: "transform 0.1s ease-out, border-color 0.3s ease, box-shadow 0.3s ease",
+    willChange: "transform",
+  }}
+/>
     </>
   );
 }

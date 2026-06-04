@@ -1,18 +1,15 @@
 @import "tailwindcss";
 
-/* ─── Base Variables (Shared) ─── */
 :root {
   --font-serif: 'Editorial New', var(--font-dm-serif), 'Georgia', serif;
   --font-mono:  var(--font-dm-mono), 'Courier New', monospace;
-  
-  /* Shared Base Colors */
   --void:        #050505;
   --bone:        #F0EBE1;
   --ember:       #E8421A;
---card-border: 1px solid var(--border);
+  --card-border: 1px solid var(--border);
   --card-shadow: none;
   --transition-speed: 0.3s;
-  --btn-style: 0.5rem; /* Default rounded */
+  --btn-style: 0.5rem;
   --footer-padding: 2rem;
   --image-viewer-shadow: none;
   --btn-radius: 8px;
@@ -20,27 +17,20 @@
   --btn-shadow: none;
 }
 
-/* 🌎 WORLD 1: THE VOID (Default Cinematic) */
 :root, [data-theme="void"] {
   --bg:          var(--void);
   --surface:     #0A0A0A;
   --surface-2:   #0F0F0F;
-  --surface-3:   #161616;
-  
+  --surface-3:   #161616;  
   --card-border: 1px solid var(--border);
   --card-shadow: none;
-  
   --text:        var(--bone);
   --text-dim:    rgba(240,235,225,0.55);
   --text-muted:  rgba(240,235,225,0.32); 
-  
   --accent:      var(--ember);
   --accent-soft: rgba(232, 66, 26, 0.12);
-  
   --border:      rgba(240, 235, 225, 0.06);
   --border-hover:rgba(240, 235, 225, 0.12);
-
-  /* Geometry & Textures */
   --radius-sm:   4px;
   --radius-md:   12px;
   --radius-lg:   14px;
@@ -48,73 +38,58 @@
   --glass-blur:  blur(0px);
 }
 
-/* 🌎 WORLD 2: NEO-BRUTALIST (The Archive) */
 [data-theme="brutalist"] {
  --bg: #E8E3D9;
   --surface:     #E8E3D9;
   --surface-2:   #DFDACF;
   --surface-3:   #FFFFFF;
---card-border: 4px solid var(--text);
+  --card-border: 4px solid var(--text);
   --card-shadow: 8px 8px 0px var(--text);
   --text:        var(--void);
   --text-dim:    rgba(5,5,5,0.7);
   --text-muted:  rgba(180, 180, 180, 0.5); 
-  
   --accent:      #000000;
-  --accent-soft: rgba(0, 0, 0, 0.1);
-  
+  --accent-soft: rgba(0, 0, 0, 0.1); 
   --border:      #000000;
   --border-hover:#000000;
-
-  /* Brutalist Geometry: Sharp corners, heavy borders, harsh shadows */
   --radius-sm:   0px;
   --radius-md:   0px;
   --radius-lg:   0px;
   --shadow-btn:  4px 4px 0px #000000;
   --glass-blur:  blur(0px);
   letter-spacing: -0.05em;
-  --btn-style: 0px; /* Sharp */
+  --btn-style: 0px; 
   --footer-padding: 4rem;
   --image-viewer-shadow: 10px 10px 0px #000;
-
   --btn-radius: 0px;
   --btn-border: 3px solid var(--text);
   --btn-shadow: 4px 4px 0px var(--text);
 }
 
-/* 🌎 WORLD 3: GLASSMORPHISM (The Ethereal) */
+
 [data-theme="glass"] {
-  /* Ambient gradient background */
   --bg:          radial-gradient(circle at 50% 0%, #1a1a24 0%, #050505 100%);
   --surface:     rgba(255, 255, 255, 0.02);
   --surface-2:   rgba(255, 255, 255, 0.04);
-  --surface-3:   rgba(255, 255, 255, 0.06);
-  
---card-border: 1px solid rgba(255,255,255,0.15);
+  --surface-3:   rgba(255, 255, 255, 0.06);  
+  --card-border: 1px solid rgba(255,255,255,0.15);
   --card-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  
   --text:        #ffffff;
-  --text-dim:    rgba(255,255,255,0.6);
-  --text-muted:  rgba(255,255,255,0.3); 
-  
+  --text-dim:    rgba(65, 65, 65, 0.6);
+  --text-muted:  rgba(3, 3, 3, 0.3); 
   --accent:      #7CA5FF;
   --accent-soft: rgba(124, 165, 255, 0.15);
-  
   --border:      rgba(255, 255, 255, 0.08);
   --border-hover:rgba(255, 255, 255, 0.2);
-
-  /* Organic Geometry: Extreme rounding, soft frosted glass */
   --radius-sm:   12px;
   --radius-md:   24px;
-  --radius-lg:   999px; /* Pill shapes */
+  --radius-lg:   999px;
   --shadow-btn:  0 4px 24px rgba(0,0,0,0.4);
   --glass-blur:  blur(16px);
   letter-spacing: 0.1em;
-
-  --btn-style: 1.5rem; /* Very rounded */
+  --btn-style: 1.5rem; 
   --footer-padding: 2rem;
   --image-viewer-shadow: 0 20px 50px rgba(0,0,0,0.5);
-
   --btn-radius: 9999px;
   --btn-border: 1px solid rgba(255, 255, 255, 0.2);
   --btn-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -129,12 +104,9 @@
   border: var(--card-border);
   box-shadow: var(--card-shadow);
   border-radius: var(--radius-md);
-  
-  /* Apply the blur only if you want the frosted look */
   backdrop-filter: var(--glass-blur);
 }
 
-/* ─── Global reset ─── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: auto; }
 
@@ -152,7 +124,7 @@ body {
   overflow-x: hidden;
   background-color: var(--bg);
   color: var(--text);
-transition: background-color 0.5s ease, color 0.5s ease;
+  transition: background-color 0.5s ease, color 0.5s ease;
   min-height: 100vh;
 }
 
@@ -177,28 +149,24 @@ transition: background-color 0.5s ease, color 0.5s ease;
 ::-webkit-scrollbar-thumb:hover { background: rgba(240,235,225,0.30); }
 
 @media (max-width: 640px) {
-  /* Hides webkit bars completely on smaller viewpoints if dragging blocks natively */
   .scrollbar-none::-webkit-scrollbar { display: none; }
   .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
 ::selection { background: var(--ember); color: #F0EBE1; }
 
-/* ─── Responsive Typography ─── */
 h1, h2, h3, h4 {
   font-family: var(--font-serif);
   font-weight: 200;
   letter-spacing: -0.03em;
 }
 
-/* Fluid type headers to stop long editorial names from clipping mobile views */
 @media (max-width: 640px) {
   h1 { font-size: 2.25rem !important; font-weight: 900 !important; tracking: -0.04em !important; }
   h2 { font-size: 1.75rem !important; }
   p { font-size: 0.85rem !important; }
 }
 
-/* ─── Gallery grid responsive ─── */
 @media (max-width: 768px) {
   .grid-gallery { grid-template-columns: repeat(1, 1fr) !important; gap: 1.5rem !important; }
 }
@@ -206,22 +174,22 @@ h1, h2, h3, h4 {
   .grid-gallery { grid-template-columns: repeat(2, 1fr) !important; }
 }
 
-/* ─── Input & Form Fields ─── */
-/* ─── Input & Form Fields ─── */
+
 .input {
   width: 100%;
   background: var(--surface-3);
-  border: 1px solid var(--border); /* Changed to dynamic */
-  color: var(--text); /* Changed to dynamic */
+  border: 1px solid var(--border);
+  color: var(--text); 
   font-family: var(--font-mono);
   font-size: 1rem; 
   padding: 0.85rem 1.2rem; 
-  border-radius: var(--radius-md); /* Changed to dynamic */
-  backdrop-filter: var(--glass-blur); /* Engages in Glass mode */
+  border-radius: var(--radius-md); 
+  backdrop-filter: var(--glass-blur); 
   outline: none;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   -webkit-appearance: none; 
 }
+
 .input:focus { 
   border-color: var(--accent); 
   background: var(--surface-2);
@@ -229,19 +197,19 @@ h1, h2, h3, h4 {
 }
 .input::placeholder { color: var(--text-muted); }
 
-/* Desktop scaling adjustment downwards */
+
 @media (min-width: 641px) {
   .input { font-size: 0.8rem; padding: 0.75rem 1rem; }
 }
 
-/* ─── Mobile Optimized Buttons ─── */
+
 .btn-primary,
 .btn-ghost {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: var(--radius-lg); /* Changed to dynamic */
+  border-radius: var(--radius-lg);
   font-family: var(--font-mono);
   font-size: 0.75rem; 
   font-weight: 600;
@@ -250,7 +218,7 @@ h1, h2, h3, h4 {
   text-transform: uppercase;
   width: 100%; 
   transition: all .2s cubic-bezier(0.16, 1, 0.3, 1);
-  backdrop-filter: var(--glass-blur); /* Engages in Glass mode */
+  backdrop-filter: var(--glass-blur); 
 }
 
 @media (min-width: 641px) {
@@ -258,10 +226,10 @@ h1, h2, h3, h4 {
 }
 
 .btn-primary {
-  background: var(--text); /* Changed to dynamic */
-  color: var(--bg); /* Changed to dynamic */
-  border: 2px solid var(--text); /* Changed to dynamic */
-  box-shadow: var(--shadow-btn); /* Triggers in Brutalist mode */
+  background: var(--text);
+  color: var(--bg); 
+  border: 2px solid var(--text);
+  box-shadow: var(--shadow-btn); 
 }
 .btn-primary:active, .btn-primary:hover {
   background: var(--accent);
@@ -280,7 +248,7 @@ h1, h2, h3, h4 {
   background: var(--surface-2);
 }
 
-/* ─── Animations ─── */
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(15px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -293,7 +261,7 @@ h1, h2, h3, h4 {
 }
 .animate-scale-in { animation: scaleIn 0.35s cubic-bezier(0.16,1,0.3,1) both; }
 
-/* ─── Tailwind Core Framework Layers ─── */
+
 @layer utilities {
   .responsive-form-row {
     @apply flex flex-col gap-4 sm:flex-row sm:items-center;
@@ -311,14 +279,14 @@ h1, h2, h3, h4 {
   }
 }
 
-/* ─── Strict Viewport Layout Overrides ─── */
+
 @media (max-width: 640px) {
-  /* Intercept layout compression zooming across webkit devices */
+ 
   input, select, textarea, .dynamic-text-fix {
     font-size: 16px !important; 
   }
 
-  /* Style standard browser file-picker attachments neatly on mobile cards */
+
   input[type="file"]::file-selector-button {
     padding: 0.5rem 1rem;
     font-size: 0.75rem;
@@ -352,24 +320,20 @@ img {
   image-orientation: from-image !important;
 }
 footer {
-  /* This prevents the footer from ever being covered by transformed elements */
   clear: both;
   width: 100%;
   position: relative;
   z-index: 10;
 }
 
-/* Use this instead */
 img {
   max-width: 100%;
   height: auto;
   display: block;
-  /* This prevents the "leaning" by ensuring the browser calculates 
-     the aspect ratio correctly before rendering */
   object-fit: cover; 
 }
 
-/* If you need to force EXIF orientation support */
+
 canvas {
   display: block;
 }

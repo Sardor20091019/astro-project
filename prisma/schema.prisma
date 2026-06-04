@@ -188,13 +188,15 @@ model Comment {
   @@index([userId])
 }
 
-  model OtpToken {
-    id        String   @id @default(cuid())
-    email     String
-    token     String
-    expires   DateTime
-    createdAt DateTime @default(now())
-
-    @@unique([email, token])
-    @@map("otptoken") // Forces PostgreSQL to use lowercase matching regardless of ORM casing
-  }
+model OtpToken {
+  id             String   @id @default(cuid())
+  email          String
+  token          String
+  expires        DateTime
+  createdAt      DateTime @default(now())
+  failedAttempts Int      @default(0)
+  ipAddress      String?
+  
+  @@unique([email, token])
+  @@map("otptoken")
+}
