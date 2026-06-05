@@ -143,7 +143,11 @@ export default function Navbar() {
     <Link href="/" className="text-sm uppercase tracking-widest text-(--text)">Gallery</Link>
     <Link href="/leaderboard" className="text-sm uppercase tracking-widest text-(--text)">Leaderboard</Link>
     <Link href="/submit" className="text-sm uppercase tracking-widest text-(--text)">Submit</Link>
-    
+    <Link href="/messages" className="relative flex items-center gap-1.5 text-sm uppercase tracking-widest text-(--text)">
+      <MessageSquare size={14} /> 
+      <span>Messages</span>
+      {hasUnread && <span className="absolute -top-1 -right-2 h-2 w-2 bg-(--accent) rounded-full animate-pulse" />}
+    </Link>
     {/* --- ADD THIS AUTH SECTION --- */}
     <div className="border-t border-(--border) pt-5 flex flex-col gap-4">
       {status === "loading" ? (

@@ -101,9 +101,7 @@ export default function SubmitPage() {
                 onUploadBegin={() => setLoading(true)}
                 onClientUploadComplete={(res) => {
                   if (res && res[0]) {
-                    // Extract structured server feedback directly from the response
                     const serverData = res[0].serverData as { isSafe: boolean; error: string | null } | undefined;
-                    
                     if (serverData && serverData.isSafe === false) {
                       alert("Upload rejected: Content does not meet safety guidelines.");
                       setUploadedUrl(null);
@@ -125,65 +123,46 @@ export default function SubmitPage() {
             )}
           </div>
 
+          {/* Technical Metadata Inputs */}
+          {uploadedUrl && (
+            <div className="grid grid-cols-2 gap-3 animate-in fade-in duration-500">
+              <input name="camera" placeholder="Camera Model" className="bg-zinc-900/80 border border-white/8 px-4 py-3.5 rounded-2xl text-sm text-white placeholder:text-zinc-600" />
+              <input name="iso" placeholder="ISO" type="number" className="bg-zinc-900/80 border border-white/8 px-4 py-3.5 rounded-2xl text-sm text-white placeholder:text-zinc-600" />
+              <input name="aperture" placeholder="Aperture (e.g. 2.8)" className="bg-zinc-900/80 border border-white/8 px-4 py-3.5 rounded-2xl text-sm text-white placeholder:text-zinc-600" />
+              <input name="shutter" placeholder="Shutter (e.g. 1/1000)" className="bg-zinc-900/80 border border-white/8 px-4 py-3.5 rounded-2xl text-sm text-white placeholder:text-zinc-600" />
+            </div>
+          )}
+
           <div className="relative mt-4">
             <User size={13} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
-            <input 
-              name="authorName" 
-              defaultValue={session?.user?.name ?? ""} 
-              placeholder="Your name" 
-              required
-              className="w-full bg-zinc-900/80 border border-white/8 pl-10 pr-4 py-3.5 rounded-2xl text-base md:text-sm text-white outline-none focus:border-red-500/50 transition-all placeholder:text-zinc-600 dynamic-text-fix" 
-            />
+            <input name="authorName" defaultValue={session?.user?.name ?? ""} placeholder="Your name" required className="w-full bg-zinc-900/80 border border-white/8 pl-10 pr-4 py-3.5 rounded-2xl text-base md:text-sm text-white outline-none focus:border-red-500/50 transition-all placeholder:text-zinc-600" />
           </div>
 
           <div className="relative">
             <Camera size={13} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
-            <input 
-              name="title" 
-              placeholder="Photo title" 
-              required
-              className="w-full bg-zinc-900/80 border border-white/8 pl-10 pr-4 py-3.5 rounded-2xl text-base md:text-sm text-white outline-none focus:border-red-500/50 transition-all placeholder:text-zinc-600 dynamic-text-fix" 
-            />
+            <input name="title" placeholder="Photo title" required className="w-full bg-zinc-900/80 border border-white/8 pl-10 pr-4 py-3.5 rounded-2xl text-base md:text-sm text-white outline-none focus:border-red-500/50 transition-all placeholder:text-zinc-600" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-3">
             <div className="relative">
               <MapPin size={13} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
-              <input 
-                name="location" 
-                placeholder="Location"
-                className="w-full bg-zinc-900/80 border border-white/8 pl-10 pr-4 py-3.5 rounded-2xl text-base md:text-sm text-white outline-none focus:border-red-500/50 transition-all placeholder:text-zinc-600 dynamic-text-fix" 
-              />
+              <input name="location" placeholder="Location" className="w-full bg-zinc-900/80 border border-white/8 pl-10 pr-4 py-3.5 rounded-2xl text-base md:text-sm text-white outline-none focus:border-red-500/50 transition-all placeholder:text-zinc-600" />
             </div>
             <div className="relative">
-              <input 
-                name="coordinates" 
-                placeholder="Lat, Long (optional)"
-                className="w-full bg-zinc-900/80 border border-white/8 px-4 py-3.5 rounded-2xl text-base md:text-sm text-white outline-none focus:border-red-500/50 transition-all placeholder:text-zinc-600 dynamic-text-fix" 
-              />
+              <input name="coordinates" placeholder="Lat, Long (optional)" className="w-full bg-zinc-900/80 border border-white/8 px-4 py-3.5 rounded-2xl text-base md:text-sm text-white outline-none focus:border-red-500/50 transition-all placeholder:text-zinc-600" />
             </div>
           </div>
 
           <div className="relative">
             <Tag size={13} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
-            <select 
-              name="category" 
-              defaultValue="OTHER"
-              className="w-full appearance-none bg-zinc-900/80 border border-white/8 pl-10 pr-4 py-3.5 rounded-2xl text-base md:text-sm text-white outline-none focus:border-red-500/50 transition-all cursor-pointer dynamic-text-fix"
-            >
+            <select name="category" defaultValue="OTHER" className="w-full appearance-none bg-zinc-900/80 border border-white/8 pl-10 pr-4 py-3.5 rounded-2xl text-base md:text-sm text-white outline-none focus:border-red-500/50 transition-all cursor-pointer">
               {CATEGORIES.filter(c => c.value !== "ALL").map(cat => (
-                <option key={cat.value} value={cat.value} className="bg-zinc-900">
-                  {cat.icon} {cat.label}
-                </option>
+                <option key={cat.value} value={cat.value} className="bg-zinc-900">{cat.icon} {cat.label}</option>
               ))}
             </select>
           </div>
 
-          <button 
-            type="submit" 
-            disabled={loading || !uploadedUrl}
-            className="w-full bg-white text-black py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-black/30 disabled:opacity-40 disabled:cursor-not-allowed mt-2"
-          >
+          <button type="submit" disabled={loading || !uploadedUrl} className="w-full bg-white text-black py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-black/30 disabled:opacity-40 disabled:cursor-not-allowed mt-2">
             {loading ? "Publishing..." : "Publish Frame →"}
           </button>
         </form>

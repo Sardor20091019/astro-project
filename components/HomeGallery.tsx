@@ -5,7 +5,7 @@ import { CATEGORIES, type PhotoCategory } from "@/data/photos";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 12;
 const SORT_OPTIONS = ["latest", "earliest", "views", "likes", "comments", "rated"] as const;
 type GallerySort = (typeof SORT_OPTIONS)[number];
 

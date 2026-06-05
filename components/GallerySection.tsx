@@ -32,7 +32,7 @@ interface GallerySectionProps {
   query: string;
 }
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 12;
 const BLUR_DATA_URL =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMTYnIGhlaWdodD0nMTInIHZpZXdCb3g9JzAgMCAxNiAxMicgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cmVjdCB3aWR0aD0nMTYnIGhlaWdodD0nMTInIGZpbGw9JyMwODA4MDgnLz48cmVjdCB4PScxJyB5PScxJyB3aWR0aD0nMTQnIGhlaWdodD0nMTAnIGZpbGw9JyMwZjBmMGYnLz48L3N2Zz4=";
 
@@ -86,7 +86,8 @@ function GalleryCard({ photo, index }: { photo: GalleryPhoto; index: number }) {
             loading={index < 2 ? "eager" : "lazy"}
             placeholder="blur"
             blurDataURL={BLUR_DATA_URL}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 360px"
+            /* Updated sizes to reflect the 2-col mobile and 3-col desktop layout */
+            sizes="(max-width: 768px) 50vw, 33vw"
             className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.025] motion-reduce:transition-none"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-transparent opacity-90" />
@@ -164,15 +165,18 @@ export default function GallerySection({
   sortBy,
   query,
 }: GallerySectionProps) {
-  const totalPages = Math.max(1, Math.ceil(totalPhotos / PAGE_SIZE));
+  // Required logic to calculate pagination limits and URLs
+  const totalPages = Math.ceil(totalPhotos / PAGE_SIZE);
+
   const previousHref = buildGalleryHref({
-    page: Math.max(1, currentPage - 1),
+    page: currentPage - 1,
     category: activeCategory,
     sortBy,
     query,
   });
+
   const nextHref = buildGalleryHref({
-    page: Math.min(totalPages, currentPage + 1),
+    page: currentPage + 1,
     category: activeCategory,
     sortBy,
     query,
@@ -250,7 +254,7 @@ export default function GallerySection({
             No frames found in this category
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-px bg-white/[0.07] sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-px bg-white/[0.07] md:grid-cols-3">
             {photos.map((photo, index) => (
               <GalleryCard key={photo.id} photo={photo} index={index} />
             ))}
