@@ -93,12 +93,43 @@
   --btn-radius: 9999px;
   --btn-border: 1px solid rgba(255, 255, 255, 0.2);
   --btn-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --background: rgba(255, 255, 255, 0.02);
+  --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-glass: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 [data-theme="glass"] footer {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
+  
 }
 
+[data-theme="brutalist"] h1, 
+[data-theme="brutalist"] h2, 
+[data-theme="brutalist"] h3, 
+[data-theme="brutalist"] h4 {
+  font-family: var(--font-mono) !important;
+  font-weight: 900 !important;
+  text-transform: uppercase;
+  letter-spacing: -0.04em;
+}
+
+[data-theme="glass"] h1, 
+[data-theme="glass"] h2, 
+[data-theme="glass"] h3, 
+[data-theme="glass"] h4 
+[data-theme="glass"] p {
+  font-family: var(--font-glass) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: var(--font-heading);
+  font-weight: 200;
+  letter-spacing: 0.06em;
+}
+[data-theme="glass"] body {
+font-family: var(--font-glass) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 .world-card {
   background: var(--surface);
   border: var(--card-border);
@@ -267,18 +298,41 @@ h1, h2, h3, h4 {
     @apply flex flex-col gap-4 sm:flex-row sm:items-center;
   }
 
-  .gallery-input {
-    @apply w-full bg-zinc-900/60 border border-white/10 text-zinc-100 rounded-2xl px-4 py-4
-           text-base sm:text-sm outline-none transition-all duration-200 backdrop-blur-md
-           focus:border-red-500/40 focus:ring-1 focus:ring-red-500/40 placeholder:text-zinc-600;
+.gallery-input {
+    width: 100%;
+    background: var(--surface-3);
+    border: var(--card-border);
+    color: var(--text);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    font-size: 1rem;
+    outline: none;
+    transition: all var(--transition-speed) ease;
+    backdrop-filter: var(--glass-blur);
+  }
+  .gallery-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
   }
 
   .mobile-file-picker {
-    @apply flex flex-col items-center justify-center w-full border-2 border-dashed border-white/10 
-           rounded-3xl p-6 text-center cursor-pointer bg-white/1 hover:bg-white/3 transition-all;
+    display: flex;
+    flex-col: items-center;
+    justify-content: center;
+    width: 100%;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    background: var(--surface);
+    transition: all var(--transition-speed) ease;
+  }
+  .mobile-file-picker:hover {
+    border-color: var(--accent);
+    background: var(--surface-2);
   }
 }
-
 
 @media (max-width: 640px) {
  
