@@ -66,7 +66,16 @@
   --btn-shadow: 4px 4px 0px var(--text);
 }
 
-
+[data-theme="glass"] p {
+  font-weight: 400;
+  letter-spacing: normal;
+  color: rgba(255, 255, 255, 0.8); /* Slightly softer white for better contrast */
+}
+[data-theme="glass"] h1, 
+[data-theme="glass"] h2 {
+  font-weight: 600; /* Medium weight for headlines */
+  letter-spacing: -0.02em; /* Tighter tracking for display text */
+}
 [data-theme="glass"] {
   --bg:          radial-gradient(circle at 50% 0%, #1a1a24 0%, #050505 100%);
   --surface:     rgba(255, 255, 255, 0.02);
@@ -74,7 +83,7 @@
   --surface-3:   rgba(255, 255, 255, 0.06);  
   --card-border: 1px solid rgba(255,255,255,0.15);
   --card-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  --text:        #ffffff;
+  --text:        #ffefa7;
   --text-dim:    rgba(65, 65, 65, 0.6);
   --text-muted:  rgba(3, 3, 3, 0.3); 
   --accent:      #7CA5FF;
