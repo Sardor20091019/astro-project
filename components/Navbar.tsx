@@ -99,6 +99,7 @@ export default function Navbar() {
         </div>
 {mobileMenuOpen && (
   <div className="md:hidden w-full bg-(--bg) border-b border-(--border) px-6 py-6 flex flex-col gap-4">
+       <ThemeToggle />
     <UserSearch />
     <Link href="/" className="text-sm uppercase">Gallery</Link>
     <Link href="/leaderboard" className="text-sm uppercase">Leaderboard</Link>
