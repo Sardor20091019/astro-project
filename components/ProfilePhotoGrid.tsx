@@ -64,17 +64,13 @@ export default function ProfilePhotoGrid({ photos: initial, canDelete }: { photo
               </div>
             </Link>
 
-            {canDelete && (
-  <button style={{ color: "white" }}
+{canDelete && (
+  <button
     onClick={e => { e.preventDefault(); deletePhoto(photo.id); }}
     disabled={isDeleting}
-    className={`absolute top-2 right-2 w-9 h-9 rounded-lg bg-red-600 backdrop-blur-md border border-white/20 text-white transition-all flex items-center justify-center  opacity-100 md:opacity-0 md:group-hover:opacity-100 z-20`}
+    className="absolute top-2 right-2 z-50 w-9 h-9 rounded-lg bg-red-600/90 backdrop-blur-md border border-white/20 text-white flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
   >
-    {isDeleting ? (
-      <Loader2 size={16} className="animate-spin text-white" />
-    ) : (
-      <Trash2 size={16} className="text-white drop-shadow-md" />
-    )}
+    {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
   </button>
 )}
           </div>
