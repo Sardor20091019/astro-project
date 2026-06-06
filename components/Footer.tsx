@@ -1,4 +1,5 @@
-import { Instagram, Linkedin, Send } from "lucide-react";
+import { Instagram, Link, Linkedin, Send } from "lucide-react";
+
 
 const socials = [
   { href: "https://linkedin.com/in/astrospectrum", label: "LinkedIn", icon: Linkedin },
@@ -37,7 +38,11 @@ export default function Footer() {
           ))}
         </div>
 
-        {/* Copyright */}
+       <div className="flex gap-4 justify-center text-[10px] text-zinc-600 uppercase tracking-widest mt-8">
+  <a href="/privacy" className="hover:text-zinc-400 transition-colors">Privacy Policy</a>
+  <span>•</span>
+  <a href="/terms" className="hover:text-zinc-400 transition-colors">Terms of Use</a>
+</div>
         <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--text-muted)]">
           &copy; {new Date().getFullYear()} Sardor Sunatullayev
         </p>

@@ -5,6 +5,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Chrome, Sparkles, Mail, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
+import Link from "next/link";
 import TelegramLogin from "@/components/TelegramLogin";
 import WorldButton from "@/components/WorldButton"; // Use your new button
 
@@ -198,6 +199,19 @@ export default function LoginPage() {
             
             <TelegramLogin />
           </div>
+
+          {/* Explicit User Legal Consent Verification Notice */}
+          <p className="mt-6 text-center text-[10px] leading-relaxed text-[var(--text-muted)] transition-colors">
+            By authenticating, you confirm you agree to our{" "}
+            <Link href="/terms" className="underline font-medium text-[var(--text-dim)] hover:text-[var(--accent)] transition-colors">
+              Terms of Use
+            </Link>{" "}
+            and acknowledge our{" "}
+            <Link href="/privacy" className="underline font-medium text-[var(--text-dim)] hover:text-[var(--accent)] transition-colors">
+              Privacy Policy
+            </Link>{" "}
+            on each session login.
+          </p>
         </motion.div>
       </section>
     </main>
