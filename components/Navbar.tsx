@@ -45,8 +45,8 @@ export default function Navbar() {
     const handleIncomingAlert = () => { if (pathname !== "/messages") setHasUnread(true); };
     pusherClient.bind("new-message", handleIncomingAlert);
     return () => {
-      pusherClient.unsubscribe(channelName);
-      pusherClient.unbind("new-message", handleIncomingAlert);
+      pusherClient?.unsubscribe(channelName);
+      pusherClient?.unbind("new-message", handleIncomingAlert);
     };
   }, [user?.id, pathname]);
 
