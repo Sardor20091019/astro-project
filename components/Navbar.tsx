@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import UserSearch from "@/components/UserSearch";
 import { MessageSquare, Menu, X } from "lucide-react";
 import { pusherClient } from "@/lib/pusher";
@@ -45,8 +45,8 @@ export default function Navbar() {
     const handleIncomingAlert = () => { if (pathname !== "/messages") setHasUnread(true); };
     pusherClient.bind("new-message", handleIncomingAlert);
     return () => {
-      pusherClient?.unsubscribe(channelName);
-      pusherClient?.unbind("new-message", handleIncomingAlert);
+      pusherClient.unsubscribe(channelName);
+      pusherClient.unbind("new-message", handleIncomingAlert);
     };
   }, [user?.id, pathname]);
 
@@ -68,32 +68,22 @@ export default function Navbar() {
 
           <div className="flex items-center gap-4 md:gap-8">
             <div className="hidden md:flex items-center gap-7">
-              {userCount !== null && (
-                <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.2em] text-(--text-muted)">
-                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                   {userCount} registered users
-                </div>
-              )}
+              {/* Desktop Only Links */}
               <ThemeToggle />
               <UserSearch />
-              <Link href="/" className="text-xs uppercase tracking-widest text-(--text-dim) hover:text-(--text) transition-colors">Gallery</Link>
-              <Link href="/leaderboard" className="text-xs uppercase tracking-widest text-(--text-dim) hover:text-(--text) transition-colors">Leaderboard</Link>
-              <Link href="/submit" className="text-xs uppercase tracking-widest text-(--text-dim) hover:text-(--text) transition-colors">Submit</Link>
+              <Link href="/" className="text-xs uppercase tracking-widest text-(--text-dim) hover:text-(--text)">Gallery</Link>
+              <Link href="/leaderboard" className="text-xs uppercase tracking-widest text-(--text-dim) hover:text-(--text)">Leaderboard</Link>
+              <Link href="/submit" className="text-xs uppercase tracking-widest text-(--text-dim) hover:text-(--text)">Submit</Link>
               
-              {/* Authenticated User Section */}
               <div className="pl-2 border-l border-(--border) flex items-center gap-4">
-                {status === "loading" ? (
-                  <span className="text-[10px] text-(--text-muted) animate-pulse">Loading...</span>
-                ) : user ? (
+                {status === "loading" ? <span className="text-[10px] animate-pulse">Loading...</span> : user ? (
                   <>
-                    <Link href="/messages" className="relative flex items-center gap-1.5 text-xs uppercase tracking-widest text-(--text-dim) hover:text-(--text)">
+                    <Link href="/messages" className="relative flex items-center">
                       <MessageSquare size={14} />
-                      {hasUnread && <span className="absolute -top-1 -right-2 h-2 w-2 bg-(--accent) rounded-full animate-pulse" />}
+                      {hasUnread && <span className="absolute -top-1 -right-2 h-2 w-2 bg-(--accent) rounded-full" />}
                     </Link>
-                    {admin && <Link href="/admin" className="text-xs font-bold uppercase text-(--accent)">Admin</Link>}
-                    <Link href={`/profile/${user.id}`} className="text-xs uppercase tracking-widest text-(--text-dim) hover:text-(--text)">
-                      {user.name}
-                    </Link>
+                    {admin && <Link href="/admin" className="text-xs font-bold text-(--accent)">Admin</Link>}
+                    <Link href={`/profile/${user.id}`} className="text-xs uppercase tracking-widest">{user.name}</Link>
                     <UserMenu user={user} />
                   </>
                 ) : (
@@ -107,19 +97,38 @@ export default function Navbar() {
             </button>
           </div>
         </div>
-
-        {mobileMenuOpen && (
-          <div className="md:hidden w-full bg-(--bg) border-b border-(--border) px-6 py-6 flex flex-col gap-5">
-            <Link href="/" className="text-sm uppercase text-(--text)">Gallery</Link>
-            <div className="border-t border-(--border) pt-5 flex flex-col gap-4">
-              {user ? (
-                <Link href={`/profile/${user.id}`} className="text-sm uppercase text-(--text)">Profile</Link>
-              ) : (
-                <Link href="/login" className="text-sm uppercase text-(--accent)">Sign in</Link>
-              )}
-            </div>
+{mobileMenuOpen && (
+  <div className="md:hidden w-full bg-(--bg) border-b border-(--border) px-6 py-6 flex flex-col gap-4">
+    <UserSearch />
+    <Link href="/" className="text-sm uppercase">Gallery</Link>
+    <Link href="/leaderboard" className="text-sm uppercase">Leaderboard</Link>
+    <Link href="/submit" className="text-sm uppercase">Submit</Link>
+    <Link href="/messages" className="text-sm uppercase">Messages</Link>
+    
+    <div className="border-t border-(--border) pt-4 flex flex-col gap-4">
+      {user ? (
+        <>
+          {/* Integrated UserMenu here for mobile Edit Profile access */}
+          <div className="flex items-center justify-between">
+            <Link href={`/profile/${user.id}`} className="text-sm uppercase text-(--text)">
+              {user.name}
+            </Link>
+            <UserMenu user={user} />
           </div>
-        )}
+          
+          <button 
+            onClick={() => signOut()} 
+            className="text-sm uppercase text-left text-red-500 hover:text-red-400"
+          >
+            Sign out
+          </button>
+        </>
+      ) : (
+        <Link href="/login" className="text-sm uppercase text-(--accent)">Sign in</Link>
+      )}
+    </div>
+  </div>
+)}
       </nav>
       <div className="h-18 w-full" />
     </>
