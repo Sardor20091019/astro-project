@@ -66,7 +66,7 @@ export default function Navbar() {
             : "bg-transparent"
         }`}
       >
-        <div className="max-w-300 mx-auto px-6 h-18 flex items-center justify-between">
+       <div className="w-full max-w-[95vw] mx-auto px-6 h-18 flex items-center justify-between" style={{  padding: "0 1.5rem" }}>
           
           <Link href="/" className="inline-flex min-h-11 min-w-11 items-center text-sm font-black uppercase tracking-[0.2em] text-(--text) transition-opacity hover:opacity-80">
             Astro<span className="text-(--accent)">spectrum</span>
