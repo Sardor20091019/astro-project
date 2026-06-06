@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import UserSearch from "@/components/UserSearch";
-import { MessageSquare, Menu, X } from "lucide-react";
+import { MessageSquare, Menu, X, Users } from "lucide-react";
 import { pusherClient } from "@/lib/pusher";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -21,6 +21,7 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
 
+  // Live count logic
   useEffect(() => {
     fetch('/api/user-count')
       .then((res) => res.json())
@@ -28,6 +29,17 @@ export default function Navbar() {
         if (typeof data.count === 'number') setUserCount(data.count);
       })
       .catch((err) => console.error("Failed to fetch user count:", err));
+
+    if (!pusherClient) return;
+
+    const channel = pusherClient.subscribe("global-channel");
+    channel.bind("user-count-updated", (data: { count: number }) => {
+      setUserCount(data.count);
+    });
+
+    return () => {
+      pusherClient?.unsubscribe("global-channel");
+    };
   }, []);
 
   useEffect(() => {
@@ -36,13 +48,13 @@ export default function Navbar() {
   }, [pathname]);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !pusherClient) return;
     const channelName = `chat_${user.id}`;
-    pusherClient?.subscribe(channelName);
+    pusherClient.subscribe(channelName);
     const handleIncomingAlert = () => {
       if (pathname !== "/messages") setHasUnread(true);
     };
-    pusherClient?.bind("new-message", handleIncomingAlert);
+    pusherClient.bind("new-message", handleIncomingAlert);
     return () => {
       pusherClient?.unsubscribe(channelName);
       pusherClient?.unbind("new-message", handleIncomingAlert);
@@ -60,20 +72,25 @@ export default function Navbar() {
   return (
     <>
       <nav 
-        className={`fixed top-0 left-0 right-0 w-full transition-all duration-300 z-9999 ${
+        className={`fixed top-0 left-0 right-0 w-full transition-all duration-300 z-50 ${
           scrolled || mobileMenuOpen
             ? "bg-(--bg)/90 backdrop-blur-md border-b border-(--border)" 
             : "bg-transparent"
         }`}
       >
-       <div className="w-full max-w-[95vw] mx-auto px-6 h-18 flex items-center justify-between" style={{  padding: "0 1.5rem" }}>
-          
+        <div className="w-full max-w-[95vw] mx-auto px-6 h-18 flex items-center justify-between">
           <Link href="/" className="inline-flex min-h-11 min-w-11 items-center text-sm font-black uppercase tracking-[0.2em] text-(--text) transition-opacity hover:opacity-80">
             Astro<span className="text-(--accent)">spectrum</span>
           </Link>
 
           <div className="flex items-center gap-4 md:gap-8">
             <div className="hidden md:flex items-center gap-7">
+              {userCount !== null && (
+                <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.2em] text-(--text-muted)">
+                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                   {userCount} registered users
+                </div>
+              )}
               <ThemeToggle />
               <UserSearch />
               <Link href="/" className="inline-flex min-h-11 min-w-11 items-center text-xs uppercase tracking-widest text-(--text-dim) hover:text-(--text) transition-colors">
@@ -82,12 +99,9 @@ export default function Navbar() {
               <Link href="/leaderboard" className="inline-flex min-h-11 min-w-11 items-center text-xs uppercase tracking-widest text-(--text-dim) hover:text-(--text) transition-colors">
                 Leaderboard
               </Link>
-            <Link 
-  href="/submit" 
-  className="inline-flex min-h-11 min-w-11 items-center text-xs uppercase tracking-widest text-(--text-dim) hover:text-(--text) transition-colors"
->
-  Submit
-</Link>
+              <Link href="/submit" className="inline-flex min-h-11 min-w-11 items-center text-xs uppercase tracking-widest text-(--text-dim) hover:text-(--text) transition-colors">
+                Submit
+              </Link>
               
               {status === "authenticated" && (
                 <Link href="/messages" className="relative flex min-h-11 min-w-11 items-center gap-1.5 text-xs uppercase tracking-widest text-(--text-dim) hover:text-(--text)">
@@ -136,43 +150,27 @@ export default function Navbar() {
           </div>
         </div>
 
-      {mobileMenuOpen && (
-  <div className="md:hidden w-full bg-(--bg) border-b border-(--border) px-6 py-6 flex flex-col gap-5">
-    <ThemeToggle />
-    <UserSearch />
-    <Link href="/" className="text-sm uppercase tracking-widest text-(--text)">Gallery</Link>
-    <Link href="/leaderboard" className="text-sm uppercase tracking-widest text-(--text)">Leaderboard</Link>
-    <Link href="/submit" className="text-sm uppercase tracking-widest text-(--text)">Submit</Link>
-    <Link href="/messages" className="relative flex items-center gap-1.5 text-sm uppercase tracking-widest text-(--text)">
-      <MessageSquare size={14} /> 
-      <span>Messages</span>
-      {hasUnread && <span className="absolute -top-1 -right-2 h-2 w-2 bg-(--accent) rounded-full animate-pulse" />}
-    </Link>
-    {/* --- ADD THIS AUTH SECTION --- */}
-    <div className="border-t border-(--border) pt-5 flex flex-col gap-4">
-      {status === "loading" ? (
-        <span className="text-xs text-(--text-muted) uppercase tracking-widest animate-pulse">Loading...</span>
-      ) : user ? (
-        <>
-          <Link href={`/profile/${user.id}`} className="text-sm uppercase tracking-widest text-(--text)">
-            Profile
-          </Link>
-          <button 
-            onClick={() => signOut()} 
-            className="text-left text-sm uppercase tracking-widest text-(--accent)"
-          >
-            Sign out
-          </button>
-        </>
-      ) : (
-        <Link href="/login" className="text-sm uppercase tracking-widest text-(--accent)">
-          Sign in
-        </Link>
-      )}
-    </div>
-  </div>
-)}
-        
+        {mobileMenuOpen && (
+          <div className="md:hidden w-full bg-(--bg) border-b border-(--border) px-6 py-6 flex flex-col gap-5">
+            {userCount !== null && <div className="text-[10px] text-(--text-muted)">{userCount} Online</div>}
+            <ThemeToggle />
+            <UserSearch />
+            <Link href="/" className="text-sm uppercase tracking-widest text-(--text)">Gallery</Link>
+            <Link href="/leaderboard" className="text-sm uppercase tracking-widest text-(--text)">Leaderboard</Link>
+            <Link href="/submit" className="text-sm uppercase tracking-widest text-(--text)">Submit</Link>
+            <Link href="/messages" className="text-sm uppercase tracking-widest text-(--text)">Messages</Link>
+            <div className="border-t border-(--border) pt-5 flex flex-col gap-4">
+              {user ? (
+                <>
+                  <Link href={`/profile/${user.id}`} className="text-sm uppercase tracking-widest text-(--text)">Profile</Link>
+                  <button onClick={() => signOut()} className="text-left text-sm uppercase tracking-widest text-(--accent)">Sign out</button>
+                </>
+              ) : (
+                <Link href="/login" className="text-sm uppercase tracking-widest text-(--accent)">Sign in</Link>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
       <div className="h-18 w-full" />
     </>

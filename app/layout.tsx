@@ -38,11 +38,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <DesktopEffects>
               <div className="relative flex min-h-screen flex-col">
                 <Navbar />
-                <div className="mx-auto w-full max-w-300 grow px-4 py-8 lg:px-0">
-                  <main className="min-w-0">
-                    {children}
-                  </main>
-                </div>
+                <div className="mx-auto w-full max-w-7xl grow px-4 py-8 lg:px-12">
+  <main className="min-w-0">
+    {children}
+  </main>
+</div>
                 <Footer />
               </div>
               <Toaster position="bottom-right" theme="dark" />
