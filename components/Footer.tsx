@@ -39,9 +39,9 @@ export default function Footer() {
         </div>
 
        <div className="flex gap-4 justify-center text-[10px] text-zinc-600 uppercase tracking-widest mt-8">
-  <a href="/privacy" className="hover:text-zinc-400 transition-colors">Privacy Policy</a>
+  <a href="/privacy" className="hover:text-zinc-400 transition-colors">Privacy Policy <span className="text-sm font-normal size-0.5 text-red-500">(IT DOESNT APPLY YET, IT IS JUST A DRAFT)</span></a>
   <span>•</span>
-  <a href="/terms" className="hover:text-zinc-400 transition-colors">Terms of Use</a>
+  <a href="/terms" className="hover:text-zinc-400 transition-colors">Terms of Use <span className="text-sm font-normal size-0.5 text-red-500">(IT DOESNT APPLY YET, IT IS JUST A DRAFT)</span></a>
 </div>
         <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--text-muted)]">
           &copy; {new Date().getFullYear()} Sardor Sunatullayev

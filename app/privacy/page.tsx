@@ -1,52 +1,29 @@
-import Link from "next/link";
-
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] pt-24 pb-16 transition-colors duration-500">
-      <div className="max-w-3xl mx-auto px-6">
-        <h1 className="text-3xl font-black uppercase tracking-tight mb-2">Privacy Policy</h1>
-        <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest mb-8">Last Updated: June 2026</p>
+    <div className="max-w-3xl mx-auto p-8">
+    <h1 className="text-2xl font-bold mb-4">Privacy Policy <span className="text-sm font-normal text-red-500">(IT DOESNT APPLY YET, IT IS JUST A DRAFT)</span></h1>
+      <p className="text-sm text-gray-500 mb-6">Last Updated: June 2026</p>
+      
+      <section className="mb-6">
+        <h2 className="text-lg font-semibold">1. Data Collection</h2>
+        <p>We collect minimal data to provide our services. This includes:</p>
+        <ul className="list-disc pl-5 mt-2">
+          <li><strong>Authentication:</strong> Email addresses and OTP tokens for secure login.</li>
+          <li><strong>Usage Limits:</strong> Your IP address is processed temporarily to enforce rate-limiting (max 3 emails per minute) to prevent spam and bot activity.</li>
+          <li><strong>Profile Info:</strong> Nicknames and names provided by users.</li>
+          <li><strong>Content:</strong> Photos you upload and associated metadata.</li>
+        </ul>
+      </section>
 
-        <div className="space-y-6 text-sm text-[var(--text-dim)] leading-relaxed">
-          <section>
-            <h2 className="text-lg font-bold text-[var(--text)] uppercase tracking-wide mb-2">1. Information We Collect</h2>
-            <p>We collect minimal personal data to operate the application safely and verify user interactions:</p>
-            <ul className="list-disc pl-5 mt-2 space-y-1">
-              <li><strong>Account Profile Information:</strong> Your name, email address, or unique messaging identifiers and profile pictures provided during authentication.</li>
-              <li><strong>Content Data:</strong> Images uploaded to our servers, user profile configurations, and chat logs transmitted through our live components.</li>
-            </ul>
-          </section>
+      <section className="mb-6">
+        <h2 className="text-lg font-semibold">2. Automated Moderation</h2>
+        <p>All photos uploaded are automatically processed by <strong>Sightengine</strong> to ensure content safety. Images that violate community guidelines are blocked at the point of upload and are not stored in our database.</p>
+      </section>
 
-          <section>
-            <h2 className="text-lg font-bold text-[var(--text)] uppercase tracking-wide mb-2">2. How Your Data Is Managed</h2>
-            <p>We process data exclusively to keep your live session active, render your user profile interface, and support real-time chat instances. We do not distribute or sell personal user metadata to third-party advertising companies.</p>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-bold text-[var(--text)] uppercase tracking-wide mb-2">3. Third-Party Data Processors</h2>
-            <p>To deliver modern real-time performance and absolute platform safety, we share specific tracking structures with trusted cloud subprocessors:</p>
-            <ul className="list-disc pl-5 mt-2 space-y-2">
-              <li><strong>NextAuth:</strong> Manages secure cookie-based session keys to keep you authenticated safely.</li>
-              <li><strong>UploadThing:</strong> Handles secure media uploads and file optimization pipeline logic for your frames.</li>
-              <li><strong>Sightengine:</strong> Processes all incoming image content through automated AI moderation layers to detect and reject explicit, illicit, or harmful visuals instantly.</li>
-              <li><strong>Pusher:</strong> Processes real-time WebSocket connection strings to power instance chat indicators and alerts.</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-bold text-[var(--text)] uppercase tracking-wide mb-2">4. Cookies</h2>
-            <p>We use strictly essential cookies necessary for system navigation and securing authentication flows. Disabling cookies will break session tracking structures across the platform.</p>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-bold text-[var(--text)] uppercase tracking-wide mb-2">5. Data Retention & User Rights</h2>
-            <p>Your data stays in our secure databases as long as your profile remains active. Users have the right to request account details or absolute profile removal at any moment.</p>
-            <p className="mt-2">
-              To request account deletion or technical data updates, you must contact the platform administration directly via the official **Instagram, Telegram, or LinkedIn** communication channels displayed clearly in the footer of the website.
-            </p>
-          </section>
-        </div>
-      </div>
+      <section className="mb-6">
+        <h2 className="text-lg font-semibold">3. Data Retention</h2>
+        <p>We store your data only as long as your account is active. If you delete your account, your personal data and uploaded content will be removed from our systems.</p>
+      </section>
     </div>
   );
 }

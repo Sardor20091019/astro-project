@@ -18,19 +18,25 @@ export default function ProfilePhotoGrid({ photos: initial, canDelete }: { photo
   async function deletePhoto(id: number) {
     if (!confirm("Delete this photo permanently?")) return;
     setDeleting(d => new Set([...d, id]));
-    const res = await fetch(`/api/photos/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      setPhotos(p => p.filter(x => x.id !== id));
-    } else {
-      alert("Failed to delete.");
+    
+    try {
+      const res = await fetch(`/api/photos/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setPhotos(p => p.filter(x => x.id !== id));
+      } else {
+        alert("Failed to delete. Please try again.");
+      }
+    } catch (err) {
+      alert("An error occurred.");
+    } finally {
+      setDeleting(d => { const n = new Set(d); n.delete(id); return n; });
     }
-    setDeleting(d => { const n = new Set(d); n.delete(id); return n; });
   }
 
   if (photos.length === 0) {
     return (
       <div className="rounded-[2rem] border border-dashed border-white/8 py-20 text-center text-zinc-600 text-sm">
-        No photos published yet.
+        No frames published yet.
       </div>
     );
   }
@@ -57,15 +63,20 @@ export default function ProfilePhotoGrid({ photos: initial, canDelete }: { photo
                 )}
               </div>
             </Link>
+
             {canDelete && (
-              <button
-                onClick={e => { e.preventDefault(); deletePhoto(photo.id); }}
-                disabled={isDeleting}
-                className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-zinc-500 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all opacity-0 group-hover:opacity-100 flex items-center justify-center"
-              >
-                {isDeleting ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
-              </button>
-            )}
+  <button style={{ color: "white" }}
+    onClick={e => { e.preventDefault(); deletePhoto(photo.id); }}
+    disabled={isDeleting}
+    className={`absolute top-2 right-2 w-9 h-9 rounded-lg bg-red-600 backdrop-blur-md border border-white/20 text-white transition-all flex items-center justify-center  opacity-100 md:opacity-0 md:group-hover:opacity-100 z-20`}
+  >
+    {isDeleting ? (
+      <Loader2 size={16} className="animate-spin text-white" />
+    ) : (
+      <Trash2 size={16} className="text-white drop-shadow-md" />
+    )}
+  </button>
+)}
           </div>
         );
       })}
