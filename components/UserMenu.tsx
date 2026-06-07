@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { updateUserProfile } from "@/lib/actions";
 import { UploadButton } from "@uploadthing/react";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
-
+import { signOut } from "next-auth/react";
 interface UserMenuProps {
   user: { id: string; name?: string | null; image?: string | null };
 }
@@ -44,9 +44,12 @@ export default function UserMenu({ user }: UserMenuProps) {
               <button onClick={() => setIsEditing(true)} className="text-sm w-full text-left p-2 hover:bg-zinc-800 rounded">
                 Edit Profile
               </button>
-              <button onClick={() => { setIsOpen(false); /* Add Logout logic here */ }} className="text-sm w-full text-left p-2 text-red-400 hover:bg-zinc-800 rounded">
-                Logout
-              </button>
+             <button 
+  onClick={() => signOut({ callbackUrl: '/' })} 
+  className="text-sm w-full text-left p-2 text-red-400 hover:bg-zinc-800 rounded"
+>
+  Logout
+</button>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
