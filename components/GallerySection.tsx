@@ -181,9 +181,6 @@ export default function GallerySection({
             <h2 className="max-w-3xl text-5xl leading-[0.9] text-[var(--text)] sm:text-6xl lg:text-7xl">
               Recent frames
             </h2>
-            <p className="max-w-md text-xs leading-6 tracking-[0.08em] text-[var(--text-dim)]">
-              Server-rendered image cards with stable aspect ratios, blur placeholders, and mobile-first source sizing.
-            </p>
           </div>
         </div>
 
