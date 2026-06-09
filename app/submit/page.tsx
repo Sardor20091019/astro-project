@@ -38,7 +38,7 @@ export default function SubmitPage() {
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black text-white px-4">
-        <div className="text-center max-w-md w-full px-6 py-10 bg-zinc-950/40 border border-white/5 rounded-[2rem] backdrop-blur-md">
+        <div className="text-center max-w-md w-full px-6 py-10 bg-zinc-950/40 border border-white/5 rounded-4xl backdrop-blur-md">
           <div className="w-16 h-16 bg-green-500/10 border border-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 size={28} className="text-green-400" />
           </div>
@@ -80,10 +80,10 @@ export default function SubmitPage() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="w-full relative overflow-hidden rounded-[1.75rem] border-2 border-dashed border-white/10 bg-white/[0.02] p-4 flex flex-col items-center justify-center min-h-[220px] md:min-h-[250px]">
+          <div className="w-full relative overflow-hidden rounded-[1.75rem] border-2 border-dashed border-white/10 bg-white/2 p-4 flex flex-col items-center justify-center min-h-55 md:min-h-62.5">
             {uploadedUrl ? (
               <div className="relative w-full">
-                <img src={uploadedUrl} alt="Preview" className="w-full max-h-64 md:max-h-72 object-cover rounded-[1.5rem]" />
+                <img src={uploadedUrl} alt="Preview" className="w-full max-h-64 md:max-h-72 object-cover rounded-3xl" />
                 <input type="hidden" name="photoUrl" value={uploadedUrl} />
                 <div className="absolute top-3 right-3 md:top-4 md:right-4">
                   <button 
