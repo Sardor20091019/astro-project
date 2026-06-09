@@ -38,7 +38,7 @@ export default function HomePage({ searchParams }: PageProps) {
       </div>
 
       {/* Footer is now World-Aware */}
-      <footer className="mt-auto w-full border-t border-[var(--border)] bg-[var(--surface)] py-6 text-center text-[var(--text-muted)] px-4">
+      <footer className="mt-auto w-full border-t border-(--border) bg-(--surface) py-6 text-center text-(--text-muted) px-4">
         <p>&copy; {new Date().getFullYear()} Astrospectrum. All rights reserved.</p>
       </footer>
     </div>
