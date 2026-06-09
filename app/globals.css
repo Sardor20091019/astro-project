@@ -227,6 +227,7 @@ h1, h2, h3, h4 {
   backdrop-filter: var(--glass-blur); 
   outline: none;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  appearance: none;
   -webkit-appearance: none; 
 }
 
