@@ -114,36 +114,36 @@ function GalleryCard({ photo, index }: { photo: GalleryPhoto; index: number }) {
         <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-5">
           <div className="mb-3 flex items-center justify-between gap-3">
             {photo.location ? (
-              <span className="inline-flex min-w-0 items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-[var(--accent)]">
+              <span className="inline-flex min-w-0 items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-(--accent)">
                 <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
                 <span className="truncate">{photo.location}</span>
               </span>
             ) : (
-              <span className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              <span className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">
                 Location withheld
               </span>
             )}
-            <span className="shrink-0 text-[10px] uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <span className="shrink-0 text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">
               {photo.category.toLowerCase()}
             </span>
           </div>
-          <h3 className="line-clamp-2 text-[1.45rem] leading-[0.95] text-[var(--text)] sm:text-[1.6rem]">
+          <h3 className="line-clamp-2 text-[1.45rem] leading-[0.95] text-(--text) sm:text-[1.6rem]">
             {title}
           </h3>
           {exifLine && (
-            <p className="mt-3 truncate text-[10px] uppercase tracking-[0.14em] text-[var(--text-dim)]">
+            <p className="mt-3 truncate text-[10px] uppercase tracking-[0.14em] text-(--text-dim)">
               {exifLine}
             </p>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-3 border-t border-[var(--border)] text-[10px] uppercase tracking-[0.14em] text-[var(--text-dim)]">
-        <span className="inline-flex items-center justify-center gap-1.5 border-r border-[var(--border)] px-2 py-3">
+      <div className="grid grid-cols-3 border-t border-(--border) text-[10px] uppercase tracking-[0.14em] text-(--text-dim)">
+        <span className="inline-flex items-center justify-center gap-1.5 border-r border-(--border) px-2 py-3">
           <Heart className="h-3 w-3" aria-hidden="true" />
           {formatMetric(photo.likeCount)}
         </span>
-        <span className="inline-flex items-center justify-center gap-1.5 border-r border-[var(--border)] px-2 py-3">
+        <span className="inline-flex items-center justify-center gap-1.5 border-r border-(--border) px-2 py-3">
           <Star className="h-3 w-3" aria-hidden="true" />
           {photo.avgRating.toFixed(1)}
         </span>
@@ -171,21 +171,21 @@ export default function GallerySection({
   const nextHref = buildGalleryHref({ page: currentPage + 1, category: activeCategory, sortBy, query });
 
   return (
-    <section id="gallery" style={{ paddingBottom: 'var(--footer-padding)' }} className="py-10 text-[var(--text)] sm:py-14 lg:py-20">
-      <div className="mx-auto w-full max-w-[1440px] px-0 sm:px-4 lg:px-8">
-        <div className="border-y border-[var(--border)] px-4 py-6 sm:px-0 sm:py-8">
-          <p className="text-[10px] uppercase tracking-[0.32em] text-[var(--accent)]">
+    <section id="gallery" style={{ paddingBottom: 'var(--footer-padding)' }} className="py-10 text-(--text) sm:py-14 lg:py-20">
+      <div className="mx-auto w-full max-w-360 px-0 sm:px-4 lg:px-8">
+        <div className="border-y border-(--border) px-4 py-6 sm:px-0 sm:py-8">
+          <p className="text-[10px] uppercase tracking-[0.32em] text-(--accent)">
             Open gallery / {totalPhotos} frames
           </p>
           <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <h2 className="max-w-3xl text-5xl leading-[0.9] text-[var(--text)] sm:text-6xl lg:text-7xl">
+            <h2 className="max-w-3xl text-5xl leading-[0.9] text-(--text) sm:text-6xl lg:text-7xl">
               Recent frames
             </h2>
           </div>
         </div>
 
         <nav
-          className="scrollbar-none overflow-x-auto border-b border-[var(--border)] px-4 py-3 sm:px-0"
+          className="scrollbar-none overflow-x-auto border-b border-(--border) px-4 py-3 sm:px-0"
           aria-label="Gallery categories"
         >
           <div className="flex min-w-max gap-2">
@@ -202,12 +202,12 @@ export default function GallerySection({
                   className={[
                     "inline-flex items-center gap-2 border px-3 py-2 text-[10px] uppercase tracking-[0.16em] transition-all duration-200",
                     isActive
-                      ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--bg)]"
-                      : "border-[var(--border)] bg-transparent text-[var(--text-dim)] hover:border-[var(--border-hover)] hover:text-[var(--text)]",
+                      ? "border-(--accent) bg-(--accent) text-(--bg)"
+                      : "border-(--border) bg-transparent text-(--text-dim) hover:border-(--border-hover) hover:text-(--text)",
                   ].join(" ")}
                 >
                   <span>{category.label}</span>
-                  <span className={isActive ? "opacity-90" : "text-[var(--text-muted)]"}>
+                  <span className={isActive ? "opacity-90" : "text-(--text-muted)"}>
                     {categoryCounts[category.value] ?? 0}
                   </span>
                 </Link>
@@ -217,13 +217,13 @@ export default function GallerySection({
         </nav>
 
         <div className="flex items-center justify-between px-4 py-4 sm:px-0">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-(--text-muted)">
             Showing {photos.length} of {totalPhotos}
           </p>
           {activeCategory !== "ALL" && (
             <Link
               href={buildGalleryHref({ page: 1, category: "ALL", sortBy, query })}
-              className="text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
+              className="text-[10px] uppercase tracking-[0.18em] text-(--text-muted) transition-colors hover:text-(--text)"
             >
               Clear
             </Link>
@@ -235,7 +235,7 @@ export default function GallerySection({
             No frames found in this category
           </div>
         ) : (
-          /* Enforced grid gap properties and grid configurations cleanly using theme border definitions */
+
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             {photos.map((photo, index) => (
               <GalleryCard key={photo.id} photo={photo} index={index} />
@@ -249,20 +249,20 @@ export default function GallerySection({
               <Link
                 href={previousHref}
                 style={{ borderRadius: 'var(--btn-radius)', border: 'var(--btn-border)', boxShadow: 'var(--btn-shadow)' }}
-                className="px-4 py-3 text-center text-[10px] uppercase tracking-[0.16em] text-[var(--text)] transition-colors hover:bg-[var(--surface-2)]"
+                className="px-4 py-3 text-center text-[10px] uppercase tracking-[0.16em] text-(--text) transition-colors hover:bg-(--surface-2)"
               >
                 Prev
               </Link>
             ) : (
               <span 
                 style={{ borderRadius: 'var(--btn-radius)', border: 'var(--btn-border)', opacity: 0.25 }}
-                className="px-4 py-3 text-center text-[10px] uppercase tracking-[0.16em] text-[var(--text-muted)]"
+                className="px-4 py-3 text-center text-[10px] uppercase tracking-[0.16em] text-(--text-muted)"
               >
                 Prev
               </span>
             )}
 
-            <span className="px-2 text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className="px-2 text-[10px] uppercase tracking-[0.18em] text-(--text-muted)">
               {String(currentPage).padStart(2, "0")} / {String(totalPages).padStart(2, "0")}
             </span>
 
@@ -270,14 +270,14 @@ export default function GallerySection({
               <Link
                 href={nextHref}
                 style={{ borderRadius: 'var(--btn-radius)', border: 'var(--btn-border)', boxShadow: 'var(--btn-shadow)' }}
-                className="px-4 py-3 text-center text-[10px] uppercase tracking-[0.16em] text-[var(--text)] transition-colors hover:bg-[var(--surface-2)]"
+                className="px-4 py-3 text-center text-[10px] uppercase tracking-[0.16em] text-(--text) transition-colors hover:bg-(--surface-2)"
               >
                 Next
               </Link>
             ) : (
               <span 
                 style={{ borderRadius: 'var(--btn-radius)', border: 'var(--btn-border)', opacity: 0.25 }}
-                className="px-4 py-3 text-center text-[10px] uppercase tracking-[0.16em] text-[var(--text-muted)]"
+                className="px-4 py-3 text-center text-[10px] uppercase tracking-[0.16em] text-(--text-muted)"
               >
                 Next
               </span>
