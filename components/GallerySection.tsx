@@ -70,7 +70,7 @@ function GalleryCard({ photo, index }: { photo: GalleryPhoto; index: number }) {
     .join(" / ");
 
   return (
-    /* Integrated .world-card to dynamically control borders, radius, backgrounds, and drop shadows */
+   
     <article className="world-card group relative overflow-hidden transition-all duration-300 ease-out">
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-[var(--surface-2)] sm:aspect-[3/4] lg:aspect-[4/3]">
         <Link

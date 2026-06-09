@@ -3,9 +3,20 @@ import { generateAndSendOtp } from "@/lib/otp";
 
 export async function POST(request: Request) {
   try {
-    const { email } = await request.json();
+    const { email, turnstileToken } = await request.json(); // Accept the token from frontend
     
-    // Extract real client IP securely through proxy headers
+    // 1. Verify Turnstile token with Cloudflare
+    const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: `secret=${process.env.TURNSTILE_SECRET_KEY}&response=${turnstileToken}`,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+    
+    const verifyData = await verifyRes.json();
+    if (!verifyData.success) {
+      return NextResponse.json({ error: "Bot verification failed" }, { status: 403 });
+    }
+
     const forwarded = request.headers.get("x-forwarded-for");
     const ip = forwarded ? forwarded.split(",")[0].trim() : "127.0.0.1";
 
