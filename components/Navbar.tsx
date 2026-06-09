@@ -69,7 +69,7 @@ export default function Navbar() {
                   <UserMenu user={user} />
                 </>
               ) : (
-                <Link href="/login" className="rounded-[4px] bg-(--text) px-4 py-1.5 text-[10px] font-bold uppercase text-(--bg)">Sign In</Link>
+                <Link href="/login" className="rounded-sm bg-(--text) px-4 py-1.5 text-[10px] font-bold uppercase text-(--bg)">Sign In</Link>
               )}
             </div>
           </div>
