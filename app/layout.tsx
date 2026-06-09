@@ -31,20 +31,19 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${dmSerif.variable} ${dmMono.variable}`}>
-      {/* ADDED: bg-[var(--bg)] and text-[var(--text)] to the body */}
-      <body className="bg-(--bg) text-(--text) transition-colors duration-300">
+      <body className="bg-[var(--bg)] text-[var(--text)] transition-colors duration-300">
         <ThemeProvider>
           <AuthProvider>
             <DesktopEffects>
-              <div className="relative flex min-h-screen flex-col">
-                <Navbar />
-                <div className="mx-auto w-full max-w-7xl grow px-4 py-8 lg:px-12">
-  <main className="min-w-0">
-    {children}
-  </main>
-</div>
-                <Footer />
-              </div>
+              {/* Navbar stays full width (or custom width) */}
+              <Navbar />
+              
+              {/* Children (Home/Pages) are rendered here */}
+              <main className="min-h-screen">
+                {children}
+              </main>
+              
+              <Footer />
               <Toaster position="bottom-right" theme="dark" />
             </DesktopEffects>
           </AuthProvider>
