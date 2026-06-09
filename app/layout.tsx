@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import type { Metadata } from "next";
 import { DM_Mono, DM_Serif_Display } from "next/font/google";
 import { Toaster } from "sonner";

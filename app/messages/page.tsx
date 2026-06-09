@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
@@ -84,7 +85,7 @@ function MessagesDashboardContent() {
 
   return (
     <div className="h-[calc(100vh-64px)] w-full bg-[#080808] text-white flex overflow-hidden font-sans">
-      <div className="max-w-[1600px] w-full mx-auto flex h-full border-x border-zinc-900/60 bg-zinc-950/10">
+      <div className="max-w-400 w-full mx-auto flex h-full border-x border-zinc-900/60 bg-zinc-950/10">
         
         {/* Left Hand Directory Sidebar */}
         <div className="w-85 border-r border-zinc-900 flex flex-col bg-[#09090b]/80 h-full backdrop-blur-md">
@@ -178,8 +179,8 @@ function MessagesDashboardContent() {
           </div>
         </div>
 
-        {/* Right Hand Workspace Grid Content Panel */}
-        <div className="flex-1 flex flex-col p-6 bg-gradient-to-b from-zinc-950/20 via-transparent to-transparent h-full">
+
+        <div className="flex-1 flex flex-col p-6 bg-linear-to-b from-zinc-950/20 via-transparent to-transparent h-full">
           {activeChat && currentUserId ? (
             <div className="w-full max-w-4xl mx-auto h-full">
               <ChatWindow

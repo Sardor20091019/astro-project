@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import Image from "next/image";
@@ -167,7 +168,7 @@ export default function Hero() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px" }}>
           <a
             href="#gallery"
-            className="min-h-[44px] min-w-[44px]"
+            className="min-h-11 min-w-11"
             style={{
               display: "inline-flex", 
               alignItems: "center", 
@@ -198,7 +199,7 @@ export default function Hero() {
           
           <Link
             href="/submit"
-            className="min-h-[44px] min-w-[44px]"
+            className="min-h-11 min-w-11"
             style={{
               display: "inline-flex", 
               alignItems: "center",

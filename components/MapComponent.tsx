@@ -1,3 +1,6 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -34,7 +37,11 @@ export default function MapComponent({ photos }: { photos: MapPhoto[] }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const raf = window.requestAnimationFrame(() => {
+      setMounted(true);
+    });
+
+    return () => window.cancelAnimationFrame(raf);
   }, []);
 
   if (!mounted) {

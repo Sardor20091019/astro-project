@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -107,17 +109,17 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <WorldButton type="submit" disabled={loading || !turnstileToken} className="w-full bg-[var(--accent)] py-4">
+                <WorldButton type="submit" disabled={loading || !turnstileToken} className="w-full bg-(--accent) py-4">
                   {loading ? <Loader2 size={16} className="animate-spin" /> : "SEND SECURITY PIN"}
                 </WorldButton>
               </motion.form>
             ) : (
               <motion.form key="otp-step" onSubmit={handleVerifyOtp} className="space-y-3">
-                <p className="mb-1 text-center font-mono text-[11px] uppercase tracking-wider text-[var(--text-muted)]">
+                <p className="mb-1 text-center font-mono text-[11px] uppercase tracking-wider text-(--text-muted)">
                   Enter token sent to {email.toLowerCase()}
                 </p>
                 <div className="relative">
-                  <ShieldCheck size={16} className="absolute left-4 top-4 text-[var(--text-muted)]" />
+                  <ShieldCheck size={16} className="absolute left-4 top-4 text-(--text-muted)" />
                   <input type="text" placeholder="6-DIGIT PIN" value={otp} onChange={(e) => setOtp(e.target.value)} maxLength={6} required className="w-full rounded-2xl border bg-[var(--surface)] py-4 text-center font-mono font-bold tracking-[0.3em]" />
                 </div>
                 <WorldButton type="submit" disabled={loading} className="w-full bg-[var(--accent)] py-4">

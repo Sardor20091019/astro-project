@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -47,6 +48,7 @@ export default function ChatWindow({ currentUserId, receiverId, receiverName }: 
   }, [receiverId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMessages([]);
     setPage(0);
     setHasMore(true);

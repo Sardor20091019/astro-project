@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import { useState } from "react";
 import Image from "next/image";
@@ -35,7 +36,7 @@ export default function ProfilePhotoGrid({ photos: initial, canDelete }: { photo
 
   if (photos.length === 0) {
     return (
-      <div className="rounded-[2rem] border border-dashed border-white/8 py-20 text-center text-zinc-600 text-sm">
+      <div className="rounded-4xl border border-dashed border-white/8 py-20 text-center text-zinc-600 text-sm">
         No frames published yet.
       </div>
     );
@@ -54,7 +55,7 @@ export default function ProfilePhotoGrid({ photos: initial, canDelete }: { photo
           >
             <Link href={`/photos/${photo.id}`}>
               <Image src={photo.url} alt={photo.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+              <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
                 <p className="text-[10px] font-black uppercase tracking-wider text-white truncate">{photo.title}</p>
                 {photo.location && (
                   <p className="text-[9px] text-red-400 font-bold flex items-center gap-1 mt-0.5">

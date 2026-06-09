@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client"
 import { useState, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -110,7 +111,7 @@ export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType
 
    
       {filtered.length === 0 ? (
-        <div className="rounded-[2rem] border border-dashed border-white/10 px-6 py-20 text-center text-white/30 text-sm">
+        <div className="rounded-4xl border border-dashed border-white/10 px-6 py-20 text-center text-white/30 text-sm">
           No frames found in this category yet.
         </div>
       ) : (
@@ -131,16 +132,16 @@ export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.25, delay: index % PAGE_SIZE < 8 ? (index % 8) * 0.04 : 0 }}
                     whileHover={{ y: -4 }}
-                    className="cursor-pointer overflow-hidden rounded-2xl border border-white/8 bg-zinc-900/60 group shadow-xl min-h-[300px]"
+                    className="cursor-pointer overflow-hidden rounded-2xl border border-white/8 bg-zinc-900/60 group shadow-xl min-h-75"
                     onClick={() => openModal(index)}
                   >
-                    <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-950">
+                    <div className="relative aspect-3/4 w-full overflow-hidden bg-zinc-950">
                       {imageSource ? (
                         <img
                           src={imageSource}
                           alt={photo.title}
                    
-                          className="w-full h-full object-cover group-hover:scale-[1.08] transition duration-[600ms]"
+                          className="w-full h-full object-cover group-hover:scale-[1.08] transition duration-600"
                           loading="lazy"
                         />
                       ) : (
@@ -157,7 +158,7 @@ export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType
                           </span>
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 z-10">
+                      <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 z-10">
                         <h4 className="text-white font-black uppercase text-xs tracking-wider leading-tight">{photo.title}</h4>
                         <p className="text-[9px] text-red-400 font-bold uppercase tracking-widest mt-1">{photo.location || "Unknown"}</p>
                       </div>
@@ -196,7 +197,7 @@ export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/96 flex items-center justify-center z-[100] p-4 overflow-y-auto"
+            className="fixed inset-0 bg-black/96 flex items-center justify-center z-100 p-4 overflow-y-auto"
             onClick={closeModal}
           >
             <motion.div
@@ -204,7 +205,7 @@ export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: 10 }}
               transition={{ duration: 0.25 }}
-              className="bg-zinc-950 border border-white/8 w-full max-w-6xl rounded-[2rem] overflow-hidden flex flex-col md:flex-row max-h-[92vh] shadow-2xl"
+              className="bg-zinc-950 border border-white/8 w-full max-w-6xl rounded-4xl overflow-hidden flex flex-col md:flex-row max-h-[92vh] shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
               {/* Image Side */}

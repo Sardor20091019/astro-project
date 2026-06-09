@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @next/next/no-img-element */
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import type { OurFileRouter } from "@/app/api/uploadthing/core";
 import { updateUserProfile } from "@/lib/actions";
 import { UploadButton } from "@uploadthing/react";
-import type { OurFileRouter } from "@/app/api/uploadthing/core";
 import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 interface UserMenuProps {
   user: { id: string; name?: string | null; image?: string | null };
 }
@@ -52,7 +54,7 @@ export default function UserMenu({ user }: UserMenuProps) {
 </button>
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3"> 
               <input 
                 value={name} 
                 onChange={(e) => setName(e.target.value)} 

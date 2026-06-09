@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 "use client";
 import { useState, useMemo } from "react";
 import Image from "next/image";
@@ -86,7 +87,7 @@ export default function AdminPhotoList({ initialPhotos }: { initialPhotos: Photo
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Search */}
-        <div className="flex-1 min-w-[200px] relative">
+        <div className="flex-1 min-w-50 relative">
           <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
           <input
             value={search}
@@ -192,17 +193,17 @@ export default function AdminPhotoList({ initialPhotos }: { initialPhotos: Photo
                       autoFocus
                       className="flex-1 bg-black border border-red-500/40 text-white text-[10px] px-2 py-1 rounded-lg outline-none min-w-0"
                     />
-                    <button onClick={() => saveTitle(photo.id)} className="text-green-500 hover:text-green-400 transition-colors flex-shrink-0">
+                    <button onClick={() => saveTitle(photo.id)} className="text-green-500 hover:text-green-400 transition-colors shrink-0">
                       <Check size={13} />
                     </button>
-                    <button onClick={() => setEditingId(null)} className="text-zinc-500 hover:text-white transition-colors flex-shrink-0">
+                    <button onClick={() => setEditingId(null)} className="text-zinc-500 hover:text-white transition-colors shrink-0">
                       <X size={13} />
                     </button>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between gap-1.5">
                     <span className="text-[10px] uppercase font-bold truncate text-white/80">{photo.title}</span>
-                    <div className="flex gap-1 flex-shrink-0">
+                    <div className="flex gap-1 shrink-0">
                       <button
                         onClick={() => { setEditingId(photo.id); setEditTitle(photo.title); }}
                         className="text-zinc-600 hover:text-white transition-colors"

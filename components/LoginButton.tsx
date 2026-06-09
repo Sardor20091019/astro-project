@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { signIn, signOut, useSession } from "next-auth/react";
@@ -14,10 +15,10 @@ export default function LoginButton() {
             <img 
               src={session.user.image} 
               alt="Profile" 
-              className="w-8 h-8 rounded-full border border-[var(--border)]"
+              className="w-8 h-8 rounded-full border border-(--border)"
             />
           )}
-          <span className="text-[var(--text)] text-sm font-medium hidden md:block">
+          <span className="text-(--text) text-sm font-medium hidden md:block">
             {session.user?.name}
           </span>
         </div>

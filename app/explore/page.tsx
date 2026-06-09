@@ -41,7 +41,7 @@ export default async function ExplorePage() {
             Tagged gallery items ({photos.length})
           </h2>
           {photos.length === 0 ? (
-            <div className="rounded-[2rem] border border-dashed border-white/15 px-6 py-20 text-center text-white/45">
+            <div className="rounded-4xl border border-dashed border-white/15 px-6 py-20 text-center text-white/45">
               No photos have been uploaded and approved yet.
             </div>
           ) : (

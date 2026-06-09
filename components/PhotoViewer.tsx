@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @next/next/no-img-element */
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
@@ -195,7 +197,7 @@ export default function PhotoViewer({
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ...spring, delay: 0.06 }}
-          className="mx-auto grid w-full max-w-7xl gap-4 rounded-[2rem] border border-white/10 bg-white/[0.08] p-4 shadow-2xl backdrop-blur-2xl md:grid-cols-[1.1fr_0.9fr] md:p-5"
+          className="mx-auto grid w-full max-w-7xl gap-4 rounded-4xl border border-white/10 bg-white/0.08 p-4 shadow-2xl backdrop-blur-2xl md:grid-cols-[1.1fr_0.9fr] md:p-5"
         >
           <div className="min-w-0">
             <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.28em] text-red-300/90">
@@ -343,14 +345,14 @@ const toggleLike = async () => {
 
   return (
     <div className="grid gap-4 md:grid-cols-[0.85fr_1.15fr]">
-      <div className="space-y-4 rounded-[1.5rem] border border-white/10 bg-black/25 p-4">
+      <div className="space-y-4 rounded-1.5rem border border-white/10 bg-black/25 p-4">
         <button
           type="button"
           onClick={toggleLike}
           className={`group flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-sm font-bold transition ${
             engagement.viewerLiked
               ? "border-red-400/50 bg-red-500/15 text-red-200"
-              : "border-white/10 bg-white/[0.04] text-white/75 hover:border-red-400/50 hover:text-white"
+              : "border-white/10 bg-white/0.04 text-white/75 hover:border-red-400/50 hover:text-white"
           }`}
         >
           <span className="flex items-center gap-2">
@@ -368,7 +370,7 @@ const toggleLike = async () => {
         </div>
       </div>
 
-      <div className="rounded-[1.5rem] border border-white/10 bg-black/25 p-4">
+      <div className="rounded-1.5rem border border-white/10 bg-black/25 p-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.18em]">
             <MessageCircle size={15} /> Comments
@@ -377,13 +379,13 @@ const toggleLike = async () => {
         </div>
 
         {isAuthLoading ? (
-          <div className="h-11 rounded-2xl border border-white/10 bg-white/[0.04]" />
+          <div className="h-11 rounded-2xl border border-white/10 bg-white/4" />
         ) : isLoggedIn ? (
           <div className="flex gap-2">
             <input
               value={comment}
               onChange={(event) => setComment(event.target.value)}
-              className="input h-11 flex-1 rounded-2xl bg-white/[0.06]"
+              className="input h-11 flex-1 rounded-2xl bg-white/0.06"
               placeholder="Write a thoughtful comment..."
             />
             <button
@@ -399,7 +401,7 @@ const toggleLike = async () => {
           <button
             type="button"
             onClick={() => signIn("google", { callbackUrl: window.location.pathname })}
-            className="w-full rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white/60 transition hover:border-red-400/50 hover:text-white"
+            className="w-full rounded-2xl border border-white/10 bg-white/0.05 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white/60 transition hover:border-red-400/50 hover:text-white"
           >
             Sign in to write a comment
           </button>

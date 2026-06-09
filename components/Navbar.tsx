@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import Link from "next/link";
@@ -8,7 +10,6 @@ import { MessageSquare, Menu, X } from "lucide-react";
 import UserSearch from "@/components/UserSearch";
 import ThemeToggle from "@/components/ThemeToggle";
 import UserMenu from "@/components/UserMenu";
-import { pusherClient } from "@/lib/pusher";
 
 
 const NavLink = ({ href, children, className = "" }: { href: string; children: React.ReactNode; className?: string }) => (

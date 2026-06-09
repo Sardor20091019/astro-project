@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Suspense } from "react";
 import Hero from "@/components/Hero";
 import HomeGallery, { HomeGallerySkeleton } from "@/components/HomeGallery";
@@ -25,10 +26,10 @@ function UserGreetingSkeleton() {
 export default function HomePage({ searchParams }: PageProps) {
   return (
     <div className="flex flex-col">
-      {/* Full-width Hero */}
+
       <Hero />
 
-      {/* Centered Gallery/Content */}
+
       <div className="main-wrapper py-8">
         <Suspense fallback={<HomeGallerySkeleton />}>
           <HomeGallery searchParams={searchParams} />

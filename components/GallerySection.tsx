@@ -72,10 +72,10 @@ function GalleryCard({ photo, index }: { photo: GalleryPhoto; index: number }) {
   return (
    
     <article className="world-card group relative overflow-hidden transition-all duration-300 ease-out">
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-[var(--surface-2)] sm:aspect-[3/4] lg:aspect-[4/3]">
+      <div className="relative aspect-4/5 w-full overflow-hidden bg-(--surface-2) sm:aspect-3/4 lg:aspect-4/3">
         <Link
           href={`/photos/${photo.id}`}
-          className="absolute inset-0 z-0 block focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]"
+          className="absolute inset-0 z-0 block focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--accent)"
           aria-label={`Open ${title}`}
         >
           <Image
@@ -89,7 +89,7 @@ function GalleryCard({ photo, index }: { photo: GalleryPhoto; index: number }) {
             sizes="(max-width: 768px) 50vw, 33vw"
             className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.025]"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-80 mix-blend-multiply" />
+          <div className="absolute inset-0 bg-linear-to-t from-black via-black/40 to-transparent opacity-80 mix-blend-multiply" />
         </Link>
 
         <div className="absolute left-3 right-3 top-3 z-10 flex items-start justify-between gap-3 sm:left-4 sm:right-4 sm:top-4">
@@ -97,16 +97,16 @@ function GalleryCard({ photo, index }: { photo: GalleryPhoto; index: number }) {
             <Link
               href={`/profile/${photo.userId}`}
               style={{ borderRadius: 'var(--radius-sm)' }}
-              className="max-w-[70%] truncate border border-[var(--border)] bg-[var(--surface-3)]/60 px-2.5 py-1 text-[9px] uppercase tracking-[0.18em] text-[var(--text-dim)] backdrop-blur-sm transition-colors hover:text-[var(--text)]"
+              className="max-w-[70%] truncate border border-(--border) bg-(--surface-3)/60 px-2.5 py-1 text-[9px] uppercase tracking-[0.18em] text-(--text-dim) backdrop-blur-sm transition-colors hover:text-(--text)"
             >
               {photo.authorName || "Unknown artist"}
             </Link>
           ) : (
-            <span style={{ borderRadius: 'var(--radius-sm)' }} className="max-w-[70%] truncate border border-[var(--border)] bg-[var(--surface-3)]/60 px-2.5 py-1 text-[9px] uppercase tracking-[0.18em] text-[var(--text-muted)] backdrop-blur-sm">
+            <span style={{ borderRadius: 'var(--radius-sm)' }} className="max-w-[70%] truncate border border-(--border) bg-(--surface-3)/60 px-2.5 py-1 text-[9px] uppercase tracking-[0.18em] text-(--text-muted) backdrop-blur-sm">
               {photo.authorName || "Unknown artist"}
             </span>
           )}
-          <span className="font-mono text-[9px] tracking-[0.14em] text-[var(--text-muted)]">
+          <span className="font-mono text-[9px] tracking-[0.14em] text-(--text-muted)">
             {String(index + 1).padStart(2, "0")}
           </span>
         </div>
@@ -231,7 +231,7 @@ export default function GallerySection({
         </div>
 
         {photos.length === 0 ? (
-          <div className="mx-4 border border-dashed border-[var(--border)] px-6 py-20 text-center text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)] sm:mx-0">
+          <div className="mx-4 border border-dashed border-(--border) px-6 py-20 text-center text-[10px] uppercase tracking-[0.18em] text-(--text-muted) sm:mx-0">
             No frames found in this category
           </div>
         ) : (
