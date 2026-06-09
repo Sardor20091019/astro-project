@@ -30,7 +30,7 @@ export default async function AdminPage() {
 
   return (
     <div className="min-h-screen bg-[#080808] text-white pt-20">
-      <div className="max-w-[1400px] mx-auto px-6 py-10">
+      <div className="max-w-350 mx-auto px-6 py-10">
         <header className="mb-10 flex items-end justify-between border-b border-white/8 pb-8">
           <div>
             <p className="mb-2 flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.36em] text-red-500/70">
