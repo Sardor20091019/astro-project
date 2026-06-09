@@ -17,7 +17,7 @@ export async function generateAndSendOtp(email: string, ip: string) {
   const cleanEmail = email.toLowerCase().trim();
   console.log("DEBUG: Starting generateAndSendOtp for", cleanEmail);
 
-  // 1. IP Rate Limit Check (Tracks all requests across the window accurately)
+
   const oneMinuteAgo = new Date(Date.now() - 60000);
   const recentRequestsCount = await prisma.otpToken.count({
     where: { ipAddress: ip, createdAt: { gte: oneMinuteAgo } },
@@ -27,20 +27,20 @@ export async function generateAndSendOtp(email: string, ip: string) {
     throw new Error("Too many requests from this device. Please wait a minute.");
   }
 
-  // 2. Automated Table Housekeeping (Only delete genuinely expired tokens)
+
   await prisma.otpToken.deleteMany({
     where: { expires: { lt: new Date() } },
   });
 
-  // 3. Create New OTP Layer
+
   const token = Math.floor(100000 + Math.random() * 900000).toString();
-  const expires = new Date(Date.now() + 2 * 60 * 1000); // 2 Minute Lifespan
+  const expires = new Date(Date.now() + 2 * 60 * 1000); 
   
   await prisma.otpToken.create({
     data: { email: cleanEmail, token, expires, ipAddress: ip },
   });
 
-  // 4. Send Custom Branded Email Template
+
   try {
     await transporter.sendMail({
       from: `"Astrospectrum" <${process.env.SMTP_USER}>`,
@@ -87,32 +87,31 @@ export async function generateAndSendOtp(email: string, ip: string) {
 export async function verifyOtp(email: string, inputToken: string) {
   const cleanEmail = email.toLowerCase().trim();
   
-  // 1. Fetch the record
   const tokenRecord = await prisma.otpToken.findFirst({
     where: { email: cleanEmail },
-    orderBy: { createdAt: "desc" }, // Always get the latest
+    orderBy: { createdAt: "desc" }, 
   });
 
   if (!tokenRecord) throw new Error("No active code found.");
 
-  // 2. Check Expiration
+
   if (new Date() > tokenRecord.expires) {
     await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
     throw new Error("Code expired.");
   }
 
-  // 3. Match Verification
+
   if (tokenRecord.token === inputToken) {
     await prisma.otpToken.deleteMany({ where: { email: cleanEmail } });
     return { success: true };
   } else {
-    // 4. THIS IS THE FIX: Increment immediately and explicitly
+
     const updated = await prisma.otpToken.update({
       where: { id: tokenRecord.id },
       data: { failedAttempts: { increment: 1 } },
     });
 
-    // Check if that increment hit the limit
+
     if (updated.failedAttempts >= 5) {
       await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
       throw new Error("Too many failed attempts. Code invalidated.");

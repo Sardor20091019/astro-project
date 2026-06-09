@@ -9,14 +9,13 @@ export default function SearchBar() {
   const [value, setValue] = useState(searchParams.get("q") || "");
 
 useEffect(() => {
-  // 1. Get the query currently sitting in the browser URL bar
+
   const currentUrlQuery = searchParams.get("q") || "";
 
-  // 2. GUARD CLAUSE: If the input value matches the URL, the user is NOT typing.
-  // They are likely just flipping pages. Stop here and don't reset the page!
+
   if (value === currentUrlQuery) return;
 
-  // 3. Clean debouncer timer execution
+
   const handler = setTimeout(() => {
     const params = new URLSearchParams(searchParams.toString());
     
@@ -26,16 +25,15 @@ useEffect(() => {
       params.delete("q");
     }
     
-    // Only resets to page 1 when the search string ACTUALLY changes
+
     params.set("page", "1"); 
     
     router.replace(`/?${params.toString()}`, { scroll: false });
   }, 300);
 
-  // 4. CRITICAL CLEANUP: Wipes out the timer if they type fast or change pages, 
-  // preventing phantom background URL rewrites
+
   return () => clearTimeout(handler);
-}, [value, router, searchParams]); // Ensure these are your exact dependencies
+}, [value, router, searchParams]); 
 
   return (
     <div className="w-full max-w-md mx-auto my-6">

@@ -17,7 +17,7 @@ export async function GET(req: Request) {
       return NextResponse.json([]);
     }
 
-    // Search for users matching the query, excluding ourselves
+
     const users = await prisma.user.findMany({
       where: {
         AND: [

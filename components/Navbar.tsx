@@ -10,7 +10,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import UserMenu from "@/components/UserMenu";
 import { pusherClient } from "@/lib/pusher";
 
-// Small helper component to keep the code clean
+
 const NavLink = ({ href, children, className = "" }: { href: string; children: React.ReactNode; className?: string }) => (
   <Link href={href} className={`text-[10px] md:text-xs uppercase tracking-[0.2em] transition-colors hover:text-(--accent) ${className}`}>
     {children}
@@ -26,7 +26,7 @@ export default function Navbar() {
   const [hasUnread, setHasUnread] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // --- Effects ---
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);

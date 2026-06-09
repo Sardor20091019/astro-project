@@ -9,7 +9,7 @@ export async function updateProfile(formData: FormData) {
   if (!session?.user?.id) throw new Error("Unauthorized");
 
   const name = formData.get("name") as string;
-  const image = formData.get("image") as string; // Or your file URL
+  const image = formData.get("image") as string;
 
   const updatedUser = await prisma.user.update({
     where: { id: session.user.id },

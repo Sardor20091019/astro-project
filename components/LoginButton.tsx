@@ -1,7 +1,7 @@
 "use client";
 
 import { signIn, signOut, useSession } from "next-auth/react";
-import WorldButton from "./WorldButton"; // Ensure you point to your new component
+import WorldButton from "./WorldButton"; 
 
 export default function LoginButton() {
   const { data: session } = useSession();

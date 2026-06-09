@@ -20,7 +20,7 @@ type MapPhoto = {
   avgRating?: number;
 };
 
-// Component to dynamically adjust map center or bounds
+
 function MapResizer({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function MapComponent({ photos }: { photos: MapPhoto[] }) {
     );
   }
 
-  // Parse coordinates and filter photos that actually have valid geo positions
+
   const mappedPhotos = photos
     .map((photo) => {
       if (!photo.coordinates) return null;
@@ -60,13 +60,13 @@ export default function MapComponent({ photos }: { photos: MapPhoto[] }) {
     })
     .filter(Boolean) as (MapPhoto & { position: [number, number] })[];
 
-  // Default center of map (Tashkent / Central Asia, or average of all pins)
+
   const defaultCenter: [number, number] =
     mappedPhotos.length > 0
       ? mappedPhotos[0].position
       : [41.2995, 69.2401];
 
-  // Custom DivIcon marker generator
+
   const createCustomMarker = (url: string) => {
     return L.divIcon({
       className: "custom-leaflet-marker",

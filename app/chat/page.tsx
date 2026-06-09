@@ -1,4 +1,4 @@
-// app/chat/page.tsx
+
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -10,13 +10,13 @@ interface PageProps {
 }
 
 export default async function ChatPage({ searchParams }: PageProps) {
-  // 1. Secure the route - redirect to sign-in if not authenticated
+
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     redirect("/api/auth/signin");
   }
 
-  // Next.js 15+ requires awaiting searchParams
+
   const resolvedParams = await searchParams;
   const receiverId = resolvedParams.id;
 
@@ -28,7 +28,7 @@ export default async function ChatPage({ searchParams }: PageProps) {
     );
   }
 
-  // 2. Look up the receiver's name inside Neon
+
   const receiverData = await prisma.user.findUnique({
     where: { id: receiverId },
     select: { name: true },

@@ -15,13 +15,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No image URL provided" }, { status: 400 });
     }
 
-    // Helper function to handle empty strings as null
+
     const val = (key: string) => {
       const value = formData.get(key);
       return value && String(value).trim() !== "" ? String(value).trim() : null;
     };
 
-    // Save to Neon Database
+
     const newPhoto = await prisma.photo.create({
       data: {
         url: photoUrl,
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
         location: val("location"),
         coordinates: val("coordinates"),
         camera: val("camera"),
-        // ISO requires special handling: only convert if string is not null and is a valid number
+  
         iso: formData.get("iso") ? parseInt(formData.get("iso") as string) || null : null,
         aperture: val("aperture"),
         shutter: val("shutter"),

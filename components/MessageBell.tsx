@@ -14,14 +14,14 @@ export default function MessageBell() {
   const [hasUnread, setHasUnread] = useState(false);
   const currentUserId = session?.user?.id;
 
-  // Automatically clear the badge if the user is actively inside the messaging hub
+
   useEffect(() => {
     if (pathname === "/messages") {
       setHasUnread(false);
     }
   }, [pathname]);
 
-  // Listen to incoming global websocket streams
+
   useEffect(() => {
     if (!currentUserId || !pusherClient) return;
 
@@ -29,7 +29,7 @@ export default function MessageBell() {
     pusherClient.subscribe(channelName);
 
     const handleIncomingAlert = () => {
-      // Only ping the bell badge if the user isn't currently browsing the message view
+ 
       if (pathname !== "/messages") {
         setHasUnread(true);
       }

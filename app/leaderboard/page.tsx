@@ -1,4 +1,4 @@
-// app/leaderboard/page.tsx
+
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
 
@@ -16,7 +16,7 @@ export default async function LeaderboardPage() {
 
   try {
     topUsers = await prisma.user.findMany({
-      take: 50, // Expanded for the full page view
+      take: 50, 
       orderBy: { followers: { _count: "desc" } },
       select: {
         id: true,

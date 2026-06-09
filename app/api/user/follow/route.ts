@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "You cannot follow yourself" }, { status: 400 });
     }
 
-    // Check if relationship already exists
+
     const existingFollow = await prisma.follows.findUnique({
       where: {
         followerId_followingId: {
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     });
 
     if (existingFollow) {
-      // Unfollow
+
       await prisma.follows.delete({
         where: {
           followerId_followingId: {
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
       });
       return NextResponse.json({ message: "Unfollowed successfully", following: false });
     } else {
-      // Follow
+
       await prisma.follows.create({
         data: {
           followerId: currentUserId,

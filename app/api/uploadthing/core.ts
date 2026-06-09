@@ -9,7 +9,7 @@ const f = createUploadthing();
 const utapi = new UTApi();
 
 export const ourFileRouter = {
-  // Gallery Uploader (with strict limits)
+
   imageUploader: f({ image: { maxFileSize: "4MB", maxFileCount: 1 } })
     .middleware(async () => {
       const session = await getServerSession(authOptions);
@@ -30,7 +30,7 @@ export const ourFileRouter = {
       return { isSafe: true, url: fileUrl, userId: metadata.userId };
     }),
 
-  // Dedicated Profile Uploader (no gallery limit)
+
   profileUploader: f({ image: { maxFileSize: "2MB", maxFileCount: 1 } })
     .middleware(async () => {
       const session = await getServerSession(authOptions);

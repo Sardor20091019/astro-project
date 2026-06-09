@@ -14,7 +14,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid target" }, { status: 400 });
   }
 
-  // 1. Use 'follows' (plural) to match your schema model 'Follows'
   const existing = await prisma.follows.findUnique({
     where: { 
       followerId_followingId: { 
@@ -25,7 +24,7 @@ export async function POST(req: Request) {
   });
 
   if (existing) {
-    // 2. Fix: Change .follow to .follows
+
     await prisma.follows.delete({ 
       where: { 
         followerId_followingId: { 
@@ -35,7 +34,7 @@ export async function POST(req: Request) {
       } 
     });
   } else {
-    // 3. Fix: Change .follow to .follows
+
     await prisma.follows.create({
       data: { followerId: session.user.id, followingId: targetUserId },
     });
@@ -54,7 +53,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Missing targetUserId" }, { status: 400 });
   }
 
-  // 4. Fix: Change all instances of .follow to .follows
+
   const [followerCount, followingCount] = await Promise.all([
     prisma.follows.count({ where: { followingId: targetUserId } }),
     prisma.follows.count({ where: { followerId: targetUserId } }),

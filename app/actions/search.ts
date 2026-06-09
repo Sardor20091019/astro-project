@@ -13,6 +13,6 @@ export async function searchUsers(query: string) {
       ],
     },
     select: { id: true, name: true, image: true, telegramUsername: true },
-    take: 5, // Limit results for better performance
+    take: 5, 
   });
 }

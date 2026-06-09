@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const receiverId = searchParams.get("receiverId");
   
-  // Get page from query, default to 0
+
   const page = parseInt(searchParams.get("page") || "0");
   const pageSize = 20;
 
@@ -19,7 +19,7 @@ export async function GET(req: Request) {
   try {
     const currentUserId = session.user.id;
 
-    // Fetch messages in reverse order (newest first) with skip/take
+
     const messages = await prisma.message.findMany({
       where: {
         OR: [
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
       },
     });
 
-    // Reverse them back so they appear in chronological order for the UI
+
     return NextResponse.json(messages.reverse());
   } catch (error) {
     console.error(error);

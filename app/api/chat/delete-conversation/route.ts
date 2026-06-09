@@ -1,4 +1,4 @@
-// app/api/chat/delete-conversation/route.ts
+
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth"
@@ -19,7 +19,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Missing receiverId parameter" }, { status: 400 });
     }
 
-    // Safely purge all rows linking both participants from your message table
+
     await prisma.message.deleteMany({
       where: {
         OR: [

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin";
 import AdminPhotoList from "@/components/AdminPhotoList";
 import DeleteUserButton from "@/components/DeleteUserButton";
-import { AdminCommentDelete } from "@/components/AdminCommentDelete"; // Import the component we created
+import { AdminCommentDelete } from "@/components/AdminCommentDelete"; 
 import { prisma } from "@/lib/prisma";
 import { Shield } from "lucide-react";
 
@@ -19,7 +19,6 @@ export default async function AdminPage() {
     redirect("/");
   }
 
-  // 1. Updated: Fetch comments along with photos and users
   const [photos, users, comments] = await Promise.all([
     prisma.photo.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.user.findMany({ orderBy: { name: "asc" } }),

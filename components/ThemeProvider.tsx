@@ -11,7 +11,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState("void");
 
-  // Load saved theme on mount without blocking the render
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("astro-theme") || "void";
     setThemeState(savedTheme);

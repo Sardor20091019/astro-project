@@ -12,7 +12,7 @@ export default function PhotoSlider({ photos, initialId }: { photos: any[], init
     const newIdx = index + dir;
     if (newIdx >= 0 && newIdx < photos.length) {
       setIndex(newIdx);
-      // Optional: Change URL without full reload
+   
       window.history.replaceState(null, "", `/photos/${photos[newIdx].id}`);
     }
   };
@@ -20,7 +20,7 @@ export default function PhotoSlider({ photos, initialId }: { photos: any[], init
   return (
     <div 
       className="h-[80vh] w-full flex items-center justify-center relative cursor-zoom-out"
-      onClick={() => router.push('/')} // Click background to close
+      onClick={() => router.push('/')} 
     >
       {/* X Button */}
       <button 
@@ -48,7 +48,7 @@ export default function PhotoSlider({ photos, initialId }: { photos: any[], init
             if (info.offset.x > 100) navigate(-1);
             else if (info.offset.x < -100) navigate(1);
           }}
-          onClick={(e) => e.stopPropagation()} // Clicking image doesn't close
+          onClick={(e) => e.stopPropagation()} 
           className="max-h-full max-w-full object-contain shadow-2xl rounded-lg cursor-default"
         />
       </AnimatePresence>

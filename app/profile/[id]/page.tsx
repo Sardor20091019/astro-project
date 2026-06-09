@@ -21,7 +21,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
       orderBy: { createdAt: "desc" },
       select: { id: true, url: true, title: true, location: true },
     }),
-    // Swapped .follow for .follows to match your updated schema models
+
     prisma.follows.count({ where: { followingId: userId } }),
     prisma.follows.count({ where: { followerId: userId } }),
   ]);
@@ -30,7 +30,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
 
   let isFollowing = false;
   if (session?.user?.id && session.user.id !== userId) {
-    // Updated to match Prisma's composite ID layout map structure
+
     const rel = await prisma.follows.findUnique({
       where: {
         followerId_followingId: {

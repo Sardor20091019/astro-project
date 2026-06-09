@@ -1,4 +1,4 @@
-// app/api/chat/mark-read/route.ts
+
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth"
@@ -11,9 +11,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { receiverId } = await req.json(); // 'receiverId' here is the sender of the messages we are reading
+    const { receiverId } = await req.json(); 
 
-    // Update all messages sent by the other person to the current user to "read"
+
     await prisma.message.updateMany({
       where: { 
         senderId: receiverId, 

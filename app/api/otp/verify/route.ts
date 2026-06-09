@@ -11,8 +11,7 @@ export async function POST(request: Request) {
 
     await verifyOtp(email, token);
     
-    // Tokens validated completely at this junction. 
-    // Secure NextAuth cookies or application sessions can follow here.
+
     return NextResponse.json({ success: true });
     
   } catch (error: any) {

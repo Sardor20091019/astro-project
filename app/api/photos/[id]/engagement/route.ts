@@ -21,7 +21,7 @@ export async function GET(_req: Request, { params }: RouteContext) {
   
   const anonymousToken = cookieStore.get("astro_guest")?.value;
 
-  // Use the exact unique constraint names defined in schema.prisma
+
   const viewerWhere = session?.user?.id
     ? { photoId_userId_unique: { photoId, userId: session.user.id } }
     : anonymousToken
@@ -35,7 +35,7 @@ export async function GET(_req: Request, { params }: RouteContext) {
       _count: { id: true },
     }),
     prisma.like.count({ where: { photoId } }),
-    // TypeScript now accepts these because they match the schema's unique constraint names
+  
     viewerWhere ? prisma.rating.findUnique({ where: viewerWhere }) : null,
     viewerWhere ? prisma.like.findUnique({ where: viewerWhere }) : null,
     prisma.comment.count({ where: { photoId } }),

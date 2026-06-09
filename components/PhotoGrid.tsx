@@ -10,8 +10,8 @@ type PhotoType = {
   id: number;
   url?: string;
   src?: string;
-  imageUrl?: string; // Defensive addition
-  image_url?: string; // Defensive addition
+  imageUrl?: string; 
+  image_url?: string; 
   title: string;
   location: string | null;
   coordinates?: string | null;
@@ -108,18 +108,18 @@ export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType
         )}
       </div>
 
-      {/* Photo Grid */}
+   
       {filtered.length === 0 ? (
         <div className="rounded-[2rem] border border-dashed border-white/10 px-6 py-20 text-center text-white/30 text-sm">
           No frames found in this category yet.
         </div>
       ) : (
         <>
-          {/* FIX: Removed 'layout' from wrapper div to prevent 0px height collapse with lazy images */}
+      
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <AnimatePresence mode="popLayout">
               {visible.map((photo, index) => {
-                // FIX: Fallback lookup chain covering all common database key mutations
+             
                 const imageSource = photo.url || photo.src || photo.imageUrl || photo.image_url || "";
 
                 return (
@@ -139,7 +139,7 @@ export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType
                         <img
                           src={imageSource}
                           alt={photo.title}
-                          // FIX: Used explicit arbitrary bracket notation for accurate Tailwind compilation
+                   
                           className="w-full h-full object-cover group-hover:scale-[1.08] transition duration-[600ms]"
                           loading="lazy"
                         />

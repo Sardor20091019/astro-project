@@ -9,17 +9,17 @@ export async function POST(req: Request) {
 
   try {
     const formData = await req.formData();
-    // 1. READ THE TEXT URL SENT BY UPLOADTHING
+
     const photoUrl = formData.get("photoUrl") as string | null;
 
     if (!photoUrl) {
       return NextResponse.json({ error: "No image URL provided" }, { status: 400 });
     }
 
-    // 2. SAVE DIRECTLY TO NEON DATABASE
+
     const newPhoto = await prisma.photo.create({
       data: {
-        url: photoUrl, // Directly uses the secure UploadThing link
+        url: photoUrl, 
         title: String(formData.get("title") || "Untitled frame").trim(),
         location: String(formData.get("location") || "").trim() || null,
         coordinates: String(formData.get("coordinates") || "").trim() || null,
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
         focalLength: String(formData.get("focalLength") || "").trim() || null,
         authorName: String(formData.get("authorName") || session?.user?.name || "Anonymous").trim() || null,
         category: (String(formData.get("category") || "OTHER")) as any,
-        status: "APPROVED", // Stays instantly live!
+        status: "APPROVED", 
         userId: session?.user?.id ?? null,
       },
     });

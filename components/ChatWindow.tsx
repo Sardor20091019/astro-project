@@ -27,7 +27,7 @@ export default function ChatWindow({ currentUserId, receiverId, receiverName }: 
   
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll on new messages
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);

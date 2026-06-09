@@ -29,9 +29,9 @@ void main(){
 const FRAG = `
 precision mediump float;
 uniform sampler2D u_tex;
-uniform vec2  u_mouse;   // 0..1 normalized, -1 if not hovering
-uniform float u_hover;   // 0..1 lerped hover state
-uniform float u_vel;     // |scroll velocity| 0..1 clamped
+uniform vec2  u_mouse;  
+uniform float u_hover;   
+uniform float u_vel;    
 varying vec2  v_uv;
 
 void main(){
@@ -65,7 +65,7 @@ export default function WebGLImage({ src, alt, className, style, fill, sizes }: 
   const stateRef   = useRef({ mx: 0.5, my: 0.5, hover: 0, vel: 0, rafId: 0 });
   const [fallback, setFallback] = useState(false);
 
-  // Receive scroll velocity from Lenis
+
   useLenis(({ velocity }) => {
     stateRef.current.vel = Math.min(Math.abs(velocity) / 18, 1);
   });
@@ -78,7 +78,7 @@ export default function WebGLImage({ src, alt, className, style, fill, sizes }: 
     if (!gl) { setFallback(true); return; }
     glRef.current = gl;
 
-    // ── compile program ──
+
     const vert = compileShader(gl, gl.VERTEX_SHADER, VERT);
     const frag = compileShader(gl, gl.FRAGMENT_SHADER, FRAG);
     const prog = gl.createProgram()!;
@@ -87,7 +87,7 @@ export default function WebGLImage({ src, alt, className, style, fill, sizes }: 
     gl.useProgram(prog);
     progRef.current = prog;
 
-    // ── geometry: full-screen quad ──
+
     const pos = new Float32Array([-1,-1, 1,-1, -1,1, 1,1]);
     const uvs = new Float32Array([ 0, 0, 1, 0,  0,1, 1,1]);
     const pb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, pb);
@@ -100,7 +100,7 @@ export default function WebGLImage({ src, alt, className, style, fill, sizes }: 
     const aUv = gl.getAttribLocation(prog, "a_uv");
     gl.enableVertexAttribArray(aUv); gl.vertexAttribPointer(aUv, 2, gl.FLOAT, false, 0, 0);
 
-    // ── uniforms ──
+
     uniRef.current = {
       u_tex:   gl.getUniformLocation(prog, "u_tex"),
       u_mouse: gl.getUniformLocation(prog, "u_mouse"),
@@ -109,7 +109,7 @@ export default function WebGLImage({ src, alt, className, style, fill, sizes }: 
     };
     gl.uniform1i(uniRef.current.u_tex, 0);
 
-    // ── load texture ──
+
     const tex = gl.createTexture()!;
     texRef.current = tex;
     gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -117,7 +117,7 @@ export default function WebGLImage({ src, alt, className, style, fill, sizes }: 
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    // placeholder 1×1 white
+
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 1, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, new Uint8Array([200,200,200]));
 
     const img = new Image();
@@ -128,7 +128,7 @@ export default function WebGLImage({ src, alt, className, style, fill, sizes }: 
     };
     img.src = src;
 
-    // ── resize ──
+
     const ro = new ResizeObserver(() => {
       canvas.width  = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
@@ -139,7 +139,7 @@ export default function WebGLImage({ src, alt, className, style, fill, sizes }: 
     canvas.height = canvas.offsetHeight || 300;
     gl.viewport(0, 0, canvas.width, canvas.height);
 
-    // ── pointer events ──
+
     function onEnter() { stateRef.current.hover = 1; }
     function onLeave() { stateRef.current.hover = 0; stateRef.current.mx = 0.5; stateRef.current.my = 0.5; }
     function onMove(e: MouseEvent) {
@@ -152,7 +152,7 @@ export default function WebGLImage({ src, alt, className, style, fill, sizes }: 
     canvas.addEventListener("mouseleave", onLeave);
     canvas.addEventListener("mousemove", onMove);
 
-    // ── render loop ──
+  
     function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
     const lerpState = { hover: 0, vel: 0, mx: 0.5, my: 0.5 };
 

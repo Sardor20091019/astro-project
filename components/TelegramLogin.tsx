@@ -9,7 +9,7 @@ export default function TelegramLogin() {
 
   useEffect(() => {
     (window as any).onTelegramAuth = async (user: any) => {
-      // Explicitly map properties as strings so NextAuth credentials provider doesn't choke on numbers
+
       const result = await signIn("telegram", {
         redirect: false,
         id: user.id?.toString(),
@@ -25,7 +25,7 @@ export default function TelegramLogin() {
         console.error("Auth error:", result.error);
         alert(`Login failed: ${result.error}`);
       } else {
-        // Force the browser to refresh the state and route back home immediately
+
         window.location.href = "/";
       }
     };
@@ -38,7 +38,7 @@ export default function TelegramLogin() {
     script.setAttribute("data-request-access", "write");
     script.async = true;
 
-    // Clear previous scripts to prevent duplicates if component remounts
+
     if (containerRef.current) {
       containerRef.current.innerHTML = "";
       containerRef.current.appendChild(script);

@@ -11,7 +11,6 @@ export async function updateUserProfile(userId: string, data: { name: string; im
         image: data.image 
       },
     });
-    // Revalidate the root to refresh navbar and profile pages
     revalidatePath("/", "layout");
     return { success: true };
   } catch (error) {

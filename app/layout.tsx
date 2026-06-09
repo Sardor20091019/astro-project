@@ -4,7 +4,7 @@ import { Toaster } from "sonner";
 // @ts-ignore
 import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
-import ThemeProvider from "@/components/ThemeProvider"; // Ensure this import is here
+import ThemeProvider from "@/components/ThemeProvider";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import DesktopEffects from "@/components/DesktopEffects";
@@ -35,14 +35,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <AuthProvider>
             <DesktopEffects>
-              {/* Navbar stays full width (or custom width) */}
               <Navbar />
-              
-              {/* Children (Home/Pages) are rendered here */}
               <main className="min-h-screen">
                 {children}
-              </main>
-              
+              </main>        
               <Footer />
               <Toaster position="bottom-right" theme="dark" />
             </DesktopEffects>

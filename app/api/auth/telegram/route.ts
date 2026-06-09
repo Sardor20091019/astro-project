@@ -13,33 +13,32 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
     }
 
-    // 1. Prepare Secret: SHA256 of the bot token
+  
     const secret = crypto.createHash("sha256").update(botToken).digest();
 
-    // 2. Prepare Data Check String
-    // MUST sort keys alphabetically, MUST map values as strings
+
     const sortedKeys = Object.keys(userData).sort();
     const dataCheckString = sortedKeys
       .map((key) => `${key}=${userData[key]}`)
       .join("\n");
-    // 3. Compute HMAC
+
     const hmac = crypto.createHmac("sha256", secret).update(dataCheckString).digest("hex");
 
-    // Add these logs right inside your POST function in route.ts
+
     console.log("--- DEBUG START ---");
     console.log("Bot Token Present:", !!process.env.TELEGRAM_BOT_TOKEN);
     console.log("Received Data Keys:", Object.keys(userData));
-    console.log("Constructed String:", dataCheckString); // This is the crucial line
+    console.log("Constructed String:", dataCheckString); 
     console.log("Calculated Hash:", hmac);
     console.log("Sent Hash:", hash);
     console.log("--- DEBUG END ---");
 
-    // --- DEBUGGING: If you see a mismatch, look at these logs in your terminal ---
+
     console.log("--- AUTH DEBUG ---");
     console.log("String being hashed:", dataCheckString);
     console.log("Calculated HMAC:", hmac);
     console.log("Received Hash:", hash);
-    // ----------------------------------------------------------------------------
+
 
     if (hmac !== hash) {
       console.error("HMAC Mismatch!");
@@ -51,7 +50,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Authentication data expired" }, { status: 401 });
     }
 
-    // Database logic
+
     const user = await prisma.user.upsert({
       where: { telegramId: userData.id.toString() },
       update: {

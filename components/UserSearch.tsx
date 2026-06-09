@@ -10,7 +10,7 @@ export default function UserSearch() {
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
-      if (query.length > 1) { // Only search after 2+ characters
+      if (query.length > 1) {
         const users = await searchUsers(query);
         setResults(users);
       } else {
@@ -39,7 +39,7 @@ export default function UserSearch() {
               href={`/profile/${user.id}`} 
               key={user.id} 
               className="flex items-center gap-3 p-3 hover:bg-[#2a2a2a] transition-colors"
-              onClick={() => setResults([])} // Clear results on click
+              onClick={() => setResults([])}
             >
               <span className="text-white text-sm">{user.name || user.telegramUsername}</span>
             </Link>

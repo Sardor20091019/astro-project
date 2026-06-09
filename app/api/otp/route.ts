@@ -3,9 +3,9 @@ import { generateAndSendOtp } from "@/lib/otp";
 
 export async function POST(request: Request) {
   try {
-    const { email, turnstileToken } = await request.json(); // Accept the token from frontend
+    const { email, turnstileToken } = await request.json(); 
     
-    // 1. Verify Turnstile token with Cloudflare
+
     const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
       body: `secret=${process.env.TURNSTILE_SECRET_KEY}&response=${turnstileToken}`,

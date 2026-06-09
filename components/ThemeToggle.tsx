@@ -1,5 +1,5 @@
 "use client";
-import { useTheme } from "./ThemeProvider"; // Use YOUR custom provider, not next-themes
+import { useTheme } from "./ThemeProvider"; 
 
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();

@@ -12,7 +12,7 @@ export async function GET() {
 
     const currentUserId = session.user.id;
 
-    // Pull all messages involving the current user
+
     const messages = await prisma.message.findMany({
       where: {
         OR: [{ senderId: currentUserId }, { receiverId: currentUserId }],
@@ -24,7 +24,7 @@ export async function GET() {
       },
     });
 
-    // Group items dynamically to extract unique chat counterparts
+
     const conversationMap = new Map();
 
     messages.forEach((msg: { senderId: string; receiver: any; sender: any; text: any; createdAt: any; }) => {

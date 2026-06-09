@@ -17,7 +17,7 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Missing message ID" }, { status: 400 });
     }
 
-    // Find the message to verify ownership
+
     const message = await prisma.message.findUnique({
       where: { id: messageId }
     });
@@ -26,12 +26,12 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Message not found" }, { status: 404 });
     }
 
-    // Only allow the sender to remove it
+
     if (message.senderId !== session.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Remove from Neon
+
     await prisma.message.delete({
       where: { id: messageId }
     });

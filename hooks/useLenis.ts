@@ -9,7 +9,7 @@ interface ScrollState {
 
 type ScrollCallback = (state: ScrollState) => void;
 
-// Global singleton so multiple hooks share one Lenis instance
+
 let lenisInstance: import("lenis").default | null = null;
 const subscribers = new Set<ScrollCallback>();
 let rafId: number | null = null;
@@ -62,7 +62,7 @@ export function useLenis(cb?: ScrollCallback) {
       mounted = false;
       subscribers.delete(localCb);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 }
 

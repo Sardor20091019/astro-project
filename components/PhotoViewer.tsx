@@ -264,7 +264,7 @@ function EngagementPanel({
   }, [loadComments]);
 
 const toggleLike = async () => {
-    // 1. Optimistic update
+  
     setEngagement((current) => ({
       ...current,
       viewerLiked: !current.viewerLiked,
@@ -279,7 +279,7 @@ const toggleLike = async () => {
 
     const data = await res.json();
     
-    // DEBUG: Add this log
+
     console.log("API Response received:", data); 
 
     if (res.ok) {

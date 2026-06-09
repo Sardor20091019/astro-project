@@ -5,7 +5,7 @@ import MapComponent from "@/components/MapWrapper";
 export const dynamic = "force-dynamic";
 
 export default async function ExplorePage() {
-  // Query all approved photos from local Postgres DB
+
   const photos = await prisma.photo.findMany({
     where: { status: "APPROVED" },
     orderBy: { createdAt: "desc" },
@@ -52,4 +52,4 @@ export default async function ExplorePage() {
       </div>
     </div>
   );
-}
+}

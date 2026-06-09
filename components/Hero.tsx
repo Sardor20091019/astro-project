@@ -11,17 +11,17 @@ export default function Hero() {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subRef = useRef<HTMLParagraphElement>(null);
   
-  // State to trigger the character reveal smoothly on mount
+
   const [animate, setAnimate] = useState(false);
 
-  // High-performance parallax background + content on scroll via Lenis
+
   useLenis(({ y }) => {
     if (bgRef.current)    bgRef.current.style.transform = `translateY(${y * 0.42}px)`;
     if (titleRef.current) titleRef.current.style.transform = `translateY(${y * 0.18}px)`;
     if (subRef.current)   subRef.current.style.transform = `translateY(${y * 0.08}px)`;
   });
 
-  // Activate entry animations safely on the client
+
   useEffect(() => {
     setAnimate(true);
   }, []);
