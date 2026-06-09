@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${dmSerif.variable} ${dmMono.variable}`}>
-      <body className="bg-[var(--bg)] text-[var(--text)] transition-colors duration-300">
+      <body className="bg-(--bg) text-(--text) transition-colors duration-300">
         <ThemeProvider>
           <AuthProvider>
             <DesktopEffects>
