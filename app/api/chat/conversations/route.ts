@@ -1,8 +1,29 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+
+interface ChatParticipant {
+  id: string;
+  name: string | null;
+  image: string | null;
+}
+
+interface IncomingMessage {
+  senderId: string;
+  text: string;
+  createdAt: Date;
+  sender: ChatParticipant;
+  receiver: ChatParticipant;
+}
+
+interface ConversationEntry {
+  user: ChatParticipant;
+  lastMessage: {
+    text: string;
+    createdAt: Date;
+  };
+}
 
 export async function GET() {
   try {
@@ -13,7 +34,6 @@ export async function GET() {
 
     const currentUserId = session.user.id;
 
-
     const messages = await prisma.message.findMany({
       where: {
         OR: [{ senderId: currentUserId }, { receiverId: currentUserId }],
@@ -23,12 +43,11 @@ export async function GET() {
         sender: { select: { id: true, name: true, image: true } },
         receiver: { select: { id: true, name: true, image: true } },
       },
-    });
+    }) as unknown as IncomingMessage[];
 
+    const conversationMap = new Map<string, ConversationEntry>();
 
-    const conversationMap = new Map();
-
-    messages.forEach((msg: { senderId: string; receiver: any; sender: any; text: any; createdAt: any; }) => {
+    messages.forEach((msg) => {
       const otherUser = msg.senderId === currentUserId ? msg.receiver : msg.sender;
       
       if (!conversationMap.has(otherUser.id)) {

@@ -16,56 +16,53 @@ export const authOptions: NextAuthOptions = {
     }),
     
     CredentialsProvider({
-  id: "otp",
-  name: "One-Time Password",
-  credentials: { email: { type: "text" }, code: { type: "text" } },
-  async authorize(credentials): Promise<User | null> {
-    if (!credentials?.email || !credentials?.code) return null;
+      id: "otp",
+      name: "One-Time Password",
+      credentials: { email: { type: "text" }, code: { type: "text" } },
+      async authorize(credentials): Promise<User | null> {
+        if (!credentials?.email || !credentials?.code) return null;
 
-    const formattedEmail = credentials.email.toLowerCase().trim();
-    const inputToken = credentials.code.trim();
+        const formattedEmail = credentials.email.toLowerCase().trim();
+        const inputToken = credentials.code.trim();
 
-    const tokenRecord = await prisma.otpToken.findFirst({
-      where: { email: formattedEmail },
-      orderBy: { createdAt: "desc" },
-      select: { id: true, email: true, token: true, expires: true, createdAt: true, failedAttempts: true },
-    });
+        const tokenRecord = await prisma.otpToken.findFirst({
+          where: { email: formattedEmail },
+          orderBy: { createdAt: "desc" },
+          select: { id: true, email: true, token: true, expires: true, createdAt: true, failedAttempts: true },
+        });
 
+        if (!tokenRecord) throw new Error("No active code found.");
+        if (new Date() > tokenRecord.expires) {
+          await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
+          throw new Error("Code expired.");
+        }
 
-    if (!tokenRecord) throw new Error("No active code found.");
-    if (new Date() > tokenRecord.expires) {
-      await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
-      throw new Error("Code expired.");
-    }
+        if (tokenRecord.token !== inputToken) {
+          const newCount = (tokenRecord.failedAttempts ?? 0) + 1;
+          
+          if (newCount >= 5) {
+            await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
+            throw new Error("Too many attempts. Code invalidated.");
+          }
 
-    if (tokenRecord.token !== inputToken) {
+          await prisma.otpToken.update({
+            where: { id: tokenRecord.id },
+            data: { failedAttempts: newCount },
+          });
 
-      const newCount = (tokenRecord.failedAttempts ?? 0) + 1;
-      
-      if (newCount >= 5) {
+          throw new Error(`Invalid code. (${5 - newCount} attempts remaining)`);
+        }
+
         await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
-        throw new Error("Too many attempts. Code invalidated.");
-      }
 
-      await prisma.otpToken.update({
-        where: { id: tokenRecord.id },
-        data: { failedAttempts: newCount },
-      });
+        let user = await prisma.user.findUnique({ where: { email: formattedEmail } });
+        if (!user) {
+          user = await prisma.user.create({ data: { email: formattedEmail, role: "USER" } });
+        }
 
-      throw new Error(`Invalid code. (${5 - newCount} attempts remaining)`);
-    }
-
-
-    await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
-
-    let user = await prisma.user.findUnique({ where: { email: formattedEmail } });
-    if (!user) {
-      user = await prisma.user.create({ data: { email: formattedEmail, role: "USER" } });
-    }
-
-    return { id: user.id, email: user.email, name: user.name } as User;
-  },
-}),
+        return { id: user.id, email: user.email, name: user.name } as User;
+      },
+    }),
 
     CredentialsProvider({
       id: "telegram",
@@ -132,34 +129,51 @@ export const authOptions: NextAuthOptions = {
             image: token.picture ?? undefined,
             role: "USER",
           },
-          select: { id: true },
+          select: { id: true, role: true },
         });
 
         token.id = dbUser.id;
+        token.role = dbUser.role;
         return token;
       }
 
-      if (user?.id) {
-        token.id = user.id;
-        return token;
-      }
-
-      if (!token.id && token.email) {
+      if (user) {
         const dbUser = await prisma.user.findUnique({
-          where: { email: token.email },
-          select: { id: true },
+          where: { id: user.id },
+          select: { role: true },
+        });
+        token.id = user.id;
+        token.role = dbUser?.role || "USER";
+        return token;
+      }
+
+      if (token.email || token.sub) {
+        const dbUser = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { email: token.email ?? undefined },
+              { telegramId: token.sub ?? undefined }
+            ]
+          },
+          select: { id: true, role: true },
         });
 
         if (dbUser) {
           token.id = dbUser.id;
+          token.role = dbUser.role;
         }
       }
 
       return token;
     },
     async session({ session, token }) {
-      if (session.user && typeof token.id === "string") {
-        session.user.id = token.id;
+      if (session.user) {
+        if (typeof token.id === "string") {
+          session.user.id = token.id;
+        }
+        if (typeof token.role === "string") {
+          session.user.role = token.role;
+        }
       }
       return session;
     },

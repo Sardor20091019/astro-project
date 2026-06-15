@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
 }
 
@@ -56,24 +56,24 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  customImage   String?
-  role          Role      @default(USER)
+  id               String    @id @default(cuid())
+  name             String?
+  email            String?   @unique
+  emailVerified    DateTime?
+  image            String?
+  customImage      String?
+  role             Role      @default(USER)
 
-  accounts      Account[]
-  sessions      Session[]
-  ratings       Rating[]
-  likes         Like[]
-  comments      Comment[]
-  photos        Photo[]
+  accounts         Account[]
+  sessions         Session[]
+  ratings          Rating[]
+  likes            Like[]
+  comments         Comment[]
+  photos           Photo[]
   telegramId       String?   @unique
   telegramUsername String?
-  following     Follows[] @relation("follower")
-  followers     Follows[] @relation("following")
+  following        Follows[] @relation("follower")
+  followers        Follows[] @relation("following")
   
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
@@ -147,12 +147,9 @@ model Rating {
   value          Int
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  
 
   photo          Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
-
   user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
 
   @@unique([photoId, userId], name: "photoId_userId_unique")
   @@unique([photoId, anonymousToken], name: "photoId_anonymousToken_unique")
@@ -165,7 +162,6 @@ model Like {
   userId         String?
   anonymousToken String?
   createdAt      DateTime @default(now())
-  
 
   photo          Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
   user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -1,11 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 import { generateAndSendOtp } from "@/lib/otp";
 
+interface TurnstileResponse {
+  success: boolean;
+  "error-codes"?: string[];
+}
+
 export async function POST(request: Request) {
   try {
-    const { email, turnstileToken } = await request.json(); 
-    
+    const { email, turnstileToken } = await request.json() as { email?: string; turnstileToken?: string }; 
+
+    if (!turnstileToken) {
+      return NextResponse.json({ error: "Verification token missing" }, { status: 400 });
+    }
 
     const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
@@ -13,7 +20,7 @@ export async function POST(request: Request) {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
     
-    const verifyData = await verifyRes.json();
+    const verifyData = await verifyRes.json() as TurnstileResponse;
     if (!verifyData.success) {
       return NextResponse.json({ error: "Bot verification failed" }, { status: 403 });
     }
@@ -28,8 +35,9 @@ export async function POST(request: Request) {
     await generateAndSendOtp(email, ip);
     return NextResponse.json({ success: true });
     
-  } catch (error: any) {
-    console.error("OTP API Error:", error.message);
-    return NextResponse.json({ error: error.message }, { status: 429 });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+    console.error("OTP API Error:", errorMessage);
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
