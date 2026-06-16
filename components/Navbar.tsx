@@ -90,6 +90,11 @@ export default function Navbar() {
             <NavLink href="/leaderboard">Leaderboard</NavLink>
             <NavLink href="/submit">Submit</NavLink>
           </div>
+          {user && (
+      <Link href="/messages" className="flex items-center gap-2 text-[10px] uppercase tracking-widest">
+        <MessageSquare size={16} /> Messages
+      </Link>
+    )}
           <div className="mt-auto flex flex-col gap-4 border-t border-(--border) pt-6">
             <ThemeToggle />
             {user ? (
