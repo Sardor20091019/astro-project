@@ -15,11 +15,12 @@ enum PhotoCategory {
 }
 
 export async function POST(req: Request) {
-  const origin = req.headers.get("origin");
-  const allowedOrigin = process.env.NEXTAUTH_URL;
-  if (!origin || (allowedOrigin && origin !== allowedOrigin)) {
-    return NextResponse.json({ error: "CSRF verification failed" }, { status: 403 });
-  }
+const origin = req.headers.get("origin");
+const allowedOrigin = process.env.NEXTAUTH_URL || "http://localhost:3000";
+
+if (origin && origin !== allowedOrigin) {
+  return NextResponse.json({ error: "CSRF verification failed" }, { status: 403 });
+}
 
   const session = await getServerSession(authOptions);
   if (!session || !session.user || !session.user.id) {
