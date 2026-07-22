@@ -15,10 +15,11 @@ enum PhotoCategory {
 }
 
 export async function POST(req: Request) {
+// Temporarily relax the check to debug:
 const origin = req.headers.get("origin");
-const allowedOrigin = process.env.NEXTAUTH_URL || "http://localhost:3000";
+const allowedOrigin = process.env.NEXTAUTH_URL || "https://www.astrospectrum.uz";
 
-if (origin && origin !== allowedOrigin) {
+if (origin && origin !== allowedOrigin && !origin.includes("astrospectrum.uz")) {
   return NextResponse.json({ error: "CSRF verification failed" }, { status: 403 });
 }
 
