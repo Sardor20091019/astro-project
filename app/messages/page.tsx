@@ -96,7 +96,7 @@ function MessagesDashboardContent() {
               <Search className="absolute left-3.5 top-3 h-3.5 w-3.5 text-zinc-500" />
               <input
                 type="text"
-                placeholder="Search global users..."
+                placeholder="Search users"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-zinc-900/50 text-xs text-zinc-200 pl-10 pr-4 py-2.5 rounded-xl border border-zinc-800/80 focus:outline-none focus:border-zinc-700 transition-all duration-200 placeholder-zinc-500"
