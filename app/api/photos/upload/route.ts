@@ -68,7 +68,7 @@ if (origin && origin !== allowedOrigin && !origin.includes("astrospectrum.uz")) 
         focalLength: val("focalLength"),
         authorName: String(session.user.name || "Anonymous").trim(),
         category: category,
-        status: "PENDING",
+        status: "APPROVED",
         userId: session.user.id,
       },
     });
