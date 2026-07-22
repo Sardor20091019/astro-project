@@ -67,11 +67,11 @@ export default function AdminUploadForm() {
             <CheckCircle2 size={32} className="mx-auto mb-2" /> Image Uploaded!
           </div>
         ) : (
-        <UploadButton<OurFileRouter, "imageUploader">
+       <UploadButton<OurFileRouter, "imageUploader">
   endpoint="imageUploader"
   onClientUploadComplete={(res) => {
     if (res && res[0]) {
-      setUploadedUrl(res[0].url);
+      setUploadedUrl(res[0].ufsUrl || res[0].url);
     }
   }}
   onUploadError={(error: Error) => {

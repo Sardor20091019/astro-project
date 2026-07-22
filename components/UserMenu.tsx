@@ -62,13 +62,17 @@ export default function UserMenu({ user }: UserMenuProps) {
                 placeholder="New Nickname" 
               />
               
-              <UploadButton<OurFileRouter, "profileUploader">
-                endpoint="profileUploader"
-                onClientUploadComplete={(res) => {
-                  setImageUrl(res[0].serverData.url);
-                }}
-                onUploadError={(err) => alert("Upload failed: " + err.message)}
-              />
+            <UploadButton<OurFileRouter, "profileUploader">
+  endpoint="profileUploader"
+  onClientUploadComplete={(res) => {
+    if (res && res[0]) {
+      // Fallback order: serverData url -> standard ufsUrl -> standard url
+      const finalUrl = res[0].serverData?.url || res[0].ufsUrl || res[0].url;
+      setImageUrl(finalUrl);
+    }
+  }}
+  onUploadError={(err) => alert("Upload failed: " + err.message)}
+/>
               
               <div className="flex gap-2">
                 <button 

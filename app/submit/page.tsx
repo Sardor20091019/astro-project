@@ -98,29 +98,30 @@ export default function SubmitPage() {
               </div>
             ) : (
               <UploadButton<OurFileRouter, "imageUploader">
-                endpoint="imageUploader"
-                onUploadBegin={() => setLoading(true)}
-                onClientUploadComplete={(res) => {
-                  if (res && res[0]) {
-                    const serverData = res[0].serverData as { isSafe: boolean; error: string | null } | undefined;
-                    if (serverData && serverData.isSafe === false) {
-                      alert("Upload rejected: Content does not meet safety guidelines.");
-                      setUploadedUrl(null);
-                    } else {
-                      setUploadedUrl(res[0].url);
-                    }
-                  }
-                  setLoading(false);
-                }}
-                onUploadError={(error: Error) => {
-                  alert(`Upload Failed: ${error.message}`);
-                  setLoading(false);
-                }}
-                appearance={{
-                  button: "bg-white/10 hover:bg-white/20 text-white text-[11px] md:text-xs uppercase tracking-widest px-6 md:px-8 py-3.5 md:py-4 rounded-xl transition-all w-full sm:w-auto",
-                  allowedContent: "text-zinc-500 text-[9px] md:text-[10px] mt-2"
-                }}
-              />
+  endpoint="imageUploader"
+  onUploadBegin={() => setLoading(true)}
+  onClientUploadComplete={(res) => {
+    if (res && res[0]) {
+      const serverData = res[0].serverData as { isSafe: boolean; error: string | null } | undefined;
+      if (serverData && serverData.isSafe === false) {
+        alert("Upload rejected: Content does not meet safety guidelines.");
+        setUploadedUrl(null);
+      } else {
+
+        setUploadedUrl(res[0].ufsUrl || res[0].url);
+      }
+    }
+    setLoading(false);
+  }}
+  onUploadError={(error: Error) => {
+    alert(`Upload Failed: ${error.message}`);
+    setLoading(false);
+  }}
+  appearance={{
+    button: "bg-white/10 hover:bg-white/20 text-white text-[11px] md:text-xs uppercase tracking-widest px-6 md:px-8 py-3.5 md:py-4 rounded-xl transition-all w-full sm:w-auto",
+    allowedContent: "text-zinc-500 text-[9px] md:text-[10px] mt-2"
+  }}
+/>
             )}
           </div>
 
