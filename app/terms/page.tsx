@@ -15,11 +15,6 @@ export default function TermsOfUse() {
         <h2 className="text-lg font-semibold">2. Conduct & Moderation</h2>
         <p>We reserve the right to remove any content or terminate user accounts at our sole discretion, especially if content is flagged by our moderation systems as harmful, illegal, or inappropriate.</p>
       </section>
-
-      <section className="mb-6">
-        <h2 className="text-lg font-semibold">3. Governing Law</h2>
-        <p>These terms shall be governed by and construed in accordance with the laws of the Republic of Uzbekistan. Any disputes arising from these terms will be handled through direct communication with the site administration.</p>
-      </section>
     </div>
   );
 }
