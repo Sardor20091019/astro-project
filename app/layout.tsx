@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${dmSerif.variable} ${dmMono.variable}`}>
+    <html lang="en" className={`${dmSerif.variable} ${dmMono.variable}`} suppressHydrationWarning>
       <body className="bg-(--bg) text-(--text) transition-colors duration-300">
         <ThemeProvider>
           <AuthProvider>
@@ -41,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {children}
               </main>        
               <Footer />
-              <Toaster position="bottom-right" theme="dark" />
+              <Toaster position="bottom-right" theme="system" />
             </DesktopEffects>
           </AuthProvider>
         </ThemeProvider>
