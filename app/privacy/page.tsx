@@ -29,7 +29,7 @@ export default function PrivacyPolicy() {
 
       <section className="mb-6">
         <h2 className="text-lg font-semibold">4. Contact Us</h2>
-        <p>If you have any questions or concerns about this privacy policy or your data, you can contact us at: <a href="mailto:astrospectrum.uz@gmail.com" className="text-blue-500 underline">support@astrospectrum.uz</a></p>
+        <p>If you have any questions or concerns about this privacy policy or your data, you can contact us at: <a href="mailto:astrospectrum.uz@gmail.com" className="text-blue-500 underline">astrospectrum.uz@gmail.com</a></p>
       </section>
     </div>
   );
