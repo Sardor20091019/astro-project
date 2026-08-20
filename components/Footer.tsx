@@ -13,7 +13,6 @@ export default function Footer() {
     <footer  className="border-t border-(--border) bg-(--bg) px-6 py-12 transition-colors duration-300">
 
               <div className="mx-auto flex max-w-7xl flex-col gap-8 md:flex-row md:items-center md:justify-between" style={{marginLeft: "310px"}}>
-        {/* Branding */}
         <div>
           <p className="mb-2 text-sm font-black uppercase tracking-[0.18em] text-(--text)">
             Astro<span className="text-(--accent)">spectrum</span>

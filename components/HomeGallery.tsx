@@ -114,11 +114,7 @@ export default async function HomeGallery({ searchParams }: HomeGalleryProps) {
     prisma.photo.count({ where: whereFilter }),
     prisma.photo.groupBy({
       by: ["category"],
-      where: {
-        status: "APPROVED",
-        NOT: [{ url: "" }, { url: "undefined" }, { url: "null" }],
-        ...(query ? { title: { contains: query, mode: "insensitive" } } : {}),
-      },
+      where: whereFilter, 
       _count: { category: true },
     }),
   ]);

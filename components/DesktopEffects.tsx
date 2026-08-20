@@ -6,9 +6,6 @@ import { useEffect, useState } from "react";
 const LenisProvider = dynamic(() => import("@/components/LenisProvider"), {
   ssr: false,
 });
-const CursorFollower = dynamic(() => import("@/components/CursorFollower"), {
-  ssr: false,
-});
 
 export default function DesktopEffects({ children }: { children: React.ReactNode }) {
   const [desktopEffectsEnabled, setDesktopEffectsEnabled] = useState(false);
@@ -29,7 +26,6 @@ export default function DesktopEffects({ children }: { children: React.ReactNode
 
   return (
     <LenisProvider>
-      <CursorFollower />
       {children}
     </LenisProvider>
   );

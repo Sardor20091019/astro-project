@@ -23,15 +23,20 @@ function UserGreetingSkeleton() {
   );
 }
 
-export default function HomePage({ searchParams }: PageProps) {
+
+export default async function HomePage({ searchParams }: PageProps) {
+  const resolvedParams = await searchParams;
+  
+
+  const suspenseKey = JSON.stringify(resolvedParams);
+
   return (
     <div className="flex flex-col">
-
       <Hero />
 
-
       <div className="main-wrapper py-8">
-        <Suspense fallback={<HomeGallerySkeleton />}>
+   
+        <Suspense key={suspenseKey} fallback={<HomeGallerySkeleton />}>
           <HomeGallery searchParams={searchParams} />
         </Suspense>
       </div>
