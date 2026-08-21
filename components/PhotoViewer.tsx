@@ -3,7 +3,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, useTransform, useSpring } from "framer-motion";
 import { Session } from "next-auth";
 import { signIn, useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -12,7 +12,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Heart,
-  Loader2,
   MapPin,
   MessageCircle,
   Sparkles,
@@ -21,11 +20,11 @@ import {
   Info,
   Maximize2,
   Minimize2,
+  Download,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { submitComment as submitCommentAction } from "@/app/actions/comments";
 import StarRating from "./StarRating";
-import StarDisplay from "./StarDisplay";
 
 // --- Types ---
 type GalleryPhoto = {
@@ -63,12 +62,69 @@ type Engagement = {
   commentCount: number;
 };
 
-const spring = { type: "spring" as const, stiffness: 200, damping: 25, mass: 1 };
+const springConfig = { type: "spring" as const, stiffness: 280, damping: 30 };
+
+// Optimized Magnetic Button using pure motion values (Zero React re-renders)
+function MagneticButton({
+  children,
+  className,
+  onClick,
+  title,
+  disabled
+}: {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: (e: React.MouseEvent) => void;
+  title?: string;
+  disabled?: boolean;
+}) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const xSpring = useSpring(x, { stiffness: 300, damping: 20 });
+  const ySpring = useSpring(y, { stiffness: 300, damping: 20 });
+
+  const handleMouse = (e: React.MouseEvent) => {
+    if (!ref.current || disabled) return;
+    const { clientX, clientY } = e;
+    const { height, width, left, top } = ref.current.getBoundingClientRect();
+    x.set((clientX - (left + width / 2)) * 0.2);
+    y.set((clientY - (top + height / 2)) * 0.2);
+  };
+
+  const reset = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.button
+      ref={ref}
+      onMouseMove={handleMouse}
+      onMouseLeave={reset}
+      style={{ x: xSpring, y: ySpring }}
+      className={className}
+      onClick={onClick}
+      title={title}
+      disabled={disabled}
+    >
+      {children}
+    </motion.button>
+  );
+}
+
+const KineticLoader = () => (
+  <motion.div
+    animate={{ rotate: 360 }}
+    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+    className="w-4 h-4 rounded-full border-[1.5px] border-white/20 border-t-white"
+  />
+);
 
 export default function PhotoViewer({
   photos,
   initialId,
-  stats,
   initialEngagement,
   session,
 }: {
@@ -92,20 +148,19 @@ export default function PhotoViewer({
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
-  // UI States
   const [hudVisible, setHudVisible] = useState(true);
-  const [showCommentsMobile, setShowCommentsMobile] = useState(false);
-  const [isZoomed, setIsZoomed] = useState(false);
+  const [showDrawer, setShowDrawer] = useState(false);
   const [hearts, setHearts] = useState<{ id: number; x: number; y: number }[]>([]);
 
   const photo = photos[index];
   
-  // Framer Motion Values
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const rotate = useTransform(isMobile ? y : x, [-300, 0, 300], [-3, 0, 3]);
+  const scale = useMotionValue(1);
+  const [isZoomed, setIsZoomed] = useState(false);
 
-  // Handle Hydration & Responsive Layout Detection
+  const rotate = useTransform(isMobile ? y : x, [-300, 0, 300], [-2, 0, 2]);
+
   useEffect(() => {
     setMounted(true);
     const mql = window.matchMedia("(max-width: 768px)");
@@ -115,44 +170,109 @@ export default function PhotoViewer({
     return () => mql.removeEventListener("change", handler);
   }, []);
 
-  // Auto-hide HUD on mobile after 3.5 seconds
+  // Preload adjacent images
   useEffect(() => {
-    if (!isMobile || !hudVisible || showCommentsMobile) return;
-    const timer = setTimeout(() => setHudVisible(false), 3500);
-    return () => clearTimeout(timer);
-  }, [hudVisible, isMobile, showCommentsMobile]);
+    if (photos.length <= 1) return;
+    const prevIndex = (index - 1 + photos.length) % photos.length;
+    const nextIndex = (index + 1) % photos.length;
+    const imgPrev = new window.Image();
+    imgPrev.src = photos[prevIndex].url;
+    const imgNext = new window.Image();
+    imgNext.src = photos[nextIndex].url;
+  }, [index, photos]);
 
-  // Infinite/Looping Navigation Handler
+  // Immersive Focus Mode timeout
+  useEffect(() => {
+    if (showDrawer) {
+      setHudVisible(true);
+      return;
+    }
+    
+    let timeout: NodeJS.Timeout;
+    const handleActivity = () => {
+      setHudVisible(true);
+      clearTimeout(timeout);
+      timeout = setTimeout(() => setHudVisible(false), 2500);
+    };
+
+    window.addEventListener("mousemove", handleActivity);
+    window.addEventListener("touchstart", handleActivity);
+    window.addEventListener("keydown", handleActivity);
+    handleActivity();
+    
+    return () => {
+      window.removeEventListener("mousemove", handleActivity);
+      window.removeEventListener("touchstart", handleActivity);
+      window.removeEventListener("keydown", handleActivity);
+      clearTimeout(timeout);
+    };
+  }, [showDrawer, index]);
+
+  useEffect(() => {
+    const unsubscribe = scale.onChange((val) => setIsZoomed(val > 1.05));
+    return () => unsubscribe();
+  }, [scale]);
+
   const navigate = useCallback(
     (nextDirection: number) => {
-      if (isZoomed || photos.length === 0) return;
+      if (photos.length === 0) return;
+      x.set(0);
+      y.set(0);
+      scale.set(1);
       setDirection(nextDirection);
       setIndex((current) => {
-        // Seamless circular wrap around
         const nextIndex = (current + nextDirection + photos.length) % photos.length;
         window.history.replaceState(null, "", `/photos/${photos[nextIndex].id}`);
-        setHudVisible(true);
-        setShowCommentsMobile(false);
         setHearts([]);
         return nextIndex;
       });
     },
-    [photos, isZoomed],
+    [photos, x, y, scale],
   );
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const currentScale = scale.get();
+    const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
+    const newScale = Math.min(Math.max(currentScale * zoomFactor, 1), 4);
+    
+    scale.set(newScale);
+    if (newScale === 1) {
+      x.set(0);
+      y.set(0);
+    }
+  };
+
+  const toggleZoom = () => {
+    const current = scale.get();
+    if (current > 1.05) {
+      scale.set(1);
+      x.set(0);
+      y.set(0);
+    } else {
+      scale.set(2.2);
+    }
+  };
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if (event.key === "ArrowLeft") navigate(-1);
       if (event.key === "ArrowRight") navigate(1);
       if (event.key === "Escape") {
-        if (isZoomed) setIsZoomed(false);
-        else if (showCommentsMobile) setShowCommentsMobile(false);
-        else router.push("/");
+        if (scale.get() > 1.05) {
+          scale.set(1);
+          x.set(0);
+          y.set(0);
+        } else if (showDrawer) {
+          setShowDrawer(false);
+        } else {
+          router.push("/");
+        }
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [navigate, router, isZoomed, showCommentsMobile]);
+  }, [navigate, router, showDrawer, scale, x, y]);
 
   useEffect(() => {
     if (!photo) return;
@@ -166,7 +286,6 @@ export default function PhotoViewer({
       .catch(() => undefined);
   }, [photo, initialId, initialEngagement]);
 
-  // Actions
   const toggleLike = async () => {
     setEngagement((current) => ({
       ...current,
@@ -198,284 +317,311 @@ export default function PhotoViewer({
     }
   };
 
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(photo.url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `${photo.title.toLowerCase().replace(/[^a-z0-9]/g, "-") || "astrospectrum"}-${photo.id}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(photo.url, "_blank");
+    }
+  };
+
   let lastTap = 0;
   const handleTouchOrClick = (e: React.MouseEvent | React.TouchEvent) => {
     const now = Date.now();
-    const DOUBLE_TAP_DELAY = 300;
-    
-    if (now - lastTap < DOUBLE_TAP_DELAY) {
+    if (now - lastTap < 300) {
       if (!engagement.viewerLiked) toggleLike();
-      
-      let clientX, clientY;
-      if ('touches' in e) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
-      } else {
-        clientX = (e as React.MouseEvent).clientX;
-        clientY = (e as React.MouseEvent).clientY;
-      }
-      
+      let clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+      let clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
       setHearts((prev) => [...prev, { id: Date.now(), x: clientX, y: clientY }]);
-    } else {
-      if (isMobile) {
-        setHudVisible(!hudVisible);
-      }
     }
     lastTap = now;
   };
 
-  if (!photo) return <div className="p-8 text-(--text) bg-(--surface-1) min-h-screen">Photo not found.</div>;
+  if (!photo) return <div className="p-8 text-white bg-[#030305] min-h-screen">Photo not found.</div>;
 
   const metadata = [
-    photo.camera ? `${photo.camera}` : null,
-    photo.focalLength ? `${photo.focalLength}` : null,
+    photo.camera,
+    photo.focalLength,
     photo.aperture,
     photo.shutter,
     photo.iso ? `ISO ${photo.iso}` : null,
   ].filter(Boolean);
 
   return (
-    <div className="relative flex h-[100dvh] w-full overflow-hidden bg-black md:bg-(--surface-1) text-(--text)">
+    <div className="relative flex h-[100dvh] w-full overflow-hidden bg-[#030305] text-white select-none">
       
-      {/* CLOSE BUTTON */}
-      <button
-        onClick={() => router.push("/")}
-        className="fixed left-4 top-4 md:left-6 md:top-6 z-50 flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full bg-black/40 text-white/90 backdrop-blur-xl border border-white/15 transition hover:bg-white hover:text-black hover:scale-105"
-      >
-        <X size={20} />
-      </button>
+      {/* Optimized Static Ambient Background (Zero performance overhead) */}
+      <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-tr from-[#030305] via-[#09090c] to-[#030305]" />
 
-      {/* MAIN PHOTO CONTAINER */}
-      <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-black touch-none">
-        <AnimatePresence custom={direction} mode="popLayout">
-          <motion.img
+      {/* STAGE */}
+      <div 
+        onWheel={handleWheel}
+        className="relative z-10 flex flex-1 items-center justify-center overflow-hidden touch-none w-full h-full p-4 md:p-12"
+      >
+        <AnimatePresence custom={direction} mode="wait">
+          <motion.div
             key={photo.id}
-            src={photo.url}
-            alt={photo.title}
             custom={direction}
-            style={isMobile ? { y, rotate } : { x, rotate }}
+            style={isMobile ? { y, rotate, scale } : { x, y, rotate, scale }}
             drag={mounted ? (isZoomed ? true : isMobile ? "y" : "x") : false}
-            dragElastic={isZoomed ? 0 : 0.15}
-            dragConstraints={isZoomed ? { left: -500, right: 500, top: -500, bottom: 500 } : { left: 0, right: 0, top: 0, bottom: 0 }}
+            dragElastic={0.15}
+            dragConstraints={isZoomed ? { left: -800, right: 800, top: -800, bottom: 800 } : { left: 0, right: 0, top: 0, bottom: 0 }}
             onDragEnd={(_, info) => {
               if (isZoomed) return;
               const offset = isMobile ? info.offset.y : info.offset.x;
               const velocity = isMobile ? info.velocity.y : info.velocity.x;
-              
               if (offset < -90 || velocity < -500) navigate(1);
               if (offset > 90 || velocity > 500) navigate(-1);
             }}
             onClick={handleTouchOrClick}
             onTouchStart={handleTouchOrClick}
-            initial={{ 
-              opacity: 0, 
-              scale: 0.9,
-              x: !isMobile ? (direction > 0 ? 300 : -300) : 0,
-              y: isMobile ? (direction > 0 ? 300 : -300) : 0,
-              filter: "blur(8px)" 
-            }}
-            animate={{ 
-              opacity: 1, 
-              scale: isZoomed ? 2.5 : 1, 
-              x: 0, y: 0, 
-              filter: "blur(0px)",
-              cursor: isZoomed ? "grab" : "zoom-in"
-            }}
-            exit={{ 
-              opacity: 0, 
-              scale: 0.9,
-              x: !isMobile ? (direction > 0 ? -300 : 300) : 0,
-              y: isMobile ? (direction > 0 ? -300 : 300) : 0,
-              filter: "blur(8px)" 
-            }}
-            transition={spring}
-            className={`max-h-full w-auto max-w-full select-none object-contain ${isMobile ? 'h-full w-full object-cover' : 'rounded-lg shadow-2xl'}`}
-          />
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1, x: 0, y: 0, cursor: isZoomed ? "grab" : "zoom-in" }}
+            exit={{ opacity: 0, scale: 0.97 }}
+            transition={springConfig}
+            className="relative flex items-center justify-center bg-black/40 backdrop-blur-sm p-1 shadow-2xl border border-white/[0.06]"
+          >
+            <img
+              src={photo.url}
+              alt={photo.title}
+              className="max-h-[85vh] max-w-[90vw] object-contain pointer-events-none"
+            />
+          </motion.div>
         </AnimatePresence>
 
-        {/* Double Tap Floating Hearts */}
+        {/* Hearts */}
         <AnimatePresence>
           {hearts.map((h) => (
             <motion.div
               key={h.id}
-              initial={{ opacity: 0, scale: 0.5, y: 20 }}
-              animate={{ opacity: 1, scale: 1.5, y: -20 }}
-              exit={{ opacity: 0, scale: 2, y: -60 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="absolute pointer-events-none z-50 text-red-500 drop-shadow-2xl"
+              initial={{ opacity: 0, scale: 0.4, y: 15 }}
+              animate={{ opacity: 1, scale: 1.4, y: -25 }}
+              exit={{ opacity: 0, scale: 1.8, y: -60 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="absolute pointer-events-none z-50 text-red-500"
               style={{ left: h.x - 32, top: h.y - 32 }}
             >
               <Heart size={64} className="fill-current" />
             </motion.div>
           ))}
         </AnimatePresence>
-
-        {/* Desktop Zoom Toggle Button */}
-        {!isMobile && (
-          <button
-            onClick={() => setIsZoomed(!isZoomed)}
-            className="absolute bottom-6 right-6 z-40 p-3 rounded-full bg-black/40 text-white backdrop-blur-md border border-white/10 hover:bg-white hover:text-black transition"
-          >
-            {isZoomed ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
-          </button>
-        )}
       </div>
 
-      {/* MOBILE HUD OVERLAY */}
+      {/* TOP HEADER CONTROLS */}
       <AnimatePresence>
-        {isMobile && hudVisible && !showCommentsMobile && (
+        {hudVisible && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 pointer-events-none z-30 flex flex-col justify-end pb-8 px-4 bg-gradient-to-t from-black/80 via-black/20 to-transparent"
+            initial={{ opacity: 0, y: -15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.3 }}
+            className="absolute top-0 inset-x-0 z-40 flex items-start justify-between p-6 bg-gradient-to-b from-[#030305]/90 to-transparent pointer-events-auto"
           >
-            {/* Right Action Bar */}
-            <div className="absolute right-4 bottom-28 flex flex-col items-center gap-6 pointer-events-auto">
-              <button onClick={toggleLike} className="group flex flex-col items-center gap-1">
-                <div className={`p-3 rounded-full backdrop-blur-md border transition ${engagement.viewerLiked ? 'bg-red-500/20 border-red-500 text-red-500' : 'bg-black/30 border-white/20 text-white'}`}>
-                  <Heart size={24} className={engagement.viewerLiked ? "fill-current" : ""} />
-                </div>
-                <span className="text-xs font-bold drop-shadow-md text-white">{engagement.likeCount}</span>
-              </button>
-              
-              <button onClick={() => setShowCommentsMobile(true)} className="group flex flex-col items-center gap-1">
-                <div className="p-3 rounded-full bg-black/30 backdrop-blur-md border border-white/20 text-white transition hover:bg-white hover:text-black">
-                  <MessageCircle size={24} />
-                </div>
-                <span className="text-xs font-bold drop-shadow-md text-white">{engagement.commentCount}</span>
-              </button>
-
-              <button onClick={() => setShowCommentsMobile(true)} className="group flex flex-col items-center gap-1">
-                <div className="p-3 rounded-full bg-black/30 backdrop-blur-md border border-white/20 text-yellow-400">
-                  <Star size={24} className="fill-current" />
-                </div>
-                <span className="text-xs font-bold drop-shadow-md text-white">{engagement.ratingAverage.toFixed(1)}</span>
-              </button>
+            <div className="flex items-center gap-4">
+              <MagneticButton
+                onClick={() => router.push("/")}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.02] text-white/70 backdrop-blur-xl border border-white/10 transition hover:bg-white/10 hover:text-white"
+                title="Back to Gallery"
+              >
+                <X size={18} strokeWidth={1.5} />
+              </MagneticButton>
+              <div className="hidden sm:flex flex-col gap-1">
+                <h2 className="text-lg font-serif italic tracking-wide text-white/95 truncate max-w-xs">{photo.title}</h2>
+                <p className="text-[10px] font-mono tracking-[0.2em] uppercase text-white/40">Astrospectrum Archive</p>
+              </div>
             </div>
 
-            {/* Bottom Metadata Block */}
-            <div className="w-[75%] pointer-events-auto space-y-2">
-              <h1 className="text-2xl font-black text-white drop-shadow-lg">{photo.title}</h1>
-              {photo.authorName && <p className="text-sm font-bold text-white/90">📸 {photo.authorName}</p>}
-              <p className="text-xs text-white/75 flex items-center gap-1 drop-shadow-md">
-                <MapPin size={12} /> {photo.location || "Unknown Location"}
-              </p>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {metadata.map((meta, i) => (
-                  <span key={i} className="text-[10px] uppercase tracking-wider font-bold bg-white/20 backdrop-blur-md px-2 py-1 rounded text-white">
-                    {meta}
-                  </span>
-                ))}
-              </div>
+            <div className="flex items-center gap-3">
+              <span className="px-4 py-2 rounded-full bg-white/[0.02] backdrop-blur-xl border border-white/10 font-mono text-[10px] tracking-widest text-white/60">
+                {String(index + 1).padStart(2, '0')} / {String(photos.length).padStart(2, '0')}
+              </span>
+              <MagneticButton
+                onClick={() => setShowDrawer(true)}
+                className="flex items-center gap-2 px-5 py-2 rounded-full bg-white/[0.02] hover:bg-white/10 backdrop-blur-xl border border-white/10 text-[10px] font-mono uppercase tracking-[0.2em] transition text-white/70 hover:text-white"
+              >
+                <Info size={14} strokeWidth={1.5} />
+                <span className="hidden sm:inline">Index & Meta</span>
+              </MagneticButton>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* MOBILE COMMENTS & RATING SHEET */}
+      {/* BOTTOM FLOATING DOCK */}
       <AnimatePresence>
-        {isMobile && showCommentsMobile && (
+        {hudVisible && (
           <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-            className="absolute inset-x-0 bottom-0 z-50 h-[75vh] rounded-t-3xl bg-(--surface-1) border-t border-(--card-border) shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.3 }}
+            className="absolute bottom-8 inset-x-0 z-40 flex items-center justify-center pointer-events-none"
           >
-            <div className="flex items-center justify-between p-4 border-b border-(--card-border)">
-              <h3 className="font-bold text-sm uppercase tracking-wider">Photo Engagement</h3>
-              <button onClick={() => setShowCommentsMobile(false)} className="p-2 bg-(--surface-2) rounded-full">
-                <X size={16} />
-              </button>
-            </div>
+            <div className="pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-full bg-[#030305]/60 backdrop-blur-2xl border border-white/[0.08] shadow-2xl">
+              <MagneticButton
+                onClick={() => navigate(-1)}
+                className="p-3 rounded-full text-white/50 hover:text-white hover:bg-white/[0.05] transition"
+                title="Previous Frame"
+              >
+                <ChevronLeft size={18} strokeWidth={1.5} />
+              </MagneticButton>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
-              {/* Star Rating Section inside Mobile Sheet */}
-              <div className="p-4 rounded-2xl bg-(--surface-2) border border-(--card-border) flex flex-col items-center justify-center gap-2">
-                <p className="text-xs font-bold uppercase tracking-widest text-(--text-muted)">Rate this photograph</p>
-                <StarRating value={engagement.viewerRating ?? 0} onSelect={handleRating} />
-                <span className="text-[11px] font-bold text-(--text-muted) mt-1">
-                  Community Average: {engagement.ratingAverage.toFixed(1)} / 5 ({engagement.ratingCount} reviews)
-                </span>
-              </div>
+              <div className="w-[1px] h-3 bg-white/10 mx-1" />
 
-              {/* Comments Section */}
-              <div>
-                <h4 className="text-xs font-black uppercase tracking-widest mb-3 flex items-center gap-2">
-                  <MessageCircle size={14} /> Comments ({engagement.commentCount})
-                </h4>
-                <CommentsList photoId={photo.id} setEngagement={setEngagement} isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading} />
-              </div>
+              <MagneticButton
+                onClick={toggleLike}
+                className="flex items-center gap-2 px-4 py-2 rounded-full hover:bg-white/[0.05] transition group"
+              >
+                <Heart size={16} strokeWidth={engagement.viewerLiked ? 0 : 1.5} className={`transition-all ${engagement.viewerLiked ? "text-red-500 fill-current scale-110" : "text-white/50 group-hover:text-white"}`} />
+                <span className="text-[10px] font-mono tracking-widest text-white/70">{engagement.likeCount}</span>
+              </MagneticButton>
+
+              <MagneticButton
+                onClick={() => setShowDrawer(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-full hover:bg-white/[0.05] transition group"
+              >
+                <Star size={16} strokeWidth={1.5} className="text-white/50 group-hover:text-yellow-400 transition-colors" />
+                <span className="text-[10px] font-mono tracking-widest text-white/70">{engagement.ratingAverage.toFixed(1)}</span>
+              </MagneticButton>
+
+              <MagneticButton
+                onClick={() => setShowDrawer(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-full hover:bg-white/[0.05] transition group"
+              >
+                <MessageCircle size={16} strokeWidth={1.5} className="text-white/50 group-hover:text-white" />
+                <span className="text-[10px] font-mono tracking-widest text-white/70">{engagement.commentCount}</span>
+              </MagneticButton>
+
+              <div className="w-[1px] h-3 bg-white/10 mx-1" />
+
+              <MagneticButton
+                onClick={handleDownload}
+                className="p-3 rounded-full text-white/50 hover:text-white hover:bg-white/[0.05] transition"
+                title="Acquire Asset"
+              >
+                <Download size={16} strokeWidth={1.5} />
+              </MagneticButton>
+
+              {!isMobile && (
+                <MagneticButton
+                  onClick={toggleZoom}
+                  className="p-3 rounded-full text-white/50 hover:text-white hover:bg-white/[0.05] transition"
+                  title={isZoomed ? "Contract" : "Expand"}
+                >
+                  {isZoomed ? <Minimize2 size={16} strokeWidth={1.5} /> : <Maximize2 size={16} strokeWidth={1.5} />}
+                </MagneticButton>
+              )}
+
+              <div className="w-[1px] h-3 bg-white/10 mx-1" />
+
+              <MagneticButton
+                onClick={() => navigate(1)}
+                className="p-3 rounded-full text-white/50 hover:text-white hover:bg-white/[0.05] transition"
+                title="Next Frame"
+              >
+                <ChevronRight size={18} strokeWidth={1.5} />
+              </MagneticButton>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* DESKTOP SIDEBAR (Split Pane) */}
-      {!isMobile && (
-        <div className="hidden md:flex w-[420px] shrink-0 flex-col border-l border-(--card-border) bg-(--surface-1) shadow-2xl z-30 h-full">
-          
-          {/* Header & Meta */}
-          <div className="p-6 border-b border-(--card-border) overflow-y-auto max-h-[50vh] scrollbar-hide">
-            <div className="mb-4 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-red-500/80">
-              <span className="flex items-center gap-1.5"><Sparkles size={13} /> Frame {index + 1} / {photos.length}</span>
-              <span className="text-(--text-muted)">Loop Enabled</span>
-            </div>
-            <h1 className="text-3xl font-black uppercase tracking-tight mb-2">{photo.title}</h1>
-            
-            <div className="space-y-2 text-sm text-(--text-muted) mb-6">
-              <p className="flex gap-2 items-center">
-                <MapPin className="text-red-400" size={16} />
-                <span>{photo.location || "Unknown location"}</span>
-              </p>
-              {metadata.length > 0 && (
-                <div className="flex gap-2 items-start mt-3">
-                  <Camera className="text-red-400 mt-1 shrink-0" size={16} />
-                  <div className="flex flex-wrap gap-1.5">
-                    {metadata.map((meta, i) => (
-                      <span key={i} className="px-2 py-1 bg-(--surface-2) rounded border border-(--card-border) text-xs font-medium">
-                        {meta}
-                      </span>
-                    ))}
+      {/* SLIDE-OVER DRAWER */}
+      <AnimatePresence>
+        {showDrawer && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDrawer(false)}
+              className="absolute inset-0 z-50 bg-[#030305]/70 backdrop-blur-md"
+            />
+
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="absolute right-0 top-0 bottom-0 z-50 w-full sm:w-[440px] bg-[#060608] border-l border-white/[0.06] shadow-2xl flex flex-col"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-white/[0.06]">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={14} className="text-white/40" />
+                  <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/60">Exhibit Data</h3>
+                </div>
+                <MagneticButton
+                  onClick={() => setShowDrawer(false)}
+                  className="p-2 rounded-full text-white/50 hover:text-white transition"
+                >
+                  <X size={18} strokeWidth={1.5} />
+                </MagneticButton>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-thin">
+                <div>
+                  <h2 className="text-3xl font-serif tracking-wide text-white/90 mb-3">{photo.title}</h2>
+                  {photo.authorName && (
+                    <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/50 mb-2">Lens of {photo.authorName}</p>
+                  )}
+                  <p className="text-xs text-white/40 flex items-center gap-2 mb-6">
+                    <MapPin size={12} className="text-white/30" /> {photo.location || "Undisclosed Coordinates"}
+                  </p>
+                  
+                  <MagneticButton
+                    onClick={handleDownload}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 bg-white/[0.03] hover:bg-white text-white hover:text-black border border-white/[0.08] text-[10px] font-mono uppercase tracking-[0.2em] transition-all"
+                  >
+                    <Download size={14} strokeWidth={1.5} /> Acquire High-Res Master
+                  </MagneticButton>
+                </div>
+
+                {metadata.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-[10px] font-mono tracking-[0.2em] uppercase text-white/40">
+                      <Camera size={12} /> Exposure Telemetry
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {metadata.map((meta, i) => (
+                        <span key={i} className="px-3 py-1.5 bg-white/[0.02] border border-white/[0.06] text-[10px] font-mono tracking-widest text-white/60">
+                          {meta}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-3 pt-3 border-t border-white/[0.06]">
+                  <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/40">Curator Rating</p>
+                  <div className="flex items-center gap-4">
+                    <StarRating value={engagement.viewerRating ?? 0} onSelect={handleRating} />
+                    <div className="text-[10px] font-mono tracking-widest text-white/50 border-l border-white/10 pl-4">
+                      <span className="text-white/90 font-bold">{engagement.ratingAverage.toFixed(1)}</span> / 5.0 
+                      <span className="text-white/30 ml-1">({engagement.ratingCount})</span>
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* Desktop Actions */}
-            <div className="flex items-center gap-4 border-t border-(--card-border) pt-5">
-              <button
-                onClick={toggleLike}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border font-bold transition ${
-                  engagement.viewerLiked
-                    ? "bg-red-500/10 border-red-500/50 text-red-500"
-                    : "bg-(--surface-2) border-(--card-border) hover:border-red-400/50"
-                }`}
-              >
-                <Heart size={18} className={engagement.viewerLiked ? "fill-current" : ""} />
-                {engagement.likeCount} Likes
-              </button>
-              
-              <div className="flex-1 flex flex-col items-center bg-(--surface-2) rounded-xl border border-(--card-border) p-2">
-                <StarRating value={engagement.viewerRating ?? 0} onSelect={handleRating} />
-                <span className="text-[10px] font-bold text-(--text-muted) mt-1">{engagement.ratingAverage.toFixed(1)} / 5</span>
+                <div className="space-y-4 pt-3 border-t border-white/[0.06]">
+                  <h4 className="text-[10px] font-mono uppercase tracking-[0.2em] text-white/40 flex items-center gap-2">
+                    <MessageCircle size={12} /> Discourse ({engagement.commentCount})
+                  </h4>
+                  <CommentsList photoId={photo.id} setEngagement={setEngagement} isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading} />
+                </div>
               </div>
-            </div>
-          </div>
-
-          {/* Desktop Comments Section */}
-          <div className="flex-1 flex flex-col p-6 bg-(--surface-2)/30 overflow-hidden">
-            <h2 className="flex items-center gap-2 text-xs font-black uppercase tracking-widest mb-4">
-              <MessageCircle size={15} /> Comments ({engagement.commentCount})
-            </h2>
-            <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-(--card-border)">
-              <CommentsList photoId={photo.id} setEngagement={setEngagement} isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading} />
-            </div>
-          </div>
-        </div>
-      )}
-
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -521,55 +667,53 @@ function CommentsList({
   };
 
   return (
-    <div className="flex flex-col h-full gap-4">
-      {/* Input Area */}
+    <div className="flex flex-col gap-4">
       {isAuthLoading ? (
-        <div className="h-12 w-full rounded-xl bg-(--card-border) animate-pulse" />
+        <div className="h-11 w-full bg-white/[0.02] border border-white/[0.06] animate-pulse" />
       ) : isLoggedIn ? (
         <div className="flex gap-2">
           <input
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}
-            className="flex-1 h-11 px-4 text-sm rounded-xl bg-(--surface-2) border border-(--card-border) text-(--text) focus:outline-none focus:border-red-400"
-            placeholder="Add a comment..."
+            className="flex-1 h-11 px-3 text-xs font-serif italic bg-white/[0.02] border border-white/[0.08] text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors rounded-none"
+            placeholder="Add to the discourse..."
           />
           <button
             onClick={submit}
             disabled={submitting || !comment.trim()}
-            className="h-11 px-4 rounded-xl bg-(--text) text-(--surface-1) font-bold text-xs uppercase transition hover:bg-red-500 hover:text-white disabled:opacity-50"
+            className="h-11 px-5 bg-white/[0.05] border border-white/[0.08] text-white/70 text-[10px] font-mono tracking-widest uppercase transition-colors hover:bg-white hover:text-black disabled:opacity-30 rounded-none flex items-center justify-center min-w-[70px]"
           >
-            {submitting ? <Loader2 className="animate-spin" size={16} /> : "Post"}
+            {submitting ? <KineticLoader /> : "Post"}
           </button>
         </div>
       ) : (
         <button
           onClick={() => signIn("google", { callbackUrl: window.location.pathname })}
-          className="w-full rounded-xl border border-(--card-border) bg-(--surface-2) px-4 py-3 text-xs font-bold uppercase text-(--text-muted) transition hover:border-red-400"
+          className="w-full border border-white/[0.08] bg-white/[0.02] px-4 py-3 text-[10px] font-mono uppercase tracking-[0.2em] text-white/50 transition hover:bg-white hover:text-black rounded-none"
         >
-          Sign in to comment
+          Authenticate to Contribute
         </button>
       )}
 
-      {/* List */}
-      <div className="space-y-4 pb-4">
+      <div className="space-y-4 pt-2">
         {loading ? (
-          <Loader2 className="animate-spin mx-auto text-(--text-muted) mt-4" />
+          <div className="flex justify-center py-6">
+            <KineticLoader />
+          </div>
         ) : comments.length === 0 ? (
-          <p className="text-sm text-(--text-muted) text-center mt-4 flex items-center justify-center gap-2">
-            <Info size={16} /> No comments yet.
-          </p>
+          <p className="text-[10px] text-white/30 text-center py-6 font-mono tracking-widest uppercase">Silence in the gallery.</p>
         ) : (
           comments.map((item) => (
-            <div key={item.id} className="flex gap-3">
+            <div key={item.id} className="flex gap-3 group">
               <img
                 src={item.user.customImage || item.user.image || "/default-pfp.png"}
                 alt=""
-                className="h-8 w-8 rounded-full object-cover border border-(--card-border) shrink-0"
+                className="h-7 w-7 rounded-none object-cover border border-white/[0.08] shrink-0 opacity-70 group-hover:opacity-100 transition-opacity"
               />
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-(--text)">{item.user.name || "Guest"}</p>
-                <p className="text-sm text-(--text-muted) break-words mt-0.5">{item.body ?? item.comment}</p>
+                <p className="text-[10px] font-mono tracking-[0.2em] uppercase text-white/50 mb-0.5">{item.user.name || "Anonymous"}</p>
+                <p className="text-xs font-serif text-white/80 break-words leading-relaxed">{item.body ?? item.comment}</p>
               </div>
             </div>
           ))
