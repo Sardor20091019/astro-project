@@ -1,32 +1,46 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
 
 type ThemeContextType = {
-  theme: string;
-  setTheme: (theme: string) => void;
+  baseTheme: string;
+  setBaseTheme: (base: string) => void;
+  mode: "dark" | "light";
+  toggleMode: () => void;
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState("void");
+  const [baseTheme, setBaseThemeState] = useState(() => {
+    if (typeof window === "undefined") return "void";
+    return localStorage.getItem("astro-theme") || "void";
+  });
 
+  const [mode, setModeState] = useState<"dark" | "light">(() => {
+    if (typeof window === "undefined") return "dark";
+    return (localStorage.getItem("astro-mode") as "dark" | "light") || "dark";
+  });
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("astro-theme") || "void";
-    setThemeState(savedTheme);
-    document.documentElement.setAttribute("data-theme", savedTheme);
-  }, []);
+    // Apply clean attributes so your CSS matches [data-theme="void"] and [data-mode="dark"]
+    document.documentElement.setAttribute("data-theme", baseTheme);
+    document.documentElement.setAttribute("data-mode", mode);
+    document.documentElement.classList.toggle("dark", mode === "dark");
 
-  const setTheme = (newTheme: string) => {
-    setThemeState(newTheme);
-    localStorage.setItem("astro-theme", newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
+    localStorage.setItem("astro-theme", baseTheme);
+    localStorage.setItem("astro-mode", mode);
+  }, [baseTheme, mode]);
+
+  const setBaseTheme = (newBase: string) => {
+    setBaseThemeState(newBase);
+  };
+
+  const toggleMode = () => {
+    setModeState((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ baseTheme, setBaseTheme, mode, toggleMode }}>
       {children}
     </ThemeContext.Provider>
   );
