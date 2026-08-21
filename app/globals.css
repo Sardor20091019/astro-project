@@ -55,7 +55,7 @@
 
 
 /* ==========================================
-   2. NEO-BRUTALIST THEME (Thick Borders, Hard Shadows, Pop Colors)
+   2. NEO-BRUTALIST THEME (Floating Hard Shadows & Pop Colors)
    ================================---------- */
 [data-theme="brutalist"] {
   --bg: #FFFDF5;
@@ -63,7 +63,7 @@
   --surface-2: #FFDE59;
   --surface-3: #FF90E8;
   --card-border: 3px solid #000000;
-  --card-shadow: 5px 5px 0px #000000;
+  --card-shadow: 8px 8px 0px #000000;
   --text: #000000;
   --text-dim: rgba(0, 0, 0, 0.85);
   --text-muted: rgba(0, 0, 0, 0.50); 
@@ -71,17 +71,17 @@
   --accent-soft: rgba(255, 87, 87, 0.15); 
   --border: #000000;
   --border-hover: #000000;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --shadow-btn: 4px 4px 0px #000000;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --shadow-btn: 6px 6px 0px #000000;
   --glass-blur: blur(0px);
   --btn-style: 0px; 
   --footer-padding: 4rem;
-  --image-viewer-shadow: 8px 8px 0px #000000;
-  --btn-radius: 8px;
+  --image-viewer-shadow: 14px 14px 0px #000000;
+  --btn-radius: 0px;
   --btn-border: 3px solid #000000;
-  --btn-shadow: 4px 4px 0px #000000;
+  --btn-shadow: 6px 6px 0px #000000;
 }
 
 [data-theme="brutalist"][data-mode="dark"],
@@ -91,7 +91,7 @@
   --surface-2: #27272a;
   --surface-3: #3f3f46;  
   --card-border: 3px solid #ffffff;
-  --card-shadow: 5px 5px 0px #ffffff;
+  --card-shadow: 8px 8px 0px #ffffff;
   --text: #ffffff;
   --text-dim: rgba(255, 255, 255, 0.85);
   --text-muted: rgba(255, 255, 255, 0.50); 
@@ -100,9 +100,26 @@
   --border: #ffffff;
   --border-hover: #ffffff;
   --btn-border: 3px solid #ffffff;
-  --btn-shadow: 4px 4px 0px #ffffff;
-  --shadow-btn: 4px 4px 0px #ffffff;
-  --image-viewer-shadow: 8px 8px 0px #ffffff;
+  --btn-shadow: 6px 6px 0px #ffffff;
+  --shadow-btn: 6px 6px 0px #ffffff;
+  --image-viewer-shadow: 14px 14px 0px #ffffff;
+}
+
+/* Force all image boxes, avatars, and media containers to be hard-edged with deep floating shadows in Brutalist mode */
+[data-theme="brutalist"] img,
+[data-theme="brutalist"] .rounded-full,
+[data-theme="brutalist"] .rounded-lg,
+[data-theme="brutalist"] .rounded-xl,
+[data-theme="brutalist"] .rounded-2xl,
+[data-theme="brutalist"] .rounded-3xl {
+  border-radius: 0px !important;
+  box-shadow: 6px 6px 0px var(--border) !important;
+}
+
+/* Enhanced floating interaction on hover for Brutalist cards */
+[data-theme="brutalist"] .world-card:hover {
+  transform: translate(-4px, -4px);
+  box-shadow: 12px 12px 0px var(--border);
 }
 
 [data-theme="brutalist"] h1, 

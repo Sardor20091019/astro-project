@@ -14,7 +14,7 @@ export default function Footer() {
       <div className="w-full max-w-7xl flex flex-col items-center">
         
         {/* Top Grid Container */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 pb-16 border-b border-(--border)/60 text-center md:text-left">
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 pb-16 border-b border-(--border)/60 text-center md:text-left">
           
           {/* Column 1 & 2: Brand Bio */}
           <div className="lg:col-span-2 flex flex-col items-center md:items-start gap-4">
@@ -26,31 +26,7 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Column 3: Navigation Links */}
-          <div className="flex flex-col items-center md:items-start gap-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-(--text-muted)">
-              Platform
-            </p>
-            <ul className="flex flex-col items-center md:items-start gap-2.5 text-xs">
-              <li>
-                <Link href="/" className="text-(--text-dim) hover:text-(--accent) transition-colors uppercase tracking-[0.15em]">
-                  Gallery Archive
-                </Link>
-              </li>
-              <li>
-                <Link href="/leaderboard" className="text-(--text-dim) hover:text-(--accent) transition-colors uppercase tracking-[0.15em]">
-                  Global Leaderboard
-                </Link>
-              </li>
-              <li>
-                <Link href="/login" className="text-(--text-dim) hover:text-(--accent) transition-colors uppercase tracking-[0.15em]">
-                  Account Portal
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 4: Official Contacts */}
+          {/* Column 3: Official Contacts */}
           <div className="flex flex-col items-center md:items-start gap-3">
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-(--text-muted)">
               Corporate Contacts
@@ -71,7 +47,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Column 5: Social Networks */}
+          {/* Column 4: Social Networks */}
           <div className="flex flex-col items-center md:items-start gap-3">
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-(--text-muted)">
               Social Channels

@@ -33,27 +33,27 @@ export default async function LeaderboardPage() {
   const [first, second, third, ...rest] = topUsers;
 
   return (
-    <main className="min-h-screen bg-black text-white px-4 py-16 sm:py-24 flex justify-center">
+    <main className="min-h-screen bg-[var(--surface)] text-[var(--text)] px-4 py-16 sm:py-24 flex justify-center transition-colors duration-300">
       <div className="w-full max-w-3xl mx-auto flex flex-col items-center gap-12">
         
         {/* Header */}
-        <div className="border-b border-white/10 pb-6 flex flex-col gap-2 text-center items-center w-full max-w-xl">
+        <div className="border-b border-[var(--border)] pb-6 flex flex-col gap-2 text-center items-center w-full max-w-xl">
           <div className="flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-(--accent)" />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.3em] text-(--accent)">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.3em] text-[var(--accent)]">
               Community Elite
             </span>
           </div>
           <h1 className="text-3xl font-black uppercase tracking-tight sm:text-5xl">
             Creator Podium
           </h1>
-          <p className="text-xs uppercase tracking-[0.14em] text-zinc-500 font-mono">
+          <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)] font-mono">
             Top creators ranked by community followers
           </p>
         </div>
 
         {topUsers.length === 0 ? (
-          <div className="border border-dashed border-white/10 rounded-2xl p-12 text-center text-xs uppercase tracking-widest text-zinc-500 font-mono w-full max-w-xl">
+          <div className="border border-dashed border-[var(--border)] rounded-2xl p-12 text-center text-xs uppercase tracking-widest text-[var(--text-muted)] font-mono w-full max-w-xl">
             No creators found.
           </div>
         ) : (
@@ -62,16 +62,17 @@ export default async function LeaderboardPage() {
             {/* Podium Section (1st, 2nd, 3rd) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end pt-8">
               
-              {/* 2nd Place (Full Silver Theme) */}
+              {/* 2nd Place (Silver Theme) */}
               {second && (
                 <Link
                   href={`/profile/${second.id}`}
-                  className="group relative flex flex-col items-center p-6 rounded-3xl border-2 border-slate-300 bg-gradient-to-b from-slate-300/30 via-slate-900/90 to-black hover:border-slate-200 transition-all duration-300 shadow-[0_0_30px_rgba(203,213,225,0.2)] order-2 sm:order-1 text-center"
+                  style={{ borderRadius: "var(--radius)" }}
+                  className="group relative flex flex-col items-center p-6 border-2 border-slate-300 bg-gradient-to-b from-slate-300/30 via-[var(--surface-2)] to-[var(--surface)] hover:border-slate-200 transition-all duration-300 shadow-[0_0_30px_rgba(203,213,225,0.15)] order-2 sm:order-1 text-center"
                 >
                   <div className="absolute -top-4 w-8 h-8 rounded-full bg-slate-300 text-black flex items-center justify-center font-mono font-black text-xs shadow-lg">
                     2
                   </div>
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-slate-300 bg-slate-900 mb-3 shadow-md group-hover:scale-105 transition-transform duration-300">
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-slate-300 bg-[var(--surface-2)] mb-3 shadow-md group-hover:scale-105 transition-transform duration-300">
                     <Image 
                       src={second.image || "/default-avatar.png"} 
                       width={64}
@@ -80,7 +81,7 @@ export default async function LeaderboardPage() {
                       alt={second.name || "User avatar"} 
                     />
                   </div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-200 group-hover:text-white truncate w-full">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-200 group-hover:text-[var(--text)] truncate w-full">
                     {second.name || "Anonymous"}
                   </p>
                   <p className="text-[10px] font-mono text-slate-300 font-bold mt-1">
@@ -92,16 +93,17 @@ export default async function LeaderboardPage() {
                 </Link>
               )}
 
-              {/* 1st Place (Full Gold Theme) */}
+              {/* 1st Place (Gold Theme) */}
               {first && (
                 <Link
                   href={`/profile/${first.id}`}
-                  className="group relative flex flex-col items-center p-8 rounded-3xl border-2 border-yellow-400 bg-gradient-to-b from-yellow-500/40 via-zinc-900/95 to-black hover:border-yellow-300 transition-all duration-300 shadow-[0_0_60px_rgba(234,179,8,0.3)] order-1 sm:order-2 sm:-translate-y-6 text-center"
+                  style={{ borderRadius: "var(--radius)" }}
+                  className="group relative flex flex-col items-center p-8 border-2 border-yellow-400 bg-gradient-to-b from-yellow-500/40 via-[var(--surface-2)] to-[var(--surface)] hover:border-yellow-300 transition-all duration-300 shadow-[0_0_50px_rgba(234,179,8,0.25)] order-1 sm:order-2 sm:-translate-y-6 text-center"
                 >
                   <div className="absolute -top-5 w-10 h-10 rounded-full bg-yellow-400 text-black flex items-center justify-center font-mono font-black text-sm shadow-xl">
                     <Crown size={18} className="fill-black" />
                   </div>
-                  <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-yellow-400 bg-zinc-900 mb-3 shadow-xl group-hover:scale-105 transition-transform duration-300">
+                  <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-yellow-400 bg-[var(--surface-2)] mb-3 shadow-xl group-hover:scale-105 transition-transform duration-300">
                     <Image 
                       src={first.image || "/default-avatar.png"} 
                       width={80}
@@ -110,7 +112,7 @@ export default async function LeaderboardPage() {
                       alt={first.name || "User avatar"} 
                     />
                   </div>
-                  <p className="text-sm font-black uppercase tracking-wider text-yellow-200 group-hover:text-white truncate w-full">
+                  <p className="text-sm font-black uppercase tracking-wider text-yellow-200 group-hover:text-[var(--text)] truncate w-full">
                     {first.name || "Anonymous"}
                   </p>
                   <p className="text-xs font-mono font-black text-yellow-400 mt-1">
@@ -122,16 +124,17 @@ export default async function LeaderboardPage() {
                 </Link>
               )}
 
-              {/* 3rd Place (Full Bronze Theme) */}
+              {/* 3rd Place (Bronze Theme) */}
               {third && (
                 <Link
                   href={`/profile/${third.id}`}
-                  className="group relative flex flex-col items-center p-6 rounded-3xl border-2 border-amber-600 bg-gradient-to-b from-amber-700/30 via-zinc-900/90 to-black hover:border-amber-500 transition-all duration-300 shadow-[0_0_30px_rgba(217,119,6,0.2)] order-3 text-center"
+                  style={{ borderRadius: "var(--radius)" }}
+                  className="group relative flex flex-col items-center p-6 border-2 border-amber-600 bg-gradient-to-b from-amber-700/30 via-[var(--surface-2)] to-[var(--surface)] hover:border-amber-500 transition-all duration-300 shadow-[0_0_30px_rgba(217,119,6,0.15)] order-3 text-center"
                 >
                   <div className="absolute -top-4 w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center font-mono font-black text-xs shadow-lg">
                     3
                   </div>
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-amber-600 bg-zinc-900 mb-3 shadow-md group-hover:scale-105 transition-transform duration-300">
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-amber-600 bg-[var(--surface-2)] mb-3 shadow-md group-hover:scale-105 transition-transform duration-300">
                     <Image 
                       src={third.image || "/default-avatar.png"} 
                       width={64}
@@ -140,7 +143,7 @@ export default async function LeaderboardPage() {
                       alt={third.name || "User avatar"} 
                     />
                   </div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-amber-100 group-hover:text-white truncate w-full">
+                  <p className="text-xs font-bold uppercase tracking-wider text-amber-100 group-hover:text-[var(--text)] truncate w-full">
                     {third.name || "Anonymous"}
                   </p>
                   <p className="text-[10px] font-mono text-amber-300 font-bold mt-1">
@@ -157,7 +160,7 @@ export default async function LeaderboardPage() {
             {/* Rest of the List (4th to 10th) */}
             {rest.length > 0 && (
               <div className="flex flex-col gap-2 pt-4">
-                <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-500 pb-2">
+                <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--text-muted)] pb-2">
                   Remaining Rankings
                 </div>
                 <div className="flex flex-col gap-2">
@@ -168,13 +171,14 @@ export default async function LeaderboardPage() {
                       <Link
                         key={user.id}
                         href={`/profile/${user.id}`}
-                        className="group flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-zinc-950 hover:border-white/20 transition-all duration-300"
+                        style={{ borderRadius: "var(--radius-sm)" }}
+                        className="group flex items-center justify-between p-4 border border-[var(--border)]/60 bg-[var(--surface)] hover:border-[var(--border)] transition-all duration-300"
                       >
                         <div className="flex items-center gap-4 min-w-0">
-                          <span className="w-6 text-center font-mono text-xs font-bold text-zinc-600">
+                          <span className="w-6 text-center font-mono text-xs font-bold text-[var(--text-muted)]">
                             #{rank}
                           </span>
-                          <div className="relative w-10 h-10 rounded-full overflow-hidden border border-white/10 bg-zinc-900 shrink-0">
+                          <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[var(--border)] bg-[var(--surface-2)] shrink-0">
                             <Image 
                               src={user.image || "/default-avatar.png"} 
                               width={40}
@@ -183,15 +187,15 @@ export default async function LeaderboardPage() {
                               alt={user.name || "User avatar"} 
                             />
                           </div>
-                          <p className="text-xs font-bold uppercase tracking-wider text-zinc-300 group-hover:text-white truncate">
+                          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-dim)] group-hover:text-[var(--text)] truncate">
                             {user.name || "Anonymous Creator"}
                           </p>
                         </div>
                         <div className="flex items-center gap-2 font-mono">
-                          <span className="text-xs font-bold text-zinc-400">
+                          <span className="text-xs font-bold text-[var(--text-dim)]">
                             {user._count.followers.toLocaleString()}
                           </span>
-                          <span className="text-[9px] uppercase tracking-widest text-zinc-600">
+                          <span className="text-[9px] uppercase tracking-widest text-[var(--text-muted)]">
                             Followers
                           </span>
                         </div>

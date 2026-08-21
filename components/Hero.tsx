@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import Image from "next/image";
@@ -10,9 +9,9 @@ export default function Hero() {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subRef = useRef<HTMLParagraphElement>(null);
   
-  const [animate, setAnimate] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Native Parallax Effect using requestAnimationFrame
+  // Native Parallax Effect & Mount Trigger using requestAnimationFrame
   useEffect(() => {
     let animationFrameId: number;
 
@@ -29,11 +28,14 @@ export default function Hero() {
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
-    setAnimate(true);
+    
+    // Trigger entrance animation on next tick
+    const timer = setTimeout(() => setIsLoaded(true), 50);
 
     return () => {
       window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(animationFrameId);
+      clearTimeout(timer);
     };
   }, []);
 
@@ -75,7 +77,7 @@ export default function Hero() {
           fetchPriority="high"
           placeholder="blur"
           sizes="100vw"
-          className="object-cover"
+          className="object-cover scale-105 transition-transform duration-1000 ease-out"
         />
       </div>
 
@@ -105,9 +107,12 @@ export default function Hero() {
             fontSize: "11px", 
             letterSpacing: "0.4em", 
             textTransform: "uppercase", 
-            color: "rgba(240,235,225,0.35)", 
+            color: "rgba(240,235,225,0.45)", 
             marginBottom: "1.5rem", 
-            fontFamily: "var(--font-mono, 'Courier New', monospace)" 
+            fontFamily: "var(--font-mono, 'Courier New', monospace)",
+            opacity: isLoaded ? 1 : 0,
+            transform: isLoaded ? "translateY(0)" : "translateY(15px)",
+            transition: "opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s"
           }}
         >
           Photography by Sardor Sunatullayev
@@ -134,9 +139,9 @@ export default function Hero() {
                 <span
                   style={{
                     display: "inline-block",
-                    transform: animate ? "translateY(0)" : "translateY(110%)",
-                    opacity: animate ? 1 : 0,
-                    transition: `transform 0.75s cubic-bezier(0.16, 1, 0.3, 1) ${i * 28}ms, opacity 0.4s ease ${i * 28}ms`,
+                    transform: isLoaded ? "translateY(0)" : "translateY(110%)",
+                    opacity: isLoaded ? 1 : 0,
+                    transition: `transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) ${200 + i * 25}ms, opacity 0.5s ease ${200 + i * 25}ms`,
                   }}
                 >
                   {char}
@@ -153,9 +158,9 @@ export default function Hero() {
                   <span
                     style={{
                       display: "inline-block",
-                      transform: animate ? "translateY(0)" : "translateY(110%)",
-                      opacity: animate ? 1 : 0,
-                      transition: `transform 0.75s cubic-bezier(0.16, 1, 0.3, 1) ${globalIndex * 28}ms, opacity 0.4s ease ${globalIndex * 28}ms`,
+                      transform: isLoaded ? "translateY(0)" : "translateY(110%)",
+                      opacity: isLoaded ? 1 : 0,
+                      transition: `transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) ${200 + globalIndex * 25}ms, opacity 0.5s ease ${200 + globalIndex * 25}ms`,
                     }}
                   >
                     {char}
@@ -173,19 +178,31 @@ export default function Hero() {
             fontSize: "11px",
             letterSpacing: "0.14em",
             textTransform: "uppercase",
-            color: "rgba(240,235,225,0.35)",
+            color: "rgba(240,235,225,0.45)",
             marginBottom: "3rem",
             maxWidth: "380px",
             marginLeft: "auto",
             marginRight: "auto",
             willChange: "transform",
+            opacity: isLoaded ? 1 : 0,
+            transform: isLoaded ? "translateY(0)" : "translateY(20px)",
+            transition: "opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s"
           }}
         >
           Exploring light, color, and the world through photography
         </p>
 
         {/* Action Controls */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div 
+          style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center",
+            opacity: isLoaded ? 1 : 0,
+            transform: isLoaded ? "translateY(0)" : "translateY(20px)",
+            transition: "opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.65s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.65s"
+          }}
+        >
           <a
             href="#gallery"
             onClick={handleScrollToGallery}
@@ -193,8 +210,8 @@ export default function Hero() {
             style={{
               display: "inline-flex", 
               alignItems: "center", 
-              gap: "8px",
-              padding: "13px 28px", 
+              gap: "10px",
+              padding: "14px 30px", 
               borderRadius: "2px",
               background: "#F0EBE1", 
               color: "#050505",
@@ -203,15 +220,18 @@ export default function Hero() {
               letterSpacing: "0.18em", 
               textTransform: "uppercase",
               fontFamily: "var(--font-mono, 'Courier New', monospace)",
-              transition: "background .2s, color .2s, transform .2s",
+              transition: "background .25s ease, color .25s ease, transform .25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .25s ease",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
             }}
             onMouseEnter={e => { 
               e.currentTarget.style.background = "#E8421A"; 
-              e.currentTarget.style.color = "#F0EBE1"; 
+              e.currentTarget.style.color = "#F0EBE1";
+              e.currentTarget.style.transform = "translateY(-2px)";
             }}
             onMouseLeave={e => { 
               e.currentTarget.style.background = "#F0EBE1"; 
-              e.currentTarget.style.color = "#050505"; 
+              e.currentTarget.style.color = "#050505";
+              e.currentTarget.style.transform = "translateY(0)";
             }}
           >
             <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "currentColor", flexShrink: 0 }} />
@@ -231,7 +251,8 @@ export default function Hero() {
           flexDirection: "column", 
           alignItems: "center", 
           gap: "8px", 
-          opacity: 0.3,
+          opacity: isLoaded ? 0.4 : 0,
+          transition: "opacity 1s ease 0.9s",
           pointerEvents: "none"
         }}
       >
