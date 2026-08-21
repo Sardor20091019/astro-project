@@ -75,7 +75,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="relative min-h-screen bg-(--bg) text-(--text) overflow-hidden flex items-center justify-center">
+    <main className="relative min-h-screen bg-(--bg) text-(--text) overflow-hidden flex items-center justify-center p-4">
       {/* Dreamy ethereal background atmosphere */}
       <div className="absolute inset-0 bg-[url('/hero.jpg')] bg-cover bg-center opacity-20 filter blur-[4px] scale-105" />
       <div className="absolute inset-0 bg-gradient-to-tr from-(--bg) via-(--bg)/70 to-transparent" />
@@ -85,12 +85,12 @@ export default function LoginPage() {
       <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-indigo-500/10 blur-[140px] pointer-events-none" />
 
       {/* Main Glassmorphism Portal Card */}
-      <section className="relative z-10 w-full max-w-lg px-6 py-12">
+      <section className="relative z-10 w-full max-w-lg px-4 py-8 sm:px-6">
         <motion.div 
           initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="relative rounded-[2.5rem] p-8 sm:p-12 bg-(--surface-1)/40 backdrop-blur-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.4)] overflow-hidden"
+          className="relative rounded-[2.5rem] p-8 sm:p-14 bg-(--surface-1)/50 backdrop-blur-3xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.5)] overflow-hidden"
         >
           {/* Subtle top ethereal light rim */}
           <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-(--accent)/60 to-transparent" />
@@ -100,7 +100,7 @@ export default function LoginPage() {
             <h1 className="text-3xl font-black tracking-tight uppercase">
               Astro<span className="text-(--accent)">spectrum</span>
             </h1>
-            <p className="text-xs uppercase tracking-[0.25em] text-(--text-muted) mt-2">
+            <p className="text-xs uppercase tracking-[0.25em] text-(--text-muted) mt-3">
               Sign in to your account
             </p>
           </div>
@@ -112,7 +112,7 @@ export default function LoginPage() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mb-6 rounded-2xl bg-(--accent)/10 border border-(--accent)/20 p-3.5 text-center text-xs text-(--accent) tracking-wider font-medium"
+                className="mb-6 rounded-2xl bg-(--accent)/10 border border-(--accent)/20 p-4 text-center text-xs text-(--accent) tracking-wider font-medium"
               >
                 {error}
               </motion.div>
@@ -131,19 +131,18 @@ export default function LoginPage() {
                 onSubmit={handleRequestOtp} 
                 className="space-y-6"
               >
-                <div className="relative group">
-                  <Mail size={20} className="absolute left-5 top-5 text-(--text-muted) transition-colors group-focus-within:text-(--accent)" />
-                  <input 
-                    type="email" 
-                    placeholder="Enter your email address" 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)} 
-                    required 
-                    className="w-full rounded-2xl border border-white/10 bg-(--surface-2)/40 py-5 pl-14 pr-6 text-sm font-medium text-(--text) placeholder:text-(--text-muted) focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all shadow-sm" 
-                  />
-                </div>
+<div className="relative group">
+  <input 
+    type="email" 
+    placeholder="Enter your email address" 
+    value={email} 
+    onChange={(e) => setEmail(e.target.value)} 
+    required 
+    className="w-full rounded-2xl border border-white/10 bg-(--surface-2)/40 py-4 pl-16 pr-6 text-sm font-medium text-(--text) placeholder:text-(--text-muted) focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all shadow-sm" 
+  />
+</div>
                 
-                <div className="flex justify-center py-1">
+                <div className="flex justify-center py-2">
                   <Turnstile 
                     siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
                     onSuccess={(token) => setTurnstileToken(token)}
@@ -153,7 +152,7 @@ export default function LoginPage() {
                 <WorldButton 
                   type="submit" 
                   disabled={loading || !turnstileToken} 
-                  className="w-full bg-(--accent) text-(--bg) py-5 text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-(--accent)/20 hover:brightness-105 active:scale-[0.99] transition-all rounded-2xl"
+                  className="w-full bg-(--accent) text-(--bg) py-4.5 text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-(--accent)/20 hover:brightness-105 active:scale-[0.99] transition-all rounded-2xl"
                 >
                   {loading ? <Loader2 size={18} className="animate-spin mx-auto" /> : "Continue with Email"}
                 </WorldButton>
@@ -168,17 +167,17 @@ export default function LoginPage() {
                 onSubmit={handleVerifyOtp} 
                 className="space-y-6"
               >
-                <div className="text-center">
+                <div className="text-center space-y-1">
                   <p className="text-xs text-(--text-muted)">
                     We sent a verification code to
                   </p>
-                  <p className="text-sm font-bold text-(--text) mt-1">
+                  <p className="text-sm font-bold text-(--text)">
                     {email.toLowerCase()}
                   </p>
                 </div>
 
                 <div className="relative group">
-                  <ShieldCheck size={20} className="absolute left-5 top-5 text-(--text-muted) transition-colors group-focus-within:text-(--accent)" />
+                  <ShieldCheck size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-(--text-muted) transition-colors group-focus-within:text-(--accent)" />
                   <input 
                     type="text" 
                     placeholder="Enter 6-digit code" 
@@ -186,14 +185,14 @@ export default function LoginPage() {
                     onChange={(e) => setOtp(e.target.value)} 
                     maxLength={6} 
                     required 
-                    className="w-full rounded-2xl border border-white/10 bg-(--surface-2)/40 py-5 text-center font-mono font-bold tracking-[0.3em] text-(--text) text-lg focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all shadow-sm" 
+                    className="w-full rounded-2xl border border-white/10 bg-(--surface-2)/40 py-4.5 pl-16 pr-6 text-center font-mono font-bold tracking-[0.3em] text-(--text) text-lg focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all shadow-sm" 
                   />
                 </div>
 
                 <WorldButton 
                   type="submit" 
                   disabled={loading} 
-                  className="w-full bg-(--accent) text-(--bg) py-5 text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-(--accent)/20 hover:brightness-105 active:scale-[0.99] transition-all rounded-2xl"
+                  className="w-full bg-(--accent) text-(--bg) py-4.5 text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-(--accent)/20 hover:brightness-105 active:scale-[0.99] transition-all rounded-2xl"
                 >
                   {loading ? <Loader2 size={18} className="animate-spin mx-auto" /> : "Verify Code"}
                 </WorldButton>
@@ -201,7 +200,7 @@ export default function LoginPage() {
                 <button 
                   type="button" 
                   onClick={() => setStep(1)} 
-                  className="mx-auto flex items-center justify-center gap-2 pt-1 text-xs text-(--text-muted) hover:text-(--text) transition-colors"
+                  className="mx-auto flex items-center justify-center gap-2 pt-2 text-xs text-(--text-muted) hover:text-(--text) transition-colors"
                 >
                   <ArrowLeft size={14} /> Use a different email
                 </button>
@@ -211,13 +210,13 @@ export default function LoginPage() {
 
           <div className="my-8 flex items-center gap-4">
             <div className="h-px w-full bg-white/10" />
-            <span className="text-xs text-(--text-muted) font-medium">or</span>
+            <span className="text-xs text-(--text-muted) font-medium uppercase tracking-wider">or</span>
             <div className="h-px w-full bg-white/10" />
           </div>
 
-          {/* Prominent, large login options without stickers */}
+          {/* Social Login Options */}
           <div className="space-y-4">
-            <div className="w-full [&_iframe]:w-full [&_iframe]:min-h-[56px] [&_button]:w-full [&_button]:py-4 [&_button]:rounded-2xl">
+            <div className="w-full [&_iframe]:w-full [&_iframe]:min-h-[52px] [&_button]:w-full [&_button]:py-4 [&_button]:rounded-2xl">
               <TelegramLogin />
             </div>
 

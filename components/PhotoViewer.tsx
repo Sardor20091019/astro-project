@@ -125,6 +125,7 @@ const Spinner = () => (
 export default function PhotoViewer({
   photos,
   initialId,
+  stats,
   initialEngagement,
   session,
 }: {
@@ -165,6 +166,9 @@ export default function PhotoViewer({
   // Reference strictly to the inner <img> element
   const imgRef = useRef<HTMLImageElement>(null);
   const [constraints, setConstraints] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
+
+  // Use stats to prevent unused variable warning if needed
+  void stats;
 
   const rotate = useTransform(
     x, 
@@ -297,7 +301,7 @@ export default function PhotoViewer({
         } else if (showDrawer) {
           setShowDrawer(false);
         } else {
-          router.push("/");
+          router.back();
         }
       }
     };
@@ -387,16 +391,16 @@ export default function PhotoViewer({
     }
   };
 
-  let lastTap = 0;
+  const lastTapRef = useRef<number>(0);
   const handleTouchOrClick = (e: React.MouseEvent | React.TouchEvent) => {
     const now = Date.now();
-    if (now - lastTap < 300) {
+    if (now - lastTapRef.current < 300) {
       if (!engagement.viewerLiked) toggleLike();
-      let clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-      let clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+      const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
       setHearts((prev) => [...prev, { id: Date.now(), x: clientX, y: clientY }]);
     }
-    lastTap = now;
+    lastTapRef.current = now;
   };
 
   if (!photo) return <div className="p-8 text-white bg-black min-h-screen">Photo not found.</div>;
@@ -508,7 +512,7 @@ export default function PhotoViewer({
           >
             <div className="flex items-center gap-4">
               <MagneticButton
-                onClick={() => router.push("/")}
+                onClick={() => router.back()}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900/80 text-zinc-300 backdrop-blur-md border border-zinc-800 transition hover:bg-zinc-800 hover:text-white"
                 title="Back to Gallery"
               >
