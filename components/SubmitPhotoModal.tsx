@@ -257,7 +257,6 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                   disabled={loading || !uploadedUrl} 
                   className="w-full bg-(--text) text-(--bg) py-4 rounded-xl font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-(--accent) hover:text-(--bg) transition-all shadow-xl disabled:opacity-40 disabled:cursor-not-allowed mt-4 cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <Sparkles size={16} />
                   {loading ? "POSTING THE PHOTO..." : "POST THE PHOTO"}
                 </button>
               </form>
