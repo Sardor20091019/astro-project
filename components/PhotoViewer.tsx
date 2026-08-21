@@ -20,6 +20,8 @@ import {
   Maximize2,
   Minimize2,
   Download,
+  Share2,
+  Check,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { submitComment as submitCommentAction } from "@/app/actions/comments";
@@ -150,15 +152,25 @@ export default function PhotoViewer({
   const [showDrawer, setShowDrawer] = useState(false);
   const [hearts, setHearts] = useState<{ id: number; x: number; y: number }[]>([]);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const photo = photos[index];
   
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const scale = useMotionValue(1);
+  const [currentScale, setCurrentScale] = useState(1);
   const [isZoomed, setIsZoomed] = useState(false);
 
-  const rotate = useTransform(isMobile ? y : x, [-300, 0, 300], [-2, 0, 2]);
+  // Reference strictly to the inner <img> element
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [constraints, setConstraints] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
+
+  const rotate = useTransform(
+    x, 
+    [-300, 0, 300], 
+    isZoomed ? [0, 0, 0] : [-2, 0, 2]
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -171,7 +183,40 @@ export default function PhotoViewer({
 
   useEffect(() => {
     setImageLoaded(false);
-  }, [index]);
+    scale.set(1);
+    x.set(0);
+    y.set(0);
+  }, [index, scale, x, y]);
+
+  // Compute precise boundary limits based on the actual rendered image dimensions
+  useEffect(() => {
+    const updateConstraints = () => {
+      if (imgRef.current) {
+        const rect = imgRef.current.getBoundingClientRect();
+        const s = currentScale;
+        const maxW = Math.max(0, (rect.width * (s - 1)) / (2 * s));
+        const maxH = Math.max(0, (rect.height * (s - 1)) / (2 * s));
+        setConstraints({
+          left: -maxW,
+          right: maxW,
+          top: -maxH,
+          bottom: maxH,
+        });
+      }
+    };
+
+    updateConstraints();
+    window.addEventListener("resize", updateConstraints);
+    return () => window.removeEventListener("resize", updateConstraints);
+  }, [currentScale, imageLoaded]);
+
+  useEffect(() => {
+    const unsubscribeScale = scale.onChange((val) => {
+      setCurrentScale(val);
+      setIsZoomed(val > 1.05);
+    });
+    return () => unsubscribeScale();
+  }, [scale]);
 
   useEffect(() => {
     if (showDrawer) {
@@ -199,14 +244,9 @@ export default function PhotoViewer({
     };
   }, [showDrawer, index]);
 
-  useEffect(() => {
-    const unsubscribe = scale.onChange((val) => setIsZoomed(val > 1.05));
-    return () => unsubscribe();
-  }, [scale]);
-
   const navigate = useCallback(
     (nextDirection: number) => {
-      if (photos.length === 0) return;
+      if (photos.length === 0 || isZoomed) return;
       x.set(0);
       y.set(0);
       scale.set(1);
@@ -218,14 +258,14 @@ export default function PhotoViewer({
         return nextIndex;
       });
     },
-    [photos, x, y, scale],
+    [photos, x, y, scale, isZoomed],
   );
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    const currentScale = scale.get();
-    const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
-    const newScale = Math.min(Math.max(currentScale * zoomFactor, 1), 4);
+    const currentVal = scale.get();
+    const zoomFactor = e.deltaY < 0 ? 1.2 : 0.8;
+    const newScale = Math.min(Math.max(currentVal * zoomFactor, 1), 6);
     
     scale.set(newScale);
     if (newScale === 1) {
@@ -241,14 +281,14 @@ export default function PhotoViewer({
       x.set(0);
       y.set(0);
     } else {
-      scale.set(2.2);
+      scale.set(3);
     }
   };
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (event.key === "ArrowLeft") navigate(-1);
-      if (event.key === "ArrowRight") navigate(1);
+      if (event.key === "ArrowLeft" && !isZoomed) navigate(-1);
+      if (event.key === "ArrowRight" && !isZoomed) navigate(1);
       if (event.key === "Escape") {
         if (scale.get() > 1.05) {
           scale.set(1);
@@ -263,7 +303,7 @@ export default function PhotoViewer({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [navigate, router, showDrawer, scale, x, y]);
+  }, [navigate, router, showDrawer, scale, x, y, isZoomed]);
 
   useEffect(() => {
     if (!photo) return;
@@ -305,6 +345,28 @@ export default function PhotoViewer({
         ratingCount: data.ratingCount,
         viewerRating: data.viewerRating,
       }));
+    }
+  };
+
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: photo.title,
+          url: shareUrl,
+        });
+        return;
+      } catch {
+        // Fallback to clipboard if share sheet is dismissed
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Ignore copy error
     }
   };
 
@@ -355,32 +417,31 @@ export default function PhotoViewer({
       {/* Background Gradient */}
       <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-zinc-950 via-black to-zinc-950" />
 
-      {/* STAGE - Global drag and touch target container */}
-      <motion.div 
-        style={isMobile ? { y, rotate, scale } : { x, y, rotate, scale }}
-        drag={mounted ? (isZoomed ? true : isMobile ? "y" : "x") : false}
-        dragElastic={0.12}
-        dragConstraints={isZoomed ? { left: -800, right: 800, top: -800, bottom: 800 } : { left: 0, right: 0, top: 0, bottom: 0 }}
-        onDragEnd={(_, info) => {
-          if (isZoomed) return;
-          const offset = isMobile ? info.offset.y : info.offset.x;
-          const velocity = isMobile ? info.velocity.y : info.velocity.x;
-          if (offset < -70 || velocity < -400) navigate(1);
-          if (offset > 70 || velocity > 400) navigate(-1);
-        }}
-        className="relative z-10 flex flex-1 items-center justify-center overflow-hidden w-full h-full p-4 md:p-12"
-      >
+      {/* STAGE CONTAINER */}
+      <div className="relative z-10 flex flex-1 items-center justify-center overflow-hidden w-full h-full p-4 md:p-12">
         <AnimatePresence custom={direction} mode="wait">
           <motion.div
             key={photo.id}
             custom={direction}
             onClick={handleTouchOrClick}
             onTouchStart={handleTouchOrClick}
+            style={{ x, y, rotate, scale }}
+            drag={mounted ? true : false}
+            dragConstraints={isZoomed ? constraints : { left: 0, right: 0, top: 0, bottom: 0 }}
+            dragElastic={0.05}
+            dragMomentum={false}
+            onDragEnd={(_, info) => {
+              if (isZoomed) return;
+              const offset = info.offset.x;
+              const velocity = info.velocity.x;
+              if (offset < -70 || velocity < -400) navigate(1);
+              if (offset > 70 || velocity > 400) navigate(-1);
+            }}
             initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1, cursor: isZoomed ? "grab" : "zoom-in" }}
+            animate={{ opacity: 1, scale: scale.get(), cursor: isZoomed ? "grab" : "zoom-in" }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={springConfig}
-            className="relative flex items-center justify-center"
+            className="relative flex items-center justify-center touch-none"
           >
             {/* Skeleton Loading State */}
             {!imageLoaded && (
@@ -393,12 +454,28 @@ export default function PhotoViewer({
             )}
 
             <img
+              ref={imgRef}
               src={photo.url}
               alt={photo.title}
+              draggable={false}
               onLoad={() => setImageLoaded(true)}
               className={`max-h-[85vh] max-w-[90vw] object-contain rounded-lg transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
             />
           </motion.div>
+        </AnimatePresence>
+
+        {/* Copy Link Toast Notification */}
+        <AnimatePresence>
+          {copied && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              className="absolute top-20 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/90 border border-zinc-700/80 backdrop-blur-md shadow-2xl text-xs font-medium text-white"
+            >
+              <Check size={14} className="text-emerald-400" /> Link copied to clipboard
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* Floating Hearts Animation */}
@@ -417,7 +494,7 @@ export default function PhotoViewer({
             </motion.div>
           ))}
         </AnimatePresence>
-      </motion.div>
+      </div>
 
       {/* TOP HEADER CONTROLS */}
       <AnimatePresence>
@@ -507,6 +584,14 @@ export default function PhotoViewer({
               <div className="w-[1px] h-4 bg-zinc-800 mx-1" />
 
               <MagneticButton
+                onClick={handleShare}
+                className="p-2.5 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition"
+                title="Share Photo"
+              >
+                <Share2 size={16} strokeWidth={2} />
+              </MagneticButton>
+
+              <MagneticButton
                 onClick={handleDownload}
                 className="p-2.5 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition"
                 title="Download"
@@ -577,12 +662,20 @@ export default function PhotoViewer({
                     <MapPin size={14} className="text-zinc-400" /> {photo.location || "Location not specified"}
                   </p>
                   
-                  <MagneticButton
-                    onClick={handleDownload}
-                    className="w-full flex items-center justify-center gap-2 py-3 bg-white text-black hover:bg-zinc-200 text-xs font-medium rounded-xl transition"
-                  >
-                    <Download size={15} strokeWidth={2} /> Download Original
-                  </MagneticButton>
+                  <div className="flex gap-2">
+                    <MagneticButton
+                      onClick={handleShare}
+                      className="flex-1 flex items-center justify-center gap-2 py-3 bg-zinc-900 border border-zinc-800 text-white hover:bg-zinc-800 text-xs font-medium rounded-xl transition"
+                    >
+                      <Share2 size={15} strokeWidth={2} /> Share Link
+                    </MagneticButton>
+                    <MagneticButton
+                      onClick={handleDownload}
+                      className="flex-1 flex items-center justify-center gap-2 py-3 bg-white text-black hover:bg-zinc-200 text-xs font-medium rounded-xl transition"
+                    >
+                      <Download size={15} strokeWidth={2} /> Download
+                    </MagneticButton>
+                  </div>
                 </div>
 
                 {metadata.length > 0 && (
