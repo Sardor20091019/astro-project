@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -37,9 +38,20 @@ export default function SearchBar() {
   return (
     <div className="w-full max-w-xl mx-auto my-6 px-4 sm:px-0">
       <form onSubmit={handleSearchSubmit} className="relative">
-        <div className="relative flex items-center rounded-2xl bg-black border border-white/10 p-2 shadow-sm focus-within:border-(--accent) transition-all">
+        <div 
+          className="relative flex items-center p-2 shadow-sm transition-all"
+          style={{
+            backgroundColor: "var(--surface-3)",
+            border: "var(--card-border)",
+            borderRadius: "var(--radius-md)",
+            backdropFilter: "var(--glass-blur)",
+          }}
+        >
           
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center text-(--text-muted) ml-1">
+          <div 
+            className="flex h-10 w-10 shrink-0 items-center justify-center ml-1"
+            style={{ color: "var(--text-muted)" }}
+          >
             <Search size={16} />
           </div>
 
@@ -48,7 +60,11 @@ export default function SearchBar() {
             value={value}
             placeholder="Search by title..."
             onChange={(e) => setValue(e.target.value)}
-            className="w-full bg-transparent border-none px-3 py-2 text-xs sm:text-sm text-(--text) placeholder:text-(--text-muted) focus:outline-none"
+            className="w-full bg-transparent border-none px-3 py-2 text-xs sm:text-sm focus:outline-none"
+            style={{
+              color: "var(--text)",
+              fontFamily: "var(--font-mono)",
+            }}
           />
 
           <div className="flex items-center gap-1.5 pr-1">
@@ -64,7 +80,11 @@ export default function SearchBar() {
                     router.replace(`/?${params.toString()}#gallery`, { scroll: false });
                   });
                 }}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-(--text-muted) hover:text-(--text) hover:bg-white/5 transition-colors"
+                className="flex h-8 w-8 items-center justify-center transition-colors cursor-pointer"
+                style={{
+                  borderRadius: "var(--radius-sm)",
+                  color: "var(--text-muted)",
+                }}
                 title="Clear query"
               >
                 <X size={14} />
@@ -73,7 +93,13 @@ export default function SearchBar() {
 
             <button
               type="submit"
-              className="flex items-center justify-center h-8 w-8 rounded-lg text-(--text-muted) hover:text-(--text) hover:bg-white/5 transition-colors"
+              className="flex items-center justify-center h-8 w-8 transition-colors cursor-pointer"
+              style={{
+                borderRadius: "var(--radius-sm)",
+                color: "var(--text)",
+                background: "var(--surface-2)",
+                border: "var(--card-border)",
+              }}
               title="Search"
             >
               <CornerDownLeft size={13} />

@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { Camera, Share2, Heart, Check } from "lucide-react";
 import Link from "next/link";
-import { MessageSquare, Camera, Share2, Heart } from "lucide-react";
 
 interface PhotoDetailsProps {
   photoUrl: string;
@@ -17,6 +18,14 @@ export default function PhotoDetailsSidePanel({
   ownerName, 
   cameraSettings = "ISO 100 • 50mm • f/1.8 • 1/250s" 
 }: PhotoDetailsProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="w-full lg:w-85 h-full p-6 bg-zinc-950 border-t lg:border-t-0 lg:border-l border-zinc-900 flex flex-col justify-between">
       
@@ -25,9 +34,12 @@ export default function PhotoDetailsSidePanel({
         <div>
           <span className="text-[10px] font-black uppercase tracking-widest text-red-500">Exhibition Frame</span>
           <h2 className="text-lg font-bold text-zinc-100 tracking-tight mt-1">{title || "Untitled Exposure"}</h2>
-          <p className="text-xs text-zinc-400 mt-1">
+          <Link 
+            href={`/profile/${ownerId}`}
+            className="inline-block text-xs text-zinc-400 mt-1 hover:text-white transition-colors"
+          >
             by <span className="font-semibold text-zinc-200">{ownerName || "Anonymous Photographer"}</span>
-          </p>
+          </Link>
         </div>
 
         {/* Camera Spec Block */}
@@ -43,21 +55,24 @@ export default function PhotoDetailsSidePanel({
       {/* Bottom Section: System Relational CTAs */}
       <div className="space-y-3 pt-6 border-t border-zinc-900/60">
         <div className="flex gap-2">
-          <button className="flex-1 bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
-            <Heart size={12} /> Like
+          <button className="flex-1 bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 py-2.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+            <Heart size={14} /> Like
           </button>
-          <button className="flex-1 bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
-            <Share2 size={12} /> Share
+          <button 
+            onClick={handleShare}
+            className="flex-1 bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 py-2.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            {copied ? <Check size={14} className="text-emerald-400" /> : <Share2 size={14} />} 
+            {copied ? "Copied" : "Share"}
           </button>
         </div>
-
-        {/* Action Link: Pushes parameters cleanly directly over into /messages dashboard handler */}
+        
+        {/* Photographer Profile Link */}
         <Link
-          href={`/messages?userId=${ownerId}&userName=${encodeURIComponent(ownerName || "User")}`}
-          className="w-full bg-zinc-100 hover:bg-zinc-200 text-zinc-950 py-2.5 rounded-lg text-xs font-black tracking-widest uppercase flex items-center justify-center gap-2 transition duration-200 shadow-lg"
+          href={`/profile/${ownerId}`}
+          className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition duration-200"
         >
-          <MessageSquare size={13} className="text-zinc-900 fill-zinc-900" />
-          Contact Photographer
+          View Photographer Portfolio
         </Link>
       </div>
 

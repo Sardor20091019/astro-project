@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { MessageSquare, Menu, X, Plus } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import UserSearch from "@/components/UserSearchTrigger";
 import ThemeToggle from "@/components/ThemeToggle";
 import UserMenu from "@/components/UserMenu";
@@ -29,17 +29,12 @@ const NavLink = ({ href, children, active }: NavLinkProps) => (
   </Link>
 );
 
-interface NavbarProps {
-  onOpenSubmitModal?: () => void;
-}
-
-export default function Navbar({ onOpenSubmitModal }: NavbarProps) {
+export default function Navbar() {
   const { data: session, status } = useSession();
   const user = session?.user;
   const pathname = usePathname();
   
   const [scrolled, setScrolled] = useState(false);
-  const [hasUnread] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -73,17 +68,6 @@ export default function Navbar({ onOpenSubmitModal }: NavbarProps) {
             <div className="hidden md:flex items-center h-full gap-8">
               <NavLink href="/" active={pathname === "/"}>Gallery</NavLink>
               <NavLink href="/leaderboard" active={pathname === "/leaderboard"}>Leaderboard</NavLink>
-              
-              {user && (
-                <button
-                  onClick={onOpenSubmitModal}
-                  style={{ borderRadius: "var(--radius-sm)" }}
-                  className="flex items-center gap-1.5 text-[10px] md:text-xs uppercase tracking-[0.2em] text-(--text-dim) hover:text-(--accent) transition-colors py-1 cursor-pointer"
-                >
-                  <Plus size={14} className="text-(--accent)" />
-                  <span>Submit</span>
-                </button>
-              )}
             </div>
 
             {/* Actions (Search + Theme + Auth) */}
@@ -97,10 +81,6 @@ export default function Navbar({ onOpenSubmitModal }: NavbarProps) {
                   <div className="h-8 w-16 animate-pulse rounded bg-(--surface-3)" />
                 ) : user ? (
                   <div className="flex items-center h-full gap-4">
-                    <Link href="/messages" className="relative flex items-center p-1 text-(--text-dim) hover:text-(--accent) transition-colors">
-                      <MessageSquare size={18} />
-                      {hasUnread && <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-(--accent)" />}
-                    </Link>
                     <UserMenu user={user} />
                   </div>
                 ) : (
@@ -142,10 +122,6 @@ export default function Navbar({ onOpenSubmitModal }: NavbarProps) {
                   <UserMenu user={user} />
                   <span className="text-[10px] uppercase tracking-widest text-(--text)">{user.name || "User"}</span>
                 </div>
-                <Link href="/messages" className="relative flex items-center gap-2 text-[10px] uppercase tracking-widest text-(--text) p-2">
-                  <MessageSquare size={18} /> Messages
-                  {hasUnread && <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-(--accent)" />}
-                </Link>
               </div>
             ) : (
               <div className="flex items-center justify-between w-full">
@@ -167,18 +143,6 @@ export default function Navbar({ onOpenSubmitModal }: NavbarProps) {
             <div className="flex flex-col gap-4">
               <NavLink href="/" active={pathname === "/"}>Gallery</NavLink>
               <NavLink href="/leaderboard" active={pathname === "/leaderboard"}>Leaderboard</NavLink>
-              
-              {user && (
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenSubmitModal?.();
-                  }}
-                  className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-(--text) py-1 text-left font-medium hover:text-(--accent) transition-colors cursor-pointer"
-                >
-                  <Plus size={16} className="text-(--accent)" /> Submit Frame
-                </button>
-              )}
             </div>
           </div>
         </div>

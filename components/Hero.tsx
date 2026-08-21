@@ -2,7 +2,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useLenis } from "@/hooks/useLenis";
 import heroImage from "@/public/hero.jpg";
@@ -12,20 +11,29 @@ export default function Hero() {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subRef = useRef<HTMLParagraphElement>(null);
   
-
   const [animate, setAnimate] = useState(false);
 
-
-  useLenis(({ y }) => {
+  const lenis = useLenis(({ y }) => {
     if (bgRef.current)    bgRef.current.style.transform = `translateY(${y * 0.42}px)`;
     if (titleRef.current) titleRef.current.style.transform = `translateY(${y * 0.18}px)`;
     if (subRef.current)   subRef.current.style.transform = `translateY(${y * 0.08}px)`;
   });
 
-
   useEffect(() => {
     setAnimate(true);
   }, []);
+
+  const handleScrollToGallery = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const target = document.querySelector("#gallery");
+    if (!target) return;
+
+    if (lenis) {
+      lenis.scrollTo(target, { duration: 1.8 });
+    } else {
+      target.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   const part1 = "Astro";
   const part2 = "spectrum";
@@ -79,7 +87,7 @@ export default function Hero() {
           zIndex: 10, 
           textAlign: "center", 
           padding: "0 1.5rem", 
-          maxWidth: "900px", 
+          maxWidth: "100%", 
           margin: "0 auto" 
         }}
       >
@@ -96,34 +104,37 @@ export default function Hero() {
           Photography by Sardor Sunatullayev
         </p>
 
-        {/* Clean Character-Split Header (No layout thrashing) */}
+        {/* Unified Non-Breaking Header with Original Colors */}
         <h1
           ref={titleRef}
           style={{
             fontFamily: "'Editorial New', 'Times New Roman', Georgia, serif",
-            fontSize: "clamp(64px, 11vw, 148px)",
+            fontSize: "clamp(38px, 11vw, 148px)",
             fontWeight: 200,
             letterSpacing: "-0.045em",
             lineHeight: 0.92,
             color: "#F0EBE1",
             marginBottom: "2rem",
             willChange: "transform",
+            whiteSpace: "nowrap",
           }}
         >
-          {part1.split("").map((char, i) => (
-            <span key={`p1-${i}`} style={{ display: "inline-block", overflow: "hidden", verticalAlign: "bottom" }}>
-              <span
-                style={{
-                  display: "inline-block",
-                  transform: animate ? "translateY(0)" : "translateY(110%)",
-                  opacity: animate ? 1 : 0,
-                  transition: `transform 0.75s cubic-bezier(0.16, 1, 0.3, 1) ${i * 28}ms, opacity 0.4s ease ${i * 28}ms`,
-                }}
-              >
-                {char}
+          <span>
+            {part1.split("").map((char, i) => (
+              <span key={`p1-${i}`} style={{ display: "inline-block", overflow: "hidden", verticalAlign: "bottom" }}>
+                <span
+                  style={{
+                    display: "inline-block",
+                    transform: animate ? "translateY(0)" : "translateY(110%)",
+                    opacity: animate ? 1 : 0,
+                    transition: `transform 0.75s cubic-bezier(0.16, 1, 0.3, 1) ${i * 28}ms, opacity 0.4s ease ${i * 28}ms`,
+                  }}
+                >
+                  {char}
+                </span>
               </span>
-            </span>
-          ))}
+            ))}
+          </span>
           
           <span style={{ color: "#E8421A", fontStyle: "italic" }}>
             {part2.split("").map((char, i) => {
@@ -165,10 +176,11 @@ export default function Hero() {
         </p>
 
         {/* Action Controls */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
           <a
             href="#gallery"
-            className="min-h-11 min-w-11"
+            onClick={handleScrollToGallery}
+            className="min-h-11 min-w-11 cursor-pointer"
             style={{
               display: "inline-flex", 
               alignItems: "center", 
@@ -196,35 +208,6 @@ export default function Hero() {
             <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "currentColor", flexShrink: 0 }} />
             View Frames
           </a>
-          
-          <Link
-            href="/submit"
-            className="min-h-11 min-w-11"
-            style={{
-              display: "inline-flex", 
-              alignItems: "center",
-              padding: "12px 28px", 
-              borderRadius: "2px",
-              border: "1px solid rgba(240,235,225,0.18)", 
-              color: "rgba(240,235,225,0.6)",
-              fontSize: "10px", 
-              fontWeight: 900, 
-              letterSpacing: "0.18em", 
-              textTransform: "uppercase",
-              fontFamily: "var(--font-mono, 'Courier New', monospace)",
-              transition: "border-color .2s, color .2s",
-            }}
-            onMouseEnter={e => { 
-              e.currentTarget.style.borderColor = "rgba(240,235,225,0.5)"; 
-              e.currentTarget.style.color = "#F0EBE1"; 
-            }}
-            onMouseLeave={e => { 
-              e.currentTarget.style.borderColor = "rgba(240,235,225,0.18)"; 
-              e.currentTarget.style.color = "rgba(240,235,225,0.6)"; 
-            }}
-          >
-            Submit a Frame
-          </Link>
         </div>
       </div>
 
