@@ -4,7 +4,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, MapPin, Heart, Star, MessageCircle, Plus, SlidersHorizontal } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, MapPin, Heart, Star, MessageCircle, Plus, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SubmitPhotoModal from "@/components/SubmitPhotoModal";
 
@@ -26,6 +27,9 @@ export default function PhotosClientView({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
+
+  const currentSortLabel = sortOptions.find((opt) => opt.value === activeSort)?.label || "Sort";
 
   const handleCategoryChange = (catValue: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -45,6 +49,7 @@ export default function PhotosClientView({
       params.set("sort", sortValue);
     }
     router.push(`/photos?${params.toString()}`);
+    setIsSortOpen(false);
   };
 
   return (
@@ -71,8 +76,8 @@ export default function PhotosClientView({
           Gallery
         </h1>
 
-        {/* Filters, Sort & Submit Frame Bar */}
-        <div className="w-full flex flex-col xl:flex-row items-center justify-between gap-5 bg-(--surface) border border-(--border) p-6 sm:p-8 rounded-3xl backdrop-blur-md shadow-xl">
+        {/* Filters, Sort & Submit Frame Bar (Added relative z-30 so dropdown stays above photos) */}
+        <div className="w-full flex flex-col xl:flex-row items-center justify-between gap-5 bg-(--surface) border border-(--border) p-6 sm:p-8 rounded-3xl backdrop-blur-md shadow-xl relative z-30">
           
           {/* Category Filter Pills */}
           <div className="flex items-center justify-center xl:justify-start flex-wrap gap-3 w-full xl:w-auto overflow-x-auto">
@@ -94,21 +99,50 @@ export default function PhotosClientView({
             })}
           </div>
 
-          {/* Right Side: Sort & Submit Button */}
+          {/* Right Side: Custom Sort Dropdown & Submit Button */}
           <div className="flex items-center gap-4 w-full xl:w-auto justify-end shrink-0">
-            <div className="flex items-center gap-2.5 bg-(--surface-2) border border-(--border) px-6 py-4 rounded-2xl">
-              <SlidersHorizontal className="h-4 w-4 text-(--accent)" />
-              <select
-                value={activeSort}
-                onChange={(e) => handleSortChange(e.target.value)}
-                className="bg-transparent font-mono text-[10px] uppercase tracking-[0.15em] text-(--text) outline-none cursor-pointer font-bold focus:text-(--accent) transition-colors py-0.5"
+            
+            {/* Custom Sort Menu */}
+            <div className="relative">
+              <button
+                onClick={() => setIsSortOpen(!isSortOpen)}
+                className="flex items-center gap-3 bg-(--surface-2) border border-(--border) px-6 py-4 rounded-2xl font-mono text-[10px] uppercase tracking-[0.15em] text-(--text) font-bold hover:bg-(--surface-3) transition-all cursor-pointer shadow-sm"
               >
-                {sortOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value} className="bg-(--surface) text-(--text) font-mono">
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                <SlidersHorizontal className="h-4 w-4 text-(--accent)" />
+                <span>{currentSortLabel}</span>
+                <ChevronDown className={`h-3.5 w-3.5 text-(--text-dim) transition-transform duration-300 ${isSortOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              <AnimatePresence>
+                {isSortOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.95, filter: "blur(4px)" }}
+                    animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95, filter: "blur(4px)" }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute right-0 top-full mt-3 w-52 rounded-2xl bg-(--surface) border border-(--border) p-2 shadow-2xl z-50 backdrop-blur-2xl"
+                  >
+                    <div className="flex flex-col gap-1">
+                      {sortOptions.map((opt) => {
+                        const isSelected = activeSort === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            onClick={() => handleSortChange(opt.value)}
+                            className={`w-full text-left px-4 py-3.5 rounded-xl font-mono text-[10px] uppercase tracking-[0.15em] transition-all cursor-pointer ${
+                              isSelected
+                                ? "bg-(--accent) text-(--bg) font-bold shadow-md"
+                                : "text-(--text-dim) hover:bg-(--surface-2) hover:text-(--text)"
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <button
@@ -183,7 +217,7 @@ export default function PhotosClientView({
                     </div>
                   </div>
 
-                  {/* Content & Metadata Area (Increased padding & spacing) */}
+                  {/* Content & Metadata Area */}
                   <div className="p-8 sm:p-9 flex flex-col gap-6 flex-grow justify-between bg-(--surface)">
                     <div className="flex flex-col gap-3.5">
                       <div className="flex items-center justify-between gap-2">
