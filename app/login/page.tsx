@@ -138,7 +138,7 @@ export default function LoginPage() {
     value={email} 
     onChange={(e) => setEmail(e.target.value)} 
     required 
-    className="w-full rounded-2xl border border-white/10 bg-(--surface-2)/40 py-4 pl-16 pr-6 text-sm font-medium text-(--text) placeholder:text-(--text-muted) focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all shadow-sm" 
+    className="w-full rounded-2xl border border-white/10 bg-(--surface-2)/40 py-20 pl-16 pr-6 text-sm font-medium text-(--text) placeholder:text-(--text-muted) focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all shadow-sm" 
   />
 </div>
                 

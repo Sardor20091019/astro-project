@@ -105,7 +105,6 @@
   --image-viewer-shadow: 14px 14px 0px #ffffff;
 }
 
-/* Force all image boxes, avatars, and media containers to be hard-edged with deep floating shadows in Brutalist mode */
 [data-theme="brutalist"] img,
 [data-theme="brutalist"] .rounded-full,
 [data-theme="brutalist"] .rounded-lg,
@@ -116,7 +115,6 @@
   box-shadow: 6px 6px 0px var(--border) !important;
 }
 
-/* Enhanced floating interaction on hover for Brutalist cards */
 [data-theme="brutalist"] .world-card:hover {
   transform: translate(-4px, -4px);
   box-shadow: 12px 12px 0px var(--border);
@@ -207,7 +205,6 @@
 
 /* ==========================================
    4. PHOTO PROTECTION PROTOCOL 
-   (Keeps photography cards and viewers cinematic dark)
    ================================---------- */
 [data-theme="glass"] .photo-card,
 [data-theme="glass"] .image-container,
@@ -233,7 +230,7 @@
 *, *::before, *::after { 
   box-sizing: border-box; 
   margin: 0; 
-  padding: 0; 
+  /* padding: 0 removed so default/utility paddings function correctly */
 }
 
 html { 
@@ -311,58 +308,99 @@ h1, h2, h3, h4 {
   .grid-gallery { grid-template-columns: repeat(2, 1fr) !important; }
 }
 
-/* Form Inputs & Controls */
-.input, .gallery-input {
-  width: 100%;
-  background: var(--surface-3);
-  border: var(--card-border);
-  color: var(--text); 
-  font-family: var(--font-mono);
-  font-size: 1rem; 
-  padding: 0.85rem 1.2rem; 
-  border-radius: var(--radius-md); 
-  backdrop-filter: var(--glass-blur); 
-  outline: none;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  appearance: none;
-  -webkit-appearance: none; 
-}
+/* Encapsulated components within Tailwind layers */
+@layer components {
+  .input, .gallery-input {
+    width: 100%;
+    background: var(--surface-3);
+    border: var(--card-border);
+    color: var(--text); 
+    font-family: var(--font-mono);
+    font-size: 1rem; 
+    padding: 0.85rem 1.2rem; 
+    border-radius: var(--radius-md); 
+    backdrop-filter: var(--glass-blur); 
+    outline: none;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    appearance: none;
+    -webkit-appearance: none; 
+  }
 
-.input:focus, .gallery-input:focus { 
-  border-color: var(--accent); 
-  background: var(--surface-2);
-  box-shadow: 0 0 0 1px var(--accent), 0 8px 24px -4px var(--accent-soft);
-}
-.input::placeholder, .gallery-input::placeholder { 
-  color: var(--text-muted); 
+  .input:focus, .gallery-input:focus { 
+    border-color: var(--accent); 
+    background: var(--surface-2);
+    box-shadow: 0 0 0 1px var(--accent), 0 8px 24px -4px var(--accent-soft);
+  }
+  
+  .input::placeholder, .gallery-input::placeholder { 
+    color: var(--text-muted); 
+  }
+
+  .btn-primary,
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--btn-radius);
+    font-family: var(--font-mono);
+    font-size: 0.75rem; 
+    font-weight: 600;
+    -webkit-appearance: none;
+    appearance: none;
+    padding: 1rem 1.5rem; 
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    width: 100%; 
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: var(--glass-blur); 
+  }
+
+  .btn-primary {
+    background: var(--text);
+    color: var(--bg); 
+    border: var(--btn-border);
+    box-shadow: var(--shadow-btn); 
+  }
+  
+  .btn-primary:active, .btn-primary:hover {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    box-shadow: var(--btn-shadow);
+    transform: translateY(-2px);
+  }
+
+  .btn-ghost {
+    border: var(--card-border);
+    background: transparent;
+    color: var(--text-dim);
+  }
+  
+  .btn-ghost:active, .btn-ghost:hover {
+    border-color: var(--border-hover);
+    color: var(--text);
+    background: var(--surface-2);
+    transform: translateY(-2px);
+  }
+
+  .world-card {
+    background: var(--surface);
+    border: var(--card-border);
+    box-shadow: var(--card-shadow);
+    border-radius: var(--radius-md);
+    backdrop-filter: var(--glass-blur);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .world-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--image-viewer-shadow);
+  }
 }
 
 @media (min-width: 641px) {
   .input, .gallery-input { font-size: 0.8rem; padding: 0.75rem 1rem; }
-}
-
-/* Buttons */
-.btn-primary,
-.btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border-radius: var(--btn-radius);
-  font-family: var(--font-mono);
-  font-size: 0.75rem; 
-  font-weight: 600;
-  -webkit-appearance: none;
-  appearance: none;
-  padding: 1rem 1.5rem; 
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  width: 100%; 
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  backdrop-filter: var(--glass-blur); 
-}
-
-@media (min-width: 641px) {
   .btn-primary, .btn-ghost { 
     width: auto; 
     font-size: 0.68rem; 
@@ -370,68 +408,9 @@ h1, h2, h3, h4 {
   }
 }
 
-.btn-primary {
-  background: var(--text);
-  color: var(--bg); 
-  border: var(--btn-border);
-  box-shadow: var(--shadow-btn); 
-}
-.btn-primary:active, .btn-primary:hover {
-  background: var(--accent);
-  color: var(--bg);
-  border-color: var(--accent);
-  box-shadow: var(--btn-shadow);
-  transform: translateY(-2px);
-}
-
-.btn-ghost {
-  border: var(--card-border);
-  background: transparent;
-  color: var(--text-dim);
-}
-.btn-ghost:active, .btn-ghost:hover {
-  border-color: var(--border-hover);
-  color: var(--text);
-  background: var(--surface-2);
-  transform: translateY(-2px);
-}
-
-/* Utilities & Component Classes */
-@layer utilities {
-  .responsive-form-row {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  @media (min-width: 640px) {
-    .responsive-form-row {
-      flex-direction: row; 
-      align-items: center;
-    }
-  }
-
-  .mobile-file-picker {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    border: 2px dashed var(--border);
-    border-radius: var(--radius-md);
-    padding: 1.5rem;
-    text-align: center;
-    cursor: pointer;
-    background: var(--surface);
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .mobile-file-picker:hover {
-    border-color: var(--accent);
-    background: var(--surface-2);
-  }
-}
-
 @media (max-width: 640px) {
   input, select, textarea, .dynamic-text-fix {
-    font-size: 16px !important; /* Prevents auto-zoom on iOS safari */
+    font-size: 16px !important;
   }
 
   input[type="file"]::file-selector-button {
@@ -451,20 +430,6 @@ h1, h2, h3, h4 {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
   gap: 1rem;
   width: 100%; 
-}
-
-.world-card {
-  background: var(--surface);
-  border: var(--card-border);
-  box-shadow: var(--card-shadow);
-  border-radius: var(--radius-md);
-  backdrop-filter: var(--glass-blur);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.world-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--image-viewer-shadow);
 }
 
 .main-wrapper {

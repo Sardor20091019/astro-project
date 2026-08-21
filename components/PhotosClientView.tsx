@@ -228,7 +228,7 @@ export default function PhotosClientView({
                           </span>
                         ) : (
                           <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-(--text-muted)">
-                            Location withheld
+                            Location not available
                           </span>
                         )}
 

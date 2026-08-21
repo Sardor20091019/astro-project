@@ -69,7 +69,8 @@ export default function Navbar() {
             
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex items-center h-full gap-8">
-              <NavLink href="/" active={pathname === "/"}>Gallery</NavLink>
+              <NavLink href="/" active={pathname === "/"}>Gallery</NavLink> 
+              <NavLink href="/photos" active={pathname === "/photos"}>Photos</NavLink>
               <NavLink href="/leaderboard" active={pathname === "/leaderboard"}>Leaderboard</NavLink>
             </div>
 

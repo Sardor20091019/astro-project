@@ -101,7 +101,7 @@ export default function UserSearchModal({ isOpen, onClose }: UserSearchModalProp
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Search photographers by name or handle..."
+                placeholder="Search photographers by name or telegram nickname..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="w-full bg-transparent text-[var(--text)] text-xs uppercase tracking-[0.14em] focus:outline-none placeholder:text-[var(--text-muted)]"
@@ -173,7 +173,7 @@ export default function UserSearchModal({ isOpen, onClose }: UserSearchModalProp
 
             {/* Footer Shortcut Hint */}
             <div className="px-4 py-2 border-t border-[var(--border)] bg-[var(--surface-2)] flex items-center justify-between text-[9px] uppercase tracking-[0.16em] text-[var(--text-muted)]">
-              <span>Navigate with cursor</span>
+              <span>hi</span>
               <span>Press ESC to close</span>
             </div>
           </motion.div>
