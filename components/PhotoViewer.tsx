@@ -7,12 +7,27 @@ import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-mo
 import { Session } from "next-auth";
 import { signIn, useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Camera, ChevronLeft, ChevronRight, Heart, Loader2, MapPin, MessageCircle, Sparkles, X } from "lucide-react";
+import {
+  Camera,
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  Loader2,
+  MapPin,
+  MessageCircle,
+  Sparkles,
+  X,
+  Star,
+  Info,
+  Maximize2,
+  Minimize2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { submitComment as submitCommentAction } from "@/app/actions/comments";
 import StarRating from "./StarRating";
 import StarDisplay from "./StarDisplay";
 
+// --- Types ---
 type GalleryPhoto = {
   id: number;
   url: string;
@@ -48,7 +63,7 @@ type Engagement = {
   commentCount: number;
 };
 
-const spring = { type: "spring" as const, stiffness: 115, damping: 23, mass: 0.9 };
+const spring = { type: "spring" as const, stiffness: 200, damping: 25, mass: 1 };
 
 export default function PhotoViewer({
   photos,
@@ -66,38 +81,78 @@ export default function PhotoViewer({
   const router = useRouter();
   const { data: liveSession, status: sessionStatus } = useSession({ required: false });
   const authSession = sessionStatus === "loading" ? session : liveSession ?? session;
+  const isLoggedIn = Boolean(authSession);
   const isAuthLoading = sessionStatus === "loading" && !session;
-  const initialIndex = useMemo(() => photos.findIndex((photo) => photo.id === initialId), [photos, initialId]);
+
+  const initialIndex = useMemo(() => photos.findIndex((p) => p.id === initialId), [photos, initialId]);
   const [index, setIndex] = useState(initialIndex >= 0 ? initialIndex : 0);
   const [direction, setDirection] = useState(0);
   const [engagement, setEngagement] = useState<Engagement>(initialEngagement);
-  const photo = photos[index];
-  const x = useMotionValue(0);
-  const rotate = useTransform(x, [-250, 0, 250], [-2.5, 0, 2.5]);
 
+  const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // UI States
+  const [hudVisible, setHudVisible] = useState(true);
+  const [showCommentsMobile, setShowCommentsMobile] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [hearts, setHearts] = useState<{ id: number; x: number; y: number }[]>([]);
+
+  const photo = photos[index];
+  
+  // Framer Motion Values
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotate = useTransform(isMobile ? y : x, [-300, 0, 300], [-3, 0, 3]);
+
+  // Handle Hydration & Responsive Layout Detection
+  useEffect(() => {
+    setMounted(true);
+    const mql = window.matchMedia("(max-width: 768px)");
+    setIsMobile(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+
+  // Auto-hide HUD on mobile after 3.5 seconds
+  useEffect(() => {
+    if (!isMobile || !hudVisible || showCommentsMobile) return;
+    const timer = setTimeout(() => setHudVisible(false), 3500);
+    return () => clearTimeout(timer);
+  }, [hudVisible, isMobile, showCommentsMobile]);
+
+  // Infinite/Looping Navigation Handler
   const navigate = useCallback(
     (nextDirection: number) => {
+      if (isZoomed || photos.length === 0) return;
       setDirection(nextDirection);
       setIndex((current) => {
-        const nextIndex = Math.min(photos.length - 1, Math.max(0, current + nextDirection));
-        if (nextIndex !== current) {
-          window.history.replaceState(null, "", `/photos/${photos[nextIndex].id}`);
-        }
+        // Seamless circular wrap around
+        const nextIndex = (current + nextDirection + photos.length) % photos.length;
+        window.history.replaceState(null, "", `/photos/${photos[nextIndex].id}`);
+        setHudVisible(true);
+        setShowCommentsMobile(false);
+        setHearts([]);
         return nextIndex;
       });
     },
-    [photos],
+    [photos, isZoomed],
   );
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if (event.key === "ArrowLeft") navigate(-1);
       if (event.key === "ArrowRight") navigate(1);
-      if (event.key === "Escape") router.push("/");
+      if (event.key === "Escape") {
+        if (isZoomed) setIsZoomed(false);
+        else if (showCommentsMobile) setShowCommentsMobile(false);
+        else router.push("/");
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [navigate, router]);
+  }, [navigate, router, isZoomed, showCommentsMobile]);
 
   useEffect(() => {
     if (!photo) return;
@@ -105,202 +160,32 @@ export default function PhotoViewer({
       setEngagement(initialEngagement);
       return;
     }
-
     fetch(`/api/photos/${photo.id}/engagement`)
       .then((res) => res.json())
       .then((data) => setEngagement(data))
       .catch(() => undefined);
   }, [photo, initialId, initialEngagement]);
 
-  if (!photo) {
-    return <div className="p-8 text-white">Photo not found.</div>;
-  }
-
-  const metadata = [
-    photo.camera ? `Camera: ${photo.camera}` : null,
-    photo.iso ? `ISO ${photo.iso}` : null,
-    photo.aperture,
-    photo.shutter,
-    photo.focalLength ? `Focal Length: ${photo.focalLength}` : null,
-  ].filter(Boolean);
-
-  return (
-    <div className="relative min-h-screen overflow-hidden bg-black text-white">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`wash-${photo.id}`}
-          className="absolute inset-0 bg-cover bg-center opacity-25 blur-3xl scale-110"
-          style={{ backgroundImage: `url(${photo.url})` }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.25 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.55 }}
-        />
-      </AnimatePresence>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,rgba(255,255,255,0.12),transparent_32%),linear-gradient(to_bottom,rgba(0,0,0,0.1),#000_88%)]" />
-
-      <button
-        type="button"
-        onClick={() => router.push("/")}
-        className="fixed right-5 top-5 z-50 flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/35 text-white/70 backdrop-blur-2xl transition hover:scale-105 hover:bg-white hover:text-black"
-        aria-label="Close lightbox"
-      >
-        <X size={18} />
-      </button>
-
-      <button
-        type="button"
-        disabled={index === 0}
-        onClick={() => navigate(-1)}
-        className="fixed left-4 top-1/2 z-40 hidden h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/30 text-white/75 backdrop-blur-2xl transition hover:bg-white hover:text-black disabled:pointer-events-none disabled:opacity-20 md:flex"
-        aria-label="Previous photo"
-      >
-        <ChevronLeft size={24} />
-      </button>
-      <button
-        type="button"
-        disabled={index === photos.length - 1}
-        onClick={() => navigate(1)}
-        className="fixed right-4 top-1/2 z-40 hidden h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/30 text-white/75 backdrop-blur-2xl transition hover:bg-white hover:text-black disabled:pointer-events-none disabled:opacity-20 md:flex"
-        aria-label="Next photo"
-      >
-        <ChevronRight size={24} />
-      </button>
-
-      <div className="relative z-10 grid min-h-screen grid-rows-[1fr_auto] px-4 pb-5 pt-20 md:px-10 md:pb-8">
-        <div className="flex min-h-0 items-center justify-center">
-          <AnimatePresence custom={direction} mode="popLayout">
-            <motion.img
-              key={photo.id}
-              src={photo.url}
-              alt={photo.title}
-              custom={direction}
-              style={{ x, rotate }}
-              drag="x"
-              dragElastic={0.16}
-              dragConstraints={{ left: 0, right: 0 }}
-              onDragEnd={(_, info) => {
-                if (info.offset.x < -90 || info.velocity.x < -550) navigate(1);
-                if (info.offset.x > 90 || info.velocity.x > 550) navigate(-1);
-              }}
-              initial={{ opacity: 0, x: direction >= 0 ? 150 : -150, scale: 0.96, filter: "blur(10px)" }}
-              animate={{ opacity: 1, x: 0, scale: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, x: direction >= 0 ? -150 : 150, scale: 0.96, filter: "blur(10px)" }}
-              transition={spring}
-              className="max-h-[63vh] w-auto max-w-full select-none rounded-[1.75rem] border border-white/10 object-contain shadow-[0_30px_120px_rgba(0,0,0,0.75)] md:max-h-[72vh]"
-            />
-          </AnimatePresence>
-        </div>
-
-        <motion.section
-          key={`meta-${photo.id}`}
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ ...spring, delay: 0.06 }}
-          className="mx-auto grid w-full max-w-7xl gap-4 rounded-4xl border border-white/10 bg-white/0.08 p-4 shadow-2xl backdrop-blur-2xl md:grid-cols-[1.1fr_0.9fr] md:p-5"
-        >
-          <div className="min-w-0">
-            <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.28em] text-red-300/90">
-              <Sparkles size={13} />
-              Frame {index + 1} / {photos.length}
-            </div>
-            <h1 className="text-3xl font-black uppercase tracking-tight md:text-5xl">{photo.title}</h1>
-            <div className="mt-4 flex flex-col gap-2 text-sm text-white/65">
-              <p className="flex gap-2">
-                <MapPin className="mt-0.5 shrink-0 text-red-400" size={16} />
-                <span>{photo.location || "Unknown location"}{photo.coordinates ? ` (${photo.coordinates})` : ""}</span>
-              </p>
-              <p className="flex gap-2">
-                <Camera className="mt-0.5 shrink-0 text-red-400" size={16} />
-                <span>{metadata.join(" | ").replace(" | ISO", " | ISO").replaceAll(" | f", " • f")}</span>
-              </p>
-            </div>
-          </div>
-
-          <EngagementPanel
-            photoId={photo.id}
-            engagement={engagement}
-            setEngagement={setEngagement}
-            isLoggedIn={Boolean(authSession)}
-            isAuthLoading={isAuthLoading}
-          />
-        </motion.section>
-      </div>
-    </div>
-  );
-}
-
-function EngagementPanel({
-  photoId,
-  engagement,
-  setEngagement,
-  isLoggedIn,
-  isAuthLoading,
-}: {
-  photoId: number;
-  engagement: Engagement;
-  setEngagement: (engagement: Engagement | ((current: Engagement) => Engagement)) => void;
-  isLoggedIn: boolean;
-  isAuthLoading: boolean;
-}) {
-  const [comments, setComments] = useState<CommentItem[]>([]);
-  const [comment, setComment] = useState("");
-  const [loadingComments, setLoadingComments] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [commentError, setCommentError] = useState("");
-  const submittingRef = useRef(false);
-
-  const loadComments = useCallback(async () => {
-    setLoadingComments(true);
-    try {
-      const res = await fetch(`/api/comments?photoId=${photoId}`);
-      const data = await res.json();
-      setComments(Array.isArray(data) ? data : []);
-    } finally {
-      setLoadingComments(false);
-    }
-  }, [photoId]);
-
-  useEffect(() => {
-    loadComments();
-  }, [loadComments]);
-
-const toggleLike = async () => {
-  
+  // Actions
+  const toggleLike = async () => {
     setEngagement((current) => ({
       ...current,
       viewerLiked: !current.viewerLiked,
       likeCount: Math.max(0, current.likeCount + (current.viewerLiked ? -1 : 1)),
     }));
-
-    const res = await fetch("/api/likes", {
+    await fetch("/api/likes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ photoId }),
+      body: JSON.stringify({ photoId: photo.id }),
     });
+  };
 
-    const data = await res.json();
-    
-
-    console.log("API Response received:", data); 
-
-    if (res.ok) {
-      setEngagement((current) => ({ 
-        ...current, 
-        viewerLiked: data.liked, 
-        likeCount: data.likeCount 
-      }));
-    } else {
-      console.error("API failed, reverting state...");
-    }
-};
-
-  const ratePhoto = async (value: number) => {
-    setEngagement((current) => ({ ...current, viewerRating: value }));
+  const handleRating = async (val: number) => {
+    setEngagement((current) => ({ ...current, viewerRating: val }));
     const res = await fetch("/api/ratings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ photoId, value }),
+      body: JSON.stringify({ photoId: photo.id, value: val }),
     });
     const data = await res.json();
     if (res.ok) {
@@ -313,125 +198,382 @@ const toggleLike = async () => {
     }
   };
 
-  const submitComment = async () => {
-    if (submittingRef.current) return;
-    if (!comment.trim()) return;
-    if (!isLoggedIn) {
-      setCommentError("Please sign in before posting a comment.");
-      return;
+  let lastTap = 0;
+  const handleTouchOrClick = (e: React.MouseEvent | React.TouchEvent) => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+    
+    if (now - lastTap < DOUBLE_TAP_DELAY) {
+      if (!engagement.viewerLiked) toggleLike();
+      
+      let clientX, clientY;
+      if ('touches' in e) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = (e as React.MouseEvent).clientX;
+        clientY = (e as React.MouseEvent).clientY;
+      }
+      
+      setHearts((prev) => [...prev, { id: Date.now(), x: clientX, y: clientY }]);
+    } else {
+      if (isMobile) {
+        setHudVisible(!hudVisible);
+      }
     }
+    lastTap = now;
+  };
 
-    submittingRef.current = true;
+  if (!photo) return <div className="p-8 text-(--text) bg-(--surface-1) min-h-screen">Photo not found.</div>;
+
+  const metadata = [
+    photo.camera ? `${photo.camera}` : null,
+    photo.focalLength ? `${photo.focalLength}` : null,
+    photo.aperture,
+    photo.shutter,
+    photo.iso ? `ISO ${photo.iso}` : null,
+  ].filter(Boolean);
+
+  return (
+    <div className="relative flex h-[100dvh] w-full overflow-hidden bg-black md:bg-(--surface-1) text-(--text)">
+      
+      {/* CLOSE BUTTON */}
+      <button
+        onClick={() => router.push("/")}
+        className="fixed left-4 top-4 md:left-6 md:top-6 z-50 flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full bg-black/40 text-white/90 backdrop-blur-xl border border-white/15 transition hover:bg-white hover:text-black hover:scale-105"
+      >
+        <X size={20} />
+      </button>
+
+      {/* MAIN PHOTO CONTAINER */}
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-black touch-none">
+        <AnimatePresence custom={direction} mode="popLayout">
+          <motion.img
+            key={photo.id}
+            src={photo.url}
+            alt={photo.title}
+            custom={direction}
+            style={isMobile ? { y, rotate } : { x, rotate }}
+            drag={mounted ? (isZoomed ? true : isMobile ? "y" : "x") : false}
+            dragElastic={isZoomed ? 0 : 0.15}
+            dragConstraints={isZoomed ? { left: -500, right: 500, top: -500, bottom: 500 } : { left: 0, right: 0, top: 0, bottom: 0 }}
+            onDragEnd={(_, info) => {
+              if (isZoomed) return;
+              const offset = isMobile ? info.offset.y : info.offset.x;
+              const velocity = isMobile ? info.velocity.y : info.velocity.x;
+              
+              if (offset < -90 || velocity < -500) navigate(1);
+              if (offset > 90 || velocity > 500) navigate(-1);
+            }}
+            onClick={handleTouchOrClick}
+            onTouchStart={handleTouchOrClick}
+            initial={{ 
+              opacity: 0, 
+              scale: 0.9,
+              x: !isMobile ? (direction > 0 ? 300 : -300) : 0,
+              y: isMobile ? (direction > 0 ? 300 : -300) : 0,
+              filter: "blur(8px)" 
+            }}
+            animate={{ 
+              opacity: 1, 
+              scale: isZoomed ? 2.5 : 1, 
+              x: 0, y: 0, 
+              filter: "blur(0px)",
+              cursor: isZoomed ? "grab" : "zoom-in"
+            }}
+            exit={{ 
+              opacity: 0, 
+              scale: 0.9,
+              x: !isMobile ? (direction > 0 ? -300 : 300) : 0,
+              y: isMobile ? (direction > 0 ? -300 : 300) : 0,
+              filter: "blur(8px)" 
+            }}
+            transition={spring}
+            className={`max-h-full w-auto max-w-full select-none object-contain ${isMobile ? 'h-full w-full object-cover' : 'rounded-lg shadow-2xl'}`}
+          />
+        </AnimatePresence>
+
+        {/* Double Tap Floating Hearts */}
+        <AnimatePresence>
+          {hearts.map((h) => (
+            <motion.div
+              key={h.id}
+              initial={{ opacity: 0, scale: 0.5, y: 20 }}
+              animate={{ opacity: 1, scale: 1.5, y: -20 }}
+              exit={{ opacity: 0, scale: 2, y: -60 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="absolute pointer-events-none z-50 text-red-500 drop-shadow-2xl"
+              style={{ left: h.x - 32, top: h.y - 32 }}
+            >
+              <Heart size={64} className="fill-current" />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        {/* Desktop Zoom Toggle Button */}
+        {!isMobile && (
+          <button
+            onClick={() => setIsZoomed(!isZoomed)}
+            className="absolute bottom-6 right-6 z-40 p-3 rounded-full bg-black/40 text-white backdrop-blur-md border border-white/10 hover:bg-white hover:text-black transition"
+          >
+            {isZoomed ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+          </button>
+        )}
+      </div>
+
+      {/* MOBILE HUD OVERLAY */}
+      <AnimatePresence>
+        {isMobile && hudVisible && !showCommentsMobile && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 pointer-events-none z-30 flex flex-col justify-end pb-8 px-4 bg-gradient-to-t from-black/80 via-black/20 to-transparent"
+          >
+            {/* Right Action Bar */}
+            <div className="absolute right-4 bottom-28 flex flex-col items-center gap-6 pointer-events-auto">
+              <button onClick={toggleLike} className="group flex flex-col items-center gap-1">
+                <div className={`p-3 rounded-full backdrop-blur-md border transition ${engagement.viewerLiked ? 'bg-red-500/20 border-red-500 text-red-500' : 'bg-black/30 border-white/20 text-white'}`}>
+                  <Heart size={24} className={engagement.viewerLiked ? "fill-current" : ""} />
+                </div>
+                <span className="text-xs font-bold drop-shadow-md text-white">{engagement.likeCount}</span>
+              </button>
+              
+              <button onClick={() => setShowCommentsMobile(true)} className="group flex flex-col items-center gap-1">
+                <div className="p-3 rounded-full bg-black/30 backdrop-blur-md border border-white/20 text-white transition hover:bg-white hover:text-black">
+                  <MessageCircle size={24} />
+                </div>
+                <span className="text-xs font-bold drop-shadow-md text-white">{engagement.commentCount}</span>
+              </button>
+
+              <button onClick={() => setShowCommentsMobile(true)} className="group flex flex-col items-center gap-1">
+                <div className="p-3 rounded-full bg-black/30 backdrop-blur-md border border-white/20 text-yellow-400">
+                  <Star size={24} className="fill-current" />
+                </div>
+                <span className="text-xs font-bold drop-shadow-md text-white">{engagement.ratingAverage.toFixed(1)}</span>
+              </button>
+            </div>
+
+            {/* Bottom Metadata Block */}
+            <div className="w-[75%] pointer-events-auto space-y-2">
+              <h1 className="text-2xl font-black text-white drop-shadow-lg">{photo.title}</h1>
+              {photo.authorName && <p className="text-sm font-bold text-white/90">📸 {photo.authorName}</p>}
+              <p className="text-xs text-white/75 flex items-center gap-1 drop-shadow-md">
+                <MapPin size={12} /> {photo.location || "Unknown Location"}
+              </p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {metadata.map((meta, i) => (
+                  <span key={i} className="text-[10px] uppercase tracking-wider font-bold bg-white/20 backdrop-blur-md px-2 py-1 rounded text-white">
+                    {meta}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* MOBILE COMMENTS & RATING SHEET */}
+      <AnimatePresence>
+        {isMobile && showCommentsMobile && (
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+            className="absolute inset-x-0 bottom-0 z-50 h-[75vh] rounded-t-3xl bg-(--surface-1) border-t border-(--card-border) shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col"
+          >
+            <div className="flex items-center justify-between p-4 border-b border-(--card-border)">
+              <h3 className="font-bold text-sm uppercase tracking-wider">Photo Engagement</h3>
+              <button onClick={() => setShowCommentsMobile(false)} className="p-2 bg-(--surface-2) rounded-full">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              {/* Star Rating Section inside Mobile Sheet */}
+              <div className="p-4 rounded-2xl bg-(--surface-2) border border-(--card-border) flex flex-col items-center justify-center gap-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-(--text-muted)">Rate this photograph</p>
+                <StarRating value={engagement.viewerRating ?? 0} onSelect={handleRating} />
+                <span className="text-[11px] font-bold text-(--text-muted) mt-1">
+                  Community Average: {engagement.ratingAverage.toFixed(1)} / 5 ({engagement.ratingCount} reviews)
+                </span>
+              </div>
+
+              {/* Comments Section */}
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <MessageCircle size={14} /> Comments ({engagement.commentCount})
+                </h4>
+                <CommentsList photoId={photo.id} setEngagement={setEngagement} isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading} />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* DESKTOP SIDEBAR (Split Pane) */}
+      {!isMobile && (
+        <div className="hidden md:flex w-[420px] shrink-0 flex-col border-l border-(--card-border) bg-(--surface-1) shadow-2xl z-30 h-full">
+          
+          {/* Header & Meta */}
+          <div className="p-6 border-b border-(--card-border) overflow-y-auto max-h-[50vh] scrollbar-hide">
+            <div className="mb-4 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-red-500/80">
+              <span className="flex items-center gap-1.5"><Sparkles size={13} /> Frame {index + 1} / {photos.length}</span>
+              <span className="text-(--text-muted)">Loop Enabled</span>
+            </div>
+            <h1 className="text-3xl font-black uppercase tracking-tight mb-2">{photo.title}</h1>
+            
+            <div className="space-y-2 text-sm text-(--text-muted) mb-6">
+              <p className="flex gap-2 items-center">
+                <MapPin className="text-red-400" size={16} />
+                <span>{photo.location || "Unknown location"}</span>
+              </p>
+              {metadata.length > 0 && (
+                <div className="flex gap-2 items-start mt-3">
+                  <Camera className="text-red-400 mt-1 shrink-0" size={16} />
+                  <div className="flex flex-wrap gap-1.5">
+                    {metadata.map((meta, i) => (
+                      <span key={i} className="px-2 py-1 bg-(--surface-2) rounded border border-(--card-border) text-xs font-medium">
+                        {meta}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Desktop Actions */}
+            <div className="flex items-center gap-4 border-t border-(--card-border) pt-5">
+              <button
+                onClick={toggleLike}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border font-bold transition ${
+                  engagement.viewerLiked
+                    ? "bg-red-500/10 border-red-500/50 text-red-500"
+                    : "bg-(--surface-2) border-(--card-border) hover:border-red-400/50"
+                }`}
+              >
+                <Heart size={18} className={engagement.viewerLiked ? "fill-current" : ""} />
+                {engagement.likeCount} Likes
+              </button>
+              
+              <div className="flex-1 flex flex-col items-center bg-(--surface-2) rounded-xl border border-(--card-border) p-2">
+                <StarRating value={engagement.viewerRating ?? 0} onSelect={handleRating} />
+                <span className="text-[10px] font-bold text-(--text-muted) mt-1">{engagement.ratingAverage.toFixed(1)} / 5</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop Comments Section */}
+          <div className="flex-1 flex flex-col p-6 bg-(--surface-2)/30 overflow-hidden">
+            <h2 className="flex items-center gap-2 text-xs font-black uppercase tracking-widest mb-4">
+              <MessageCircle size={15} /> Comments ({engagement.commentCount})
+            </h2>
+            <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-(--card-border)">
+              <CommentsList photoId={photo.id} setEngagement={setEngagement} isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading} />
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+// --- Comments List Sub-Component ---
+function CommentsList({
+  photoId,
+  setEngagement,
+  isLoggedIn,
+  isAuthLoading
+}: {
+  photoId: number;
+  setEngagement: React.Dispatch<React.SetStateAction<Engagement>>;
+  isLoggedIn: boolean;
+  isAuthLoading: boolean;
+}) {
+  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [comment, setComment] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/comments?photoId=${photoId}`)
+      .then(res => res.json())
+      .then(data => setComments(Array.isArray(data) ? data : []))
+      .finally(() => setLoading(false));
+  }, [photoId]);
+
+  const submit = async () => {
+    if (!comment.trim() || submitting) return;
     setSubmitting(true);
-    setCommentError("");
     try {
       const result = await submitCommentAction(photoId, comment);
-
-      if (!result.ok) {
-        setCommentError(result.error === "UNAUTHORIZED" ? "Please sign in before posting a comment." : "Please write a longer comment.");
-        return;
+      if (result.ok) {
+        setComment("");
+        setComments(c => [result.comment, ...c]);
+        setEngagement(c => ({ ...c, commentCount: result.commentCount }));
       }
-
-      setComment("");
-      setComments((current) => [result.comment, ...current]);
-      setEngagement((current) => ({ ...current, commentCount: result.commentCount }));
-    } catch {
-      setCommentError("Comment submission failed. Please try again.");
     } finally {
-      submittingRef.current = false;
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-[0.85fr_1.15fr]">
-      <div className="space-y-4 rounded-1.5rem border border-white/10 bg-black/25 p-4">
-        <button
-          type="button"
-          onClick={toggleLike}
-          className={`group flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-sm font-bold transition ${
-            engagement.viewerLiked
-              ? "border-red-400/50 bg-red-500/15 text-red-200"
-              : "border-white/10 bg-white/0.04 text-white/75 hover:border-red-400/50 hover:text-white"
-          }`}
-        >
-          <span className="flex items-center gap-2">
-            <Heart size={17} className={engagement.viewerLiked ? "fill-red-500 text-red-500" : "group-hover:text-red-400"} />
-            Like
-          </span>
-          <span>{engagement.likeCount}</span>
-        </button>
-
-        <div>
-          <StarRating value={engagement.viewerRating ?? 0} onSelect={ratePhoto} />
-          <div className="mt-3">
-            <StarDisplay rating={engagement.ratingAverage} total={engagement.ratingCount} />
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-1.5rem border border-white/10 bg-black/25 p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.18em]">
-            <MessageCircle size={15} /> Comments
-          </h2>
-          <span className="text-xs text-white/35">{engagement.commentCount}</span>
-        </div>
-
-        {isAuthLoading ? (
-          <div className="h-11 rounded-2xl border border-white/10 bg-white/4" />
-        ) : isLoggedIn ? (
-          <div className="flex gap-2">
-            <input
-              value={comment}
-              onChange={(event) => setComment(event.target.value)}
-              className="input h-11 flex-1 rounded-2xl bg-white/0.06"
-              placeholder="Write a thoughtful comment..."
-            />
-            <button
-              type="button"
-              disabled={submitting || !comment.trim()}
-              onClick={submitComment}
-              className="rounded-2xl bg-white px-4 text-xs font-black uppercase tracking-[0.16em] text-black transition hover:bg-red-500 hover:text-white disabled:opacity-35"
-            >
-              {submitting ? <Loader2 className="animate-spin" size={16} /> : "Post"}
-            </button>
-          </div>
-        ) : (
+    <div className="flex flex-col h-full gap-4">
+      {/* Input Area */}
+      {isAuthLoading ? (
+        <div className="h-12 w-full rounded-xl bg-(--card-border) animate-pulse" />
+      ) : isLoggedIn ? (
+        <div className="flex gap-2">
+          <input
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && submit()}
+            className="flex-1 h-11 px-4 text-sm rounded-xl bg-(--surface-2) border border-(--card-border) text-(--text) focus:outline-none focus:border-red-400"
+            placeholder="Add a comment..."
+          />
           <button
-            type="button"
-            onClick={() => signIn("google", { callbackUrl: window.location.pathname })}
-            className="w-full rounded-2xl border border-white/10 bg-white/0.05 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white/60 transition hover:border-red-400/50 hover:text-white"
+            onClick={submit}
+            disabled={submitting || !comment.trim()}
+            className="h-11 px-4 rounded-xl bg-(--text) text-(--surface-1) font-bold text-xs uppercase transition hover:bg-red-500 hover:text-white disabled:opacity-50"
           >
-            Sign in to write a comment
+            {submitting ? <Loader2 className="animate-spin" size={16} /> : "Post"}
           </button>
-        )}
-
-        {commentError ? (
-          <p className="mt-2 text-xs font-medium text-red-300">{commentError}</p>
-        ) : null}
-
-        <div className="mt-4 max-h-36 space-y-3 overflow-y-auto pr-1">
-          {loadingComments ? (
-            <p className="text-sm text-white/35">Loading comments...</p>
-          ) : comments.length === 0 ? (
-            <p className="text-sm text-white/35">No comments yet.</p>
-          ) : (
-            comments.map((item) => (
-              <div key={item.id} className="flex gap-3 border-b border-white/5 pb-3 last:border-0">
-                <img
-                  src={item.user.customImage || item.user.image || "/default-pfp.png"}
-                  alt=""
-                  className="h-8 w-8 rounded-full border border-white/10 object-cover"
-                />
-                <div>
-                  <p className="text-xs font-bold text-white/85">{item.user.name || "Guest artist"}</p>
-                  <p className="text-sm leading-5 text-white/55">{item.body ?? item.comment}</p>
-                </div>
-              </div>
-            ))
-          )}
         </div>
+      ) : (
+        <button
+          onClick={() => signIn("google", { callbackUrl: window.location.pathname })}
+          className="w-full rounded-xl border border-(--card-border) bg-(--surface-2) px-4 py-3 text-xs font-bold uppercase text-(--text-muted) transition hover:border-red-400"
+        >
+          Sign in to comment
+        </button>
+      )}
+
+      {/* List */}
+      <div className="space-y-4 pb-4">
+        {loading ? (
+          <Loader2 className="animate-spin mx-auto text-(--text-muted) mt-4" />
+        ) : comments.length === 0 ? (
+          <p className="text-sm text-(--text-muted) text-center mt-4 flex items-center justify-center gap-2">
+            <Info size={16} /> No comments yet.
+          </p>
+        ) : (
+          comments.map((item) => (
+            <div key={item.id} className="flex gap-3">
+              <img
+                src={item.user.customImage || item.user.image || "/default-pfp.png"}
+                alt=""
+                className="h-8 w-8 rounded-full object-cover border border-(--card-border) shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-(--text)">{item.user.name || "Guest"}</p>
+                <p className="text-sm text-(--text-muted) break-words mt-0.5">{item.body ?? item.comment}</p>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
