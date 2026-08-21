@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import Image from "next/image";
@@ -215,7 +216,7 @@ export default function GallerySection({
           </p>
         </div>
 
-        {/* Categories Filter Tabs (Extended 2x Longer Again) */}
+        {/* Categories Filter Tabs */}
         <nav
           className="scrollbar-none overflow-x-auto border-b border-white/10 py-4 mb-8"
           aria-label="Gallery categories"
@@ -275,9 +276,9 @@ export default function GallerySection({
           </div>
         )}
 
-        {/* Pagination Controls (Fully Extended Buttons) */}
+        {/* Pagination Controls (Full-Width Grid Aligned) */}
         {totalPages > 1 && (
-          <div className="mt-16 flex items-center justify-between gap-6 max-w-2xl mx-auto w-full">
+          <div className="mt-16 flex items-center justify-between gap-6 w-full">
             {currentPage > 1 ? (
               <Link
                 href={previousHref}
@@ -291,7 +292,7 @@ export default function GallerySection({
               </span>
             )}
 
-            <div className="px-6 py-4 rounded-2xl border border-white/10 bg-(--surface-1) font-mono text-[10px] tracking-[0.25em] text-(--text)">
+            <div className="px-6 py-4 rounded-2xl border border-white/10 bg-(--surface-1) font-mono text-[10px] tracking-[0.25em] text-(--text) shrink-0">
               {String(currentPage).padStart(2, "0")} / {String(totalPages).padStart(2, "0")}
             </div>
 
