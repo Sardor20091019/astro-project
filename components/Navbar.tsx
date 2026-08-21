@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { Menu, X, User as UserIcon, Edit3, Check, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import UserSearch from "@/components/UserSearchTrigger";
@@ -77,7 +77,7 @@ export default function Navbar() {
       if (res.ok) {
         setIsEditingProfile(false);
         router.refresh();
-        window.location.reload(); // Refresh to reflect updated NextAuth session
+        window.location.reload();
       } else {
         const err = await res.json();
         alert(err.error || "Failed to update profile");
@@ -99,7 +99,7 @@ export default function Navbar() {
       }`}>
         <div className="mx-auto flex items-center justify-between h-18 w-full max-w-[98vw] sm:max-w-[95vw] px-4 sm:px-6">
           
-          {/* Left: Logo (Compact on mobile to prevent overlap) */}
+          {/* Left: Logo */}
           <Link href="/" className="flex items-center h-full text-xs sm:text-sm font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] hover:opacity-80 transition-opacity truncate mr-2">
             <span>Astro<span className="text-(--accent)">spectrum</span></span>
           </Link>
