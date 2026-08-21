@@ -64,7 +64,6 @@ type Engagement = {
 
 const springConfig = { type: "spring" as const, stiffness: 280, damping: 30 };
 
-// Optimized Magnetic Button using pure motion values (Zero React re-renders)
 function MagneticButton({
   children,
   className,
@@ -169,17 +168,6 @@ export default function PhotoViewer({
     mql.addEventListener("change", handler);
     return () => mql.removeEventListener("change", handler);
   }, []);
-
-  // Preload adjacent images
-  useEffect(() => {
-    if (photos.length <= 1) return;
-    const prevIndex = (index - 1 + photos.length) % photos.length;
-    const nextIndex = (index + 1) % photos.length;
-    const imgPrev = new window.Image();
-    imgPrev.src = photos[prevIndex].url;
-    const imgNext = new window.Image();
-    imgNext.src = photos[nextIndex].url;
-  }, [index, photos]);
 
   // Immersive Focus Mode timeout
   useEffect(() => {
@@ -359,7 +347,7 @@ export default function PhotoViewer({
   return (
     <div className="relative flex h-[100dvh] w-full overflow-hidden bg-[#030305] text-white select-none">
       
-      {/* Optimized Static Ambient Background (Zero performance overhead) */}
+      {/* Optimized Static Ambient Background */}
       <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-tr from-[#030305] via-[#09090c] to-[#030305]" />
 
       {/* STAGE */}
@@ -430,7 +418,7 @@ export default function PhotoViewer({
               <MagneticButton
                 onClick={() => router.push("/")}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.02] text-white/70 backdrop-blur-xl border border-white/10 transition hover:bg-white/10 hover:text-white"
-                title="Back to Gallery"
+                title="Back to Gallery (Esc)"
               >
                 <X size={18} strokeWidth={1.5} />
               </MagneticButton>
