@@ -3,7 +3,6 @@
 
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
-import { useLenis } from "@/hooks/useLenis";
 import heroImage from "@/public/hero.jpg";
 
 export default function Hero() {
@@ -13,26 +12,36 @@ export default function Hero() {
   
   const [animate, setAnimate] = useState(false);
 
-  const lenis = useLenis(({ y }) => {
-    if (bgRef.current)    bgRef.current.style.transform = `translateY(${y * 0.42}px)`;
-    if (titleRef.current) titleRef.current.style.transform = `translateY(${y * 0.18}px)`;
-    if (subRef.current)   subRef.current.style.transform = `translateY(${y * 0.08}px)`;
-  });
-
+  // Native Parallax Effect using requestAnimationFrame
   useEffect(() => {
+    let animationFrameId: number;
+
+    const handleScroll = () => {
+      const y = window.scrollY;
+      if (bgRef.current)    bgRef.current.style.transform = `translateY(${y * 0.42}px)`;
+      if (titleRef.current) titleRef.current.style.transform = `translateY(${y * 0.18}px)`;
+      if (subRef.current)   subRef.current.style.transform = `translateY(${y * 0.08}px)`;
+    };
+
+    const onScroll = () => {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = requestAnimationFrame(handleScroll);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
     setAnimate(true);
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(animationFrameId);
+    };
   }, []);
 
   const handleScrollToGallery = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     const target = document.querySelector("#gallery");
     if (!target) return;
-
-    if (lenis) {
-      lenis.scrollTo(target, { duration: 1.8 });
-    } else {
-      target.scrollIntoView({ behavior: "smooth" });
-    }
+    target.scrollIntoView({ behavior: "smooth" });
   };
 
   const part1 = "Astro";
