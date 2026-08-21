@@ -5,8 +5,8 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { Menu, X } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
+import { Menu, X, User as UserIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import UserSearch from "@/components/UserSearchTrigger";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -109,7 +109,7 @@ export default function Navbar() {
               {/* Mobile Menu Toggle Button */}
               <button 
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
-                className="md:hidden flex items-center justify-center p-2 text-(--text) hover:bg-(--surface-2) rounded transition-colors ml-1"
+                className="md:hidden flex items-center justify-center p-2 text-(--text) hover:bg-(--surface-2) rounded transition-colors ml-1 cursor-pointer"
                 aria-label="Toggle menu"
               >
                 {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -128,17 +128,40 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="fixed inset-0 top-18 z-40 flex flex-col bg-(--bg)/95 backdrop-blur-2xl p-6 md:hidden"
+            className="fixed inset-0 top-18 z-40 flex flex-col bg-(--bg)/95 backdrop-blur-2xl p-6 md:hidden overflow-y-auto"
           >
-            {/* Top Auth Row in Mobile Menu */}
-            <div className="flex items-center justify-between pb-6 border-b border-(--border)">
+            {/* Top Auth Section in Mobile Menu */}
+            <div className="flex flex-col pb-6 border-b border-(--border) gap-4">
               {status === "loading" ? (
                 <div className="h-8 w-16 animate-pulse rounded bg-(--surface-3)" />
               ) : user ? (
-                <div className="flex items-center justify-between w-full">
+                <div className="flex flex-col gap-4">
                   <div className="flex items-center gap-3">
-                    <UserMenu user={user} />
-                    <span className="text-[10px] uppercase tracking-widest text-(--text)">{user.name || "User"}</span>
+                    <div className="h-10 w-10 shrink-0 rounded-full bg-(--surface-2) border border-(--border) flex items-center justify-center overflow-hidden text-(--text-dim)">
+                      {user.image ? (
+                        <img src={user.image} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <UserIcon className="h-5 w-5" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-(--text) truncate uppercase tracking-wider">{user.name || "User"}</p>
+                      <p className="text-[10px] text-(--text-muted) truncate">{user.email}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5 pt-1">
+                    <Link 
+                      href={`/profile/${user.id}`}
+                      className="flex items-center justify-center py-3 px-4 rounded-xl bg-(--surface-2) border border-(--border) font-mono text-[10px] uppercase tracking-wider font-bold text-(--text) hover:border-(--border-hover) transition-all"
+                    >
+                      View Profile
+                    </Link>
+                    <button 
+                      onClick={() => signOut()}
+                      className="flex items-center justify-center py-3 px-4 rounded-xl bg-rose-500/10 border border-rose-500/30 font-mono text-[10px] uppercase tracking-wider font-bold text-rose-500 hover:bg-rose-500 hover:text-white transition-all cursor-pointer"
+                    >
+                      Log Out
+                    </button>
                   </div>
                 </div>
               ) : (
@@ -147,7 +170,7 @@ export default function Navbar() {
                   <Link 
                     href="/login" 
                     style={{ borderRadius: "var(--radius-sm)" }}
-                    className="inline-flex items-center justify-center bg-(--text) px-5 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-(--bg)"
+                    className="inline-flex items-center justify-center bg-(--text) px-5 py-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-(--bg)"
                   >
                     Sign In
                   </Link>
@@ -159,8 +182,9 @@ export default function Navbar() {
             <div className="flex flex-col gap-6 pt-6">
               <div className="text-[9px] uppercase tracking-[0.25em] text-(--text-muted) font-black">Menu</div>
               <div className="flex flex-col gap-4">
-                <NavLink href="/" active={pathname === "/"}>Gallery</NavLink>
-                <NavLink href="/leaderboard" active={pathname === "/leaderboard"}>Leaderboard</NavLink>
+                <Link href="/" className="text-xs uppercase tracking-[0.2em] font-semibold text-(--text) py-1">Gallery</Link>
+                <Link href="/photos" className="text-xs uppercase tracking-[0.2em] font-semibold text-(--text) py-1">Photos</Link>
+                <Link href="/leaderboard" className="text-xs uppercase tracking-[0.2em] font-semibold text-(--text) py-1">Leaderboard</Link>
               </div>
             </div>
           </motion.div>
