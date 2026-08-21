@@ -1,16 +1,20 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { Menu, X, User as UserIcon, Edit3, Check, Loader2, Camera } from "lucide-react";
+import { Menu, X, User as UserIcon, Edit3, Check, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import UserSearch from "@/components/UserSearchTrigger";
 import ThemeToggle from "@/components/ThemeToggle";
 import UserMenu from "@/components/UserMenu";
+import { UploadButton } from "@uploadthing/react";
+import type { OurFileRouter } from "@/app/api/uploadthing/core";
+import { updateUserProfile } from "@/lib/actions";
 
 interface NavLinkProps {
   href: string;
@@ -49,7 +53,6 @@ export default function Navbar() {
   const [newName, setNewName] = useState(user?.name || "");
   const [newImage, setNewImage] = useState(user?.image || "");
   const [isSaving, setIsSaving] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -69,41 +72,18 @@ export default function Navbar() {
     setIsEditingProfile(false);
   }, [pathname]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 3 * 1024 * 1024) {
-        alert("Please select an image smaller than 3MB");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   async function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault();
+    if (!user?.id) return;
     setIsSaving(true);
     try {
-      const res = await fetch("/api/user/update", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName, image: newImage }),
-      });
-      if (res.ok) {
-        setIsEditingProfile(false);
-        router.refresh();
-        window.location.reload();
-      } else {
-        const err = await res.json();
-        alert(err.error || "Failed to update profile");
-      }
+      await updateUserProfile(user.id, { name: newName, image: newImage });
+      setIsEditingProfile(false);
+      router.refresh();
+      window.location.reload();
     } catch (error) {
       console.error(error);
-      alert("Failed to update profile");
+      alert("Failed to update profile. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -116,15 +96,15 @@ export default function Navbar() {
           ? "bg-(--bg)/75 backdrop-blur-2xl border-b border-(--border) shadow-sm" 
           : "bg-gradient-to-b from-(--bg)/90 to-transparent backdrop-blur-sm"
       }`}>
-        <div className="mx-auto flex items-center justify-between h-[72px] w-full max-w-[98vw] sm:max-w-[95vw] px-5 sm:px-8">
+        <div className="mx-auto flex items-center justify-between h-[72px] w-full max-w-[98vw] sm:max-w-[95vw] px-4 sm:px-8">
           
           {/* Left: Logo */}
-          <Link href="/" className="flex items-center h-full text-xs sm:text-[13px] font-black uppercase tracking-[0.2em] hover:opacity-70 transition-opacity truncate mr-2">
+          <Link href="/" className="flex items-center h-full text-[11px] sm:text-[13px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] hover:opacity-70 transition-opacity truncate mr-2">
             <span>Astro<span className="text-(--accent)">spectrum</span></span>
           </Link>
 
           {/* Right Group: Navigation Links + Actions */}
-          <div className="flex items-center gap-6 sm:gap-10 shrink-0 h-full">
+          <div className="flex items-center gap-4 sm:gap-10 shrink-0 h-full">
             
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex items-center h-full gap-8">
@@ -134,17 +114,17 @@ export default function Navbar() {
             </div>
 
             {/* Actions (Search + Theme + Auth) */}
-            <div className="flex items-center gap-3 sm:gap-4 h-full">
+            <div className="flex items-center gap-2.5 sm:gap-4 h-full">
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="flex items-center"
+                className="flex items-center scale-90 sm:scale-100"
               >
                 <UserSearch />
               </motion.div>
 
-              <div className="flex items-center">
+              <div className="flex items-center scale-90 sm:scale-100">
                 <ThemeToggle />
               </div>
 
@@ -173,7 +153,7 @@ export default function Navbar() {
                 className="md:hidden flex items-center justify-center p-2 text-(--text) hover:bg-(--surface-2) rounded-lg transition-colors cursor-pointer"
                 aria-label="Toggle menu"
               >
-                {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
             </div>
 
@@ -209,31 +189,35 @@ export default function Navbar() {
                       </button>
                     </div>
 
-                    {/* Image Upload Area */}
-                    <div className="flex flex-col items-center justify-center gap-3 py-2">
-                      <div 
-                        onClick={() => fileInputRef.current?.click()}
-                        className="relative h-20 w-20 rounded-full border-2 border-dashed border-(--border) hover:border-(--accent) bg-(--surface-2) flex items-center justify-center cursor-pointer overflow-hidden group transition-colors"
-                      >
-                        {newImage ? (
-                          <img src={newImage} alt="Profile preview" className="h-full w-full object-cover" />
-                        ) : (
-                          <UserIcon className="h-8 w-8 text-(--text-dim)" />
-                        )}
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Camera size={20} className="text-white" />
-                        </div>
+                    {/* Avatar Preview & Uploadthing Component */}
+                    <div className="flex flex-col items-center justify-center gap-3 py-1">
+                      <div className="relative h-20 w-20 rounded-full border-2 border-(--border) bg-(--surface-2) flex items-center justify-center overflow-hidden shadow-inner">
+                        <img 
+                          src={newImage || "/default-avatar.png"} 
+                          alt="Avatar preview" 
+                          className="h-full w-full object-cover" 
+                        />
                       </div>
-                      <span className="text-[9px] uppercase tracking-widest text-(--text-muted) font-mono text-center">
-                        Tap avatar to upload
-                      </span>
-                      <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={handleImageUpload} 
-                        accept="image/*" 
-                        className="hidden" 
-                      />
+                      <div className="w-full flex justify-center pt-1">
+                        <UploadButton<OurFileRouter, "profileUploader">
+                          endpoint="profileUploader"
+                          appearance={{
+                            button: "bg-[var(--accent)] text-white font-mono text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl cursor-pointer hover:opacity-90 transition-all shadow-md w-full",
+                            allowedContent: "hidden",
+                            container: "w-full flex justify-center"
+                          }}
+                          content={{
+                            button: "Change Photo"
+                          }}
+                          onClientUploadComplete={(res) => {
+                            if (res && res[0]) {
+                              const finalUrl = res[0].serverData?.url || res[0].ufsUrl || res[0].url;
+                              setNewImage(finalUrl);
+                            }
+                          }}
+                          onUploadError={(err) => alert("Upload failed: " + err.message)}
+                        />
+                      </div>
                     </div>
 
                     <div className="flex flex-col gap-1.5">
@@ -250,7 +234,7 @@ export default function Navbar() {
                     <button 
                       type="submit" 
                       disabled={isSaving}
-                      className="mt-2 w-full py-3.5 rounded-xl bg-(--text) text-(--bg) font-mono text-xs font-bold uppercase tracking-[0.15em] hover:bg-(--accent) transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                      className="mt-1 w-full py-3.5 rounded-xl bg-(--text) text-(--bg) font-mono text-xs font-bold uppercase tracking-[0.15em] hover:bg-(--accent) transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                       {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
                       {isSaving ? "Saving..." : "Save Changes"}
@@ -286,7 +270,7 @@ export default function Navbar() {
                         Edit
                       </button>
                       <button 
-                        onClick={() => signOut()}
+                        onClick={() => signOut({ callbackUrl: '/' })}
                         className="flex items-center justify-center py-3 px-2 rounded-xl bg-rose-500/10 border border-rose-500/30 font-mono text-[10px] uppercase tracking-wider font-bold text-rose-500 hover:bg-rose-500 hover:text-white transition-all cursor-pointer text-center"
                       >
                         Log Out
