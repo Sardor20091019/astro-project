@@ -153,7 +153,7 @@ export default function ProfileHeaderCard({
         {/* User Details */}
         <div className="flex flex-col items-center gap-2 max-w-lg z-10">
           <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-[var(--text)]">
-            {user.name ?? "Anonymous Artist"}
+            {user.name ?? "NOT_AVAILABLE Artist"}
           </h1>
           <p className="font-mono text-xs uppercase tracking-[0.25em] text-[var(--text-muted)]">
             {user.email}
@@ -316,7 +316,7 @@ export default function ProfileHeaderCard({
                         />
                         <div className="min-w-0">
                           <p className="text-xs font-bold uppercase tracking-wider text-[var(--text)] group-hover:text-[var(--accent)] transition-colors truncate">
-                            {itemUser.name || "Anonymous Creator"}
+                            {itemUser.name || "NOT_AVAILABLE Creator"}
                           </p>
                         </div>
                       </div>

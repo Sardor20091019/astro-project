@@ -809,7 +809,7 @@ function CommentsList({
                 className="h-7 w-7 rounded-full object-cover border border-zinc-800 shrink-0"
               />
               <div className="flex-1 min-w-0 bg-zinc-950 border border-zinc-900 p-3 rounded-xl">
-                <p className="text-xs font-medium text-zinc-300 mb-1">{item.user.name || "Anonymous"}</p>
+                <p className="text-xs font-medium text-zinc-300 mb-1">{item.user.name || "NOT_AVAILABLE"}</p>
                 <p className="text-xs text-zinc-400 break-words leading-relaxed">{item.body ?? item.comment}</p>
               </div>
             </div>

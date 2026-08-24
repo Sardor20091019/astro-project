@@ -150,7 +150,7 @@ export default function UserSearchModal({ isOpen, onClose }: UserSearchModalProp
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-[var(--text)] truncate group-hover:text-[var(--accent)] transition-colors">
-                          {user.name || "Anonymous"}
+                          {user.name || "NOT_AVAILABLE"}
                         </p>
                         {user.telegramUsername && (
                           <p className="text-[9px] uppercase tracking-[0.14em] text-[var(--text-muted)] truncate mt-0.5 font-mono">

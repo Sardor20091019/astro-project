@@ -185,7 +185,7 @@ export default function ProfileConnectionsModal({
                         />
                         <div className="min-w-0">
                           <p className="text-xs font-bold uppercase tracking-wider text-[var(--text)] group-hover:text-[var(--accent)] transition-colors truncate">
-                            {user.name || "Anonymous Creator"}
+                            {user.name || "NOT_AVAILABLE Creator"}
                           </p>
                         </div>
                       </div>

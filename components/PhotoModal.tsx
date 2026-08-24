@@ -38,7 +38,7 @@ export default function PhotoDetailsSidePanel({
             href={`/profile/${ownerId}`}
             className="inline-block text-xs text-zinc-400 mt-1 hover:text-white transition-colors"
           >
-            by <span className="font-semibold text-zinc-200">{ownerName || "Anonymous Photographer"}</span>
+            by <span className="font-semibold text-zinc-200">{ownerName || "NOT_AVAILABLE Photographer"}</span>
           </Link>
         </div>
 

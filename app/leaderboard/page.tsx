@@ -84,7 +84,7 @@ export default async function LeaderboardPage() {
                       />
                     </div>
                     <p className="text-xs font-bold uppercase tracking-wider text-[var(--text)] truncate w-full mb-1">
-                      {second.name || "Anonymous"}
+                      {second.name || "NOT_AVAILABLE"}
                     </p>
                     <p className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-widest">
                       <span className="text-[var(--text)] font-bold">{second._count.followers.toLocaleString()}</span> followers
@@ -115,7 +115,7 @@ export default async function LeaderboardPage() {
                       />
                     </div>
                     <p className="text-sm font-black uppercase tracking-wider text-[var(--text)] truncate w-full mb-1">
-                      {first.name || "Anonymous"}
+                      {first.name || "NOT_AVAILABLE"}
                     </p>
                     <p className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-widest">
                       <span className="text-[var(--accent)] font-bold">{first._count.followers.toLocaleString()}</span> followers
@@ -143,7 +143,7 @@ export default async function LeaderboardPage() {
                       />
                     </div>
                     <p className="text-xs font-bold uppercase tracking-wider text-[var(--text)] truncate w-full mb-1">
-                      {third.name || "Anonymous"}
+                      {third.name || "NOT_AVAILABLE"}
                     </p>
                     <p className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-widest">
                       <span className="text-[var(--text)] font-bold">{third._count.followers.toLocaleString()}</span> followers
