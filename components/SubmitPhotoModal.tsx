@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession, signIn } from "next-auth/react";
-import { CheckCircle2, MapPin, User, Camera, Tag, X, ImagePlus, ShieldCheck, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
+import { CheckCircle2, MapPin, User, Camera, Tag, X, ImagePlus, ShieldCheck, Eye, EyeOff, Loader2, AlertCircle, Sliders } from "lucide-react";
 import { CATEGORIES } from "@/data/photos";
 import { useUploadThing } from "@/utils/uploadthing";
 import { AnimatePresence, motion } from "framer-motion";
@@ -24,7 +24,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
   const [submitted, setSubmitted] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
 
-  // Auto-extracted EXIF Form States
+  // Strictly Locked EXIF Form States
   const [camera, setCamera] = useState("");
   const [iso, setIso] = useState("");
   const [aperture, setAperture] = useState("");
@@ -89,6 +89,10 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
 
     setLoading(true);
     setExifStatus("idle");
+    setCamera("");
+    setIso("");
+    setAperture("");
+    setShutter("");
     setCoordinates("");
     setRawExifCoords("");
     setLocation("");
@@ -127,11 +131,10 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
         setCoordinates(coordsStr);
         setExifStatus("has-gps");
 
-        // 3. Automatically reverse-geocode coordinates to get a clean location name
+        // 3. Automatically reverse-geocode coordinates (without forbidden User-Agent header)
         try {
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${gps.latitude}&lon=${gps.longitude}`,
-            { headers: { "User-Agent": "AstrospectrumPhotoApp/1.0" } }
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${gps.latitude}&lon=${gps.longitude}`
           );
           const data = await res.json();
           const address = data.address;
@@ -306,7 +309,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                           {isUploading || loading ? "Extracting EXIF & Uploading..." : "Drop original photo or click to browse"}
                         </span>
                         <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-(--text-muted)">
-                          Requires original file with embedded EXIF GPS data
+                          Requires original file with embedded EXIF metadata
                         </span>
                       </div>
                       
@@ -321,37 +324,36 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                   )}
                 </div>
 
-                {/* Technical Metadata Inputs (Auto-filled from EXIF) */}
+                {/* Strictly Locked Technical Metadata Inputs (EXIF Only) */}
                 {uploadedUrl && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-in fade-in duration-500">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-in fade-in duration-500 opacity-90">
                     <input 
                       name="camera" 
                       value={camera} 
-                      onChange={(e) => setCamera(e.target.value)} 
-                      placeholder="Camera" 
-                      className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" 
+                      readOnly
+                      placeholder="Camera (EXIF)" 
+                      className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text-dim) placeholder:text-(--text-muted) outline-none cursor-not-allowed" 
                     />
                     <input 
                       name="iso" 
                       value={iso} 
-                      onChange={(e) => setIso(e.target.value)} 
-                      placeholder="ISO" 
-                      type="text" 
-                      className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" 
+                      readOnly
+                      placeholder="ISO (EXIF)" 
+                      className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text-dim) placeholder:text-(--text-muted) outline-none cursor-not-allowed" 
                     />
                     <input 
                       name="aperture" 
                       value={aperture} 
-                      onChange={(e) => setAperture(e.target.value)} 
-                      placeholder="Aperture (f/2.8)" 
-                      className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" 
+                      readOnly
+                      placeholder="Aperture (EXIF)" 
+                      className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text-dim) placeholder:text-(--text-muted) outline-none cursor-not-allowed" 
                     />
                     <input 
                       name="shutter" 
                       value={shutter} 
-                      onChange={(e) => setShutter(e.target.value)} 
-                      placeholder="Shutter (1/500s)" 
-                      className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" 
+                      readOnly
+                      placeholder="Shutter (EXIF)" 
+                      className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text-dim) placeholder:text-(--text-muted) outline-none cursor-not-allowed" 
                     />
                   </div>
                 )}
@@ -368,7 +370,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                   <input name="title" placeholder="Frame Title" required className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
                 </div>
 
-                {/* Locked EXIF Location Name & Locked EXIF Coordinates */}
+                {/* Strictly Locked Location Name & Coordinates */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-center bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl opacity-90">
                     <MapPin size={16} className="text-(--text-muted) shrink-0 mr-3 pointer-events-none" />
