@@ -1,7 +1,8 @@
+/* eslint-disable @next/next/no-img-element */
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
 import Link from "next/link";
-import { Crown } from "lucide-react";
+import { Crown, Trophy, Award, Medal } from "lucide-react";
 
 interface LeaderboardUser {
   id: string;
@@ -33,150 +34,146 @@ export default async function LeaderboardPage() {
   const [first, second, third, ...rest] = topUsers;
 
   return (
-    <main className="min-h-screen bg-[var(--surface)] text-[var(--text)] px-4 py-16 sm:py-24 flex justify-center transition-colors duration-300">
+    <main className="min-h-screen bg-[var(--bg)] text-[var(--text)] px-6 py-16 sm:py-24 flex justify-center selection:bg-[var(--accent)] selection:text-[var(--bg)]">
       <div className="w-full max-w-3xl mx-auto flex flex-col items-center gap-12">
         
         {/* Header */}
-        <div className="border-b border-[var(--border)] pb-6 flex flex-col gap-2 text-center items-center w-full max-w-xl">
+        <div className="border-b border-[var(--border)] pb-8 flex flex-col gap-3 text-center items-center w-full max-w-xl">
           <div className="flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
             <span className="text-[10px] font-mono font-bold uppercase tracking-[0.3em] text-[var(--accent)]">
               Community Elite
             </span>
           </div>
-          <h1 className="text-3xl font-black uppercase tracking-tight sm:text-5xl">
-            Creator Podium
+          <h1 className="text-3xl font-black uppercase tracking-tight sm:text-4xl">
+            Creator Rankings
           </h1>
-          <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)] font-mono">
-            Top creators ranked by community followers
+          <p className="text-xs uppercase tracking-[0.15em] text-[var(--text-muted)] font-mono">
+            Recognizing the most followed creators across the network
           </p>
         </div>
 
         {topUsers.length === 0 ? (
-          <div className="border border-dashed border-[var(--border)] rounded-2xl p-12 text-center text-xs uppercase tracking-widest text-[var(--text-muted)] font-mono w-full max-w-xl">
+          <div className="border border-dashed border-[var(--border)] rounded-2xl p-16 text-center text-xs uppercase tracking-widest text-[var(--text-muted)] font-mono w-full max-w-xl bg-[var(--surface)]">
             No creators found.
           </div>
         ) : (
-          <div className="flex flex-col gap-10 w-full max-w-xl">
+          <div className="flex flex-col gap-12 w-full max-w-xl">
             
-            {/* Podium Section (1st, 2nd, 3rd) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end pt-8">
-              
-              {/* 2nd Place (Silver Theme) */}
-              {second && (
-                <Link
-                  href={`/profile/${second.id}`}
-                  style={{ borderRadius: "var(--radius)" }}
-                  className="group relative flex flex-col items-center p-6 border-2 border-slate-300 bg-gradient-to-b from-slate-300/30 via-[var(--surface-2)] to-[var(--surface)] hover:border-slate-200 transition-all duration-300 shadow-[0_0_30px_rgba(203,213,225,0.15)] order-2 sm:order-1 text-center"
-                >
-                  <div className="absolute -top-4 w-8 h-8 rounded-full bg-slate-300 text-black flex items-center justify-center font-mono font-black text-xs shadow-lg">
-                    2
-                  </div>
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-slate-300 bg-[var(--surface-2)] mb-3 shadow-md group-hover:scale-105 transition-transform duration-300">
-                    <Image 
-                      src={second.image || "/default-avatar.png"} 
-                      width={64}
-                      height={64}
-                      className="w-full h-full object-cover" 
-                      alt={second.name || "User avatar"} 
-                    />
-                  </div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-200 group-hover:text-[var(--text)] truncate w-full">
-                    {second.name || "Anonymous"}
-                  </p>
-                  <p className="text-[10px] font-mono text-slate-300 font-bold mt-1">
-                    {second._count.followers.toLocaleString()} <span className="text-[8px] text-slate-400 uppercase">followers</span>
-                  </p>
-                  <div className="mt-4 w-full bg-slate-300 text-black py-2 rounded-xl text-[9px] font-mono uppercase tracking-[0.2em] font-extrabold shadow-sm">
-                    Silver Medal
-                  </div>
-                </Link>
-              )}
+            {/* Podium Section (2nd, 1st, 3rd) */}
+            {topUsers.length >= 3 && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end pt-4">
+                
+                {/* 2nd Place */}
+                {second && (
+                  <Link
+                    href={`/profile/${second.id}`}
+                    style={{ borderRadius: "var(--radius-md)" }}
+                    className="group relative flex flex-col items-center p-6 bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--text-muted)] transition-all duration-300 order-2 sm:order-1 text-center shadow-lg hover:-translate-y-1"
+                  >
+                    <div className="absolute top-3 left-3 w-6 h-6 rounded-full bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-dim)] flex items-center justify-center font-mono text-[10px] font-bold">
+                      02
+                    </div>
+                    <div className="relative w-16 h-16 rounded-full overflow-hidden border border-[var(--border)] bg-[var(--surface-2)] mb-4 shadow-md group-hover:scale-105 transition-transform duration-300">
+                      <Image 
+                        src={second.image || "/default-avatar.png"} 
+                        width={64}
+                        height={64}
+                        className="w-full h-full object-cover" 
+                        alt={second.name || "User avatar"} 
+                      />
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--text)] truncate w-full mb-1">
+                      {second.name || "Anonymous"}
+                    </p>
+                    <p className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-widest">
+                      <span className="text-[var(--text)] font-bold">{second._count.followers.toLocaleString()}</span> followers
+                    </p>
+                  </Link>
+                )}
 
-              {/* 1st Place (Gold Theme) */}
-              {first && (
-                <Link
-                  href={`/profile/${first.id}`}
-                  style={{ borderRadius: "var(--radius)" }}
-                  className="group relative flex flex-col items-center p-8 border-2 border-yellow-400 bg-gradient-to-b from-yellow-500/40 via-[var(--surface-2)] to-[var(--surface)] hover:border-yellow-300 transition-all duration-300 shadow-[0_0_50px_rgba(234,179,8,0.25)] order-1 sm:order-2 sm:-translate-y-6 text-center"
-                >
-                  <div className="absolute -top-5 w-10 h-10 rounded-full bg-yellow-400 text-black flex items-center justify-center font-mono font-black text-sm shadow-xl">
-                    <Crown size={18} className="fill-black" />
-                  </div>
-                  <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-yellow-400 bg-[var(--surface-2)] mb-3 shadow-xl group-hover:scale-105 transition-transform duration-300">
-                    <Image 
-                      src={first.image || "/default-avatar.png"} 
-                      width={80}
-                      height={80}
-                      className="w-full h-full object-cover" 
-                      alt={first.name || "User avatar"} 
-                    />
-                  </div>
-                  <p className="text-sm font-black uppercase tracking-wider text-yellow-200 group-hover:text-[var(--text)] truncate w-full">
-                    {first.name || "Anonymous"}
-                  </p>
-                  <p className="text-xs font-mono font-black text-yellow-400 mt-1">
-                    {first._count.followers.toLocaleString()} <span className="text-[9px] text-yellow-500/80 uppercase">followers</span>
-                  </p>
-                  <div className="mt-4 w-full bg-yellow-400 text-black py-2.5 rounded-xl text-[9px] font-mono uppercase tracking-[0.2em] font-black shadow-md">
-                    Gold Champion
-                  </div>
-                </Link>
-              )}
+                {/* 1st Place */}
+                {first && (
+                  <Link
+                    href={`/profile/${first.id}`}
+                    style={{ borderRadius: "var(--radius-md)" }}
+                    className="group relative flex flex-col items-center p-8 bg-[var(--surface)] border-2 border-[var(--accent)] hover:shadow-2xl transition-all duration-300 order-1 sm:order-2 sm:-translate-y-4 text-center shadow-xl hover:-translate-y-5"
+                  >
+                    <div className="absolute top-4 right-4 text-[var(--accent)]">
+                      <Crown size={20} />
+                    </div>
+                    <div className="absolute top-3 left-3 w-6 h-6 rounded-full bg-[var(--accent)] text-[var(--bg)] flex items-center justify-center font-mono text-[10px] font-black">
+                      01
+                    </div>
+                    <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-[var(--accent)] bg-[var(--surface-2)] mb-4 shadow-lg group-hover:scale-105 transition-transform duration-300">
+                      <Image 
+                        src={first.image || "/default-avatar.png"} 
+                        width={80}
+                        height={80}
+                        className="w-full h-full object-cover" 
+                        alt={first.name || "User avatar"} 
+                      />
+                    </div>
+                    <p className="text-sm font-black uppercase tracking-wider text-[var(--text)] truncate w-full mb-1">
+                      {first.name || "Anonymous"}
+                    </p>
+                    <p className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-widest">
+                      <span className="text-[var(--accent)] font-bold">{first._count.followers.toLocaleString()}</span> followers
+                    </p>
+                  </Link>
+                )}
 
-              {/* 3rd Place (Bronze Theme) */}
-              {third && (
-                <Link
-                  href={`/profile/${third.id}`}
-                  style={{ borderRadius: "var(--radius)" }}
-                  className="group relative flex flex-col items-center p-6 border-2 border-amber-600 bg-gradient-to-b from-amber-700/30 via-[var(--surface-2)] to-[var(--surface)] hover:border-amber-500 transition-all duration-300 shadow-[0_0_30px_rgba(217,119,6,0.15)] order-3 text-center"
-                >
-                  <div className="absolute -top-4 w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center font-mono font-black text-xs shadow-lg">
-                    3
-                  </div>
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-amber-600 bg-[var(--surface-2)] mb-3 shadow-md group-hover:scale-105 transition-transform duration-300">
-                    <Image 
-                      src={third.image || "/default-avatar.png"} 
-                      width={64}
-                      height={64}
-                      className="w-full h-full object-cover" 
-                      alt={third.name || "User avatar"} 
-                    />
-                  </div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-amber-100 group-hover:text-[var(--text)] truncate w-full">
-                    {third.name || "Anonymous"}
-                  </p>
-                  <p className="text-[10px] font-mono text-amber-300 font-bold mt-1">
-                    {third._count.followers.toLocaleString()} <span className="text-[8px] text-amber-400 uppercase">followers</span>
-                  </p>
-                  <div className="mt-4 w-full bg-amber-600 text-white py-2 rounded-xl text-[9px] font-mono uppercase tracking-[0.2em] font-extrabold shadow-sm">
-                    Bronze Medal
-                  </div>
-                </Link>
-              )}
+                {/* 3rd Place */}
+                {third && (
+                  <Link
+                    href={`/profile/${third.id}`}
+                    style={{ borderRadius: "var(--radius-md)" }}
+                    className="group relative flex flex-col items-center p-6 bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--text-muted)] transition-all duration-300 order-3 text-center shadow-lg hover:-translate-y-1"
+                  >
+                    <div className="absolute top-3 left-3 w-6 h-6 rounded-full bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-dim)] flex items-center justify-center font-mono text-[10px] font-bold">
+                      03
+                    </div>
+                    <div className="relative w-16 h-16 rounded-full overflow-hidden border border-[var(--border)] bg-[var(--surface-2)] mb-4 shadow-md group-hover:scale-105 transition-transform duration-300">
+                      <Image 
+                        src={third.image || "/default-avatar.png"} 
+                        width={64}
+                        height={64}
+                        className="w-full h-full object-cover" 
+                        alt={third.name || "User avatar"} 
+                      />
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--text)] truncate w-full mb-1">
+                      {third.name || "Anonymous"}
+                    </p>
+                    <p className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-widest">
+                      <span className="text-[var(--text)] font-bold">{third._count.followers.toLocaleString()}</span> followers
+                    </p>
+                  </Link>
+                )}
 
-            </div>
+              </div>
+            )}
 
-            {/* Rest of the List (4th to 10th) */}
-            {rest.length > 0 && (
-              <div className="flex flex-col gap-2 pt-4">
-                <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--text-muted)] pb-2">
-                  Remaining Rankings
+            {/* Rest of the List (4th to 10th or full list if < 3) */}
+            {(rest.length > 0 || topUsers.length < 3) && (
+              <div className="flex flex-col gap-3">
+                <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--text-muted)] px-1">
+                  {topUsers.length < 3 ? "Rankings" : "Following Ranks"}
                 </div>
                 <div className="flex flex-col gap-2">
-                  {rest.map((user, index) => {
-                    const rank = index + 4;
+                  {(topUsers.length < 3 ? topUsers : rest).map((user, index) => {
+                    const rank = topUsers.length < 3 ? index + 1 : index + 4;
 
                     return (
                       <Link
                         key={user.id}
                         href={`/profile/${user.id}`}
                         style={{ borderRadius: "var(--radius-sm)" }}
-                        className="group flex items-center justify-between p-4 border border-[var(--border)]/60 bg-[var(--surface)] hover:border-[var(--border)] transition-all duration-300"
+                        className="group flex items-center justify-between p-4 border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--text-muted)] transition-all duration-300"
                       >
                         <div className="flex items-center gap-4 min-w-0">
                           <span className="w-6 text-center font-mono text-xs font-bold text-[var(--text-muted)]">
-                            #{rank}
+                            {rank < 10 ? `0${rank}` : rank}
                           </span>
                           <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[var(--border)] bg-[var(--surface-2)] shrink-0">
                             <Image 
@@ -187,16 +184,16 @@ export default async function LeaderboardPage() {
                               alt={user.name || "User avatar"} 
                             />
                           </div>
-                          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-dim)] group-hover:text-[var(--text)] truncate">
-                            {user.name || "Anonymous Creator"}
+                          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text)] truncate">
+                            {user.name || "DELETED USER"}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2 font-mono">
-                          <span className="text-xs font-bold text-[var(--text-dim)]">
+                        <div className="flex items-center gap-1.5 font-mono">
+                          <span className="text-xs font-bold text-[var(--text)]">
                             {user._count.followers.toLocaleString()}
                           </span>
                           <span className="text-[9px] uppercase tracking-widest text-[var(--text-muted)]">
-                            Followers
+                            followers
                           </span>
                         </div>
                       </Link>

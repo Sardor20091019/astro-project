@@ -7,7 +7,7 @@ import { UploadButton } from "@uploadthing/react";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
-import { Edit3, LogOut, X } from "lucide-react";
+import { Edit3, LogOut, X, UserCircle } from "lucide-react";
 
 interface UserMenuProps {
   user: { id: string; name?: string | null; image?: string | null };
@@ -68,6 +68,18 @@ export default function UserMenu({ user }: UserMenuProps) {
                 <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-(--text-muted)">Signed in as</p>
                 <p className="text-xs font-bold text-(--text) truncate">{user.name || "User"}</p>
               </div>
+
+              <button 
+                onClick={() => {
+                  router.push("/profile");
+                  setIsOpen(false);
+                }} 
+                style={{ borderRadius: "var(--radius-sm)" }}
+                className="text-xs font-mono uppercase tracking-[0.15em] w-full text-left px-3 py-2.5 text-(--text-dim) hover:bg-(--surface-2) hover:text-(--text) transition-all flex items-center gap-2.5 cursor-pointer"
+              >
+                <UserCircle className="w-3.5 h-3.5 text-(--accent)" />
+                My Profile
+              </button>
               
               <button 
                 onClick={() => setIsEditing(true)} 

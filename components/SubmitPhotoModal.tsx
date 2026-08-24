@@ -239,7 +239,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-center bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl focus-within:border-(--accent) transition-all">
                     <MapPin size={16} className="text-(--text-muted) shrink-0 mr-3 pointer-events-none" />
-                    <input name="location" placeholder="Location (Tien Shan)" className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
+                    <input name="location" placeholder="Location (Uzbekistan)" className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
                   </div>
                   <div className="flex items-center bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl focus-within:border-(--accent) transition-all">
                     <input name="coordinates" placeholder="Coordinates (Optional)" className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />

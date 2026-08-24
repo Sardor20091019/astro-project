@@ -95,10 +95,6 @@ export default function PhotosClientView({
             <ArrowLeft className="h-3.5 w-3.5" />
             Home
           </Link>
-          <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.25em] text-(--text-muted)">
-            <Camera className="h-3.5 w-3.5 text-(--accent)" />
-            <span>Archive Stream</span>
-          </div>
         </div>
       </header>
 
