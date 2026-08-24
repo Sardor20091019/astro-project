@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { CheckCircle2, MapPin, User, Camera, Tag, X, ImagePlus, ShieldCheck, Eye, EyeOff, Loader2 } from "lucide-react";
 import { CATEGORIES } from "@/data/photos";
-import { useUploadThing } from "@/utils/uploadthing"; // Ensure this matches your project's helper path
+import { useUploadThing } from "@/utils/uploadthing";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import exifr from "exifr";
@@ -84,12 +84,8 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
     setLoading(true);
 
     try {
-      // 1. Extract ALL EXIF metadata locally before uploading
-      const exif = await exifr.parse(file, {
-        gps: true,
-        ifd0: true,
-        exif: true,
-      });
+      // 1. Extract ALL EXIF metadata locally before uploading (pass `true` to parse everything)
+      const exif = await exifr.parse(file, true);
 
       if (exif) {
         // Camera Make & Model + Focal Length
