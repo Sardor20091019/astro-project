@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { Menu, X, User as UserIcon, Edit3, Check, Loader2 } from "lucide-react";
+import { Menu, X, User as UserIcon, Edit3, Check, Loader2, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import UserSearchTrigger from "@/components/UserSearchTrigger";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -108,6 +108,9 @@ export default function Navbar() {
               <NavLink href="/" active={pathname === "/"}>Gallery</NavLink> 
               <NavLink href="/photos" active={pathname === "/photos"}>Photos</NavLink>
               <NavLink href="/leaderboard" active={pathname === "/leaderboard"}>Leaderboard</NavLink>
+              {user && (
+                <NavLink href="/creator/photos" active={pathname === "/creator/photos"}>Creator Photos</NavLink>
+              )}
               <div className="flex items-center pl-4 border-l border-[var(--border)]">
                 <UserSearchTrigger />
               </div>
@@ -299,6 +302,12 @@ export default function Navbar() {
                   <span>Leaderboard</span>
                   <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[var(--accent)]">→</span>
                 </Link>
+                {user && (
+                  <Link href="/creator/photos" className="text-sm uppercase tracking-[0.2em] font-semibold text-[var(--accent)] flex items-center justify-between group py-1">
+                    <span>Creator Photos</span>
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[var(--accent)]">→</span>
+                  </Link>
+                )}
               </div>
             </div>
           </motion.div>

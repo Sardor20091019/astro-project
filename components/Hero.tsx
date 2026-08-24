@@ -29,7 +29,6 @@ export default function Hero() {
 
     window.addEventListener("scroll", onScroll, { passive: true });
     
-    // Trigger entrance animation on next tick
     const timer = setTimeout(() => setIsLoaded(true), 50);
 
     return () => {
@@ -58,6 +57,8 @@ export default function Hero() {
         alignItems: "center",
         justifyContent: "center",
         overflow: "hidden",
+        width: "100%",
+        boxSizing: "border-box",
       }}
     >
       {/* Parallax Background Asset */}
@@ -67,6 +68,7 @@ export default function Hero() {
           position: "absolute",
           inset: "-12% 0",
           willChange: "transform",
+          zIndex: 0,
         }}
       >
         <Image
@@ -86,180 +88,205 @@ export default function Hero() {
         style={{ 
           position: "absolute", 
           inset: 0, 
-          background: "linear-gradient(to bottom, rgba(5,5,5,0.55) 0%, transparent 40%, #050505 100%)",
-          pointerEvents: "none"
+          background: "linear-gradient(to bottom, rgba(5,5,5,0.7) 0%, rgba(5,5,5,0.2) 50%, #050505 100%)",
+          pointerEvents: "none",
+          zIndex: 1,
         }} 
       />
 
-      {/* Main Content Container */}
+      {/* Main Content Wrapper matching site container width */}
       <div 
         style={{ 
           position: "relative", 
           zIndex: 10, 
-          textAlign: "center", 
-          padding: "0 1.5rem", 
-          maxWidth: "100%", 
-          margin: "0 auto" 
+          display: "flex", 
+          flexDirection: "column", 
+          justifyContent: "space-between", 
+          height: "100%",
+          width: "100%",
+          maxWidth: "1280px",
+          margin: "0 auto",
+          paddingTop: "clamp(2rem, 5vh, 3.5rem)",
+          paddingBottom: "clamp(2rem, 5vh, 3.5rem)",
+          paddingLeft: "clamp(1rem, 3vw, 2rem)",
+          paddingRight: "clamp(1rem, 3vw, 2rem)",
+          boxSizing: "border-box",
         }}
       >
-        <p 
+        {/* Top Header Metadata */}
+        <div 
           style={{ 
-            fontSize: "11px", 
-            letterSpacing: "0.4em", 
-            textTransform: "uppercase", 
-            color: "rgba(240,235,225,0.45)", 
-            marginBottom: "1.5rem", 
-            fontFamily: "var(--font-mono, 'Courier New', monospace)",
+            display: "flex", 
+            justifyContent: "space-between", 
+            alignItems: "center",
+            width: "100%",
             opacity: isLoaded ? 1 : 0,
-            transform: isLoaded ? "translateY(0)" : "translateY(15px)",
+            transform: isLoaded ? "translateY(0)" : "translateY(-15px)",
             transition: "opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s"
           }}
         >
-          Photography by Sardor Sunatullayev
-        </p>
+          <span 
+            style={{ 
+              fontSize: "10px", 
+              letterSpacing: "0.3em", 
+              textTransform: "uppercase", 
+              color: "rgba(240,235,225,0.5)", 
+              fontFamily: "var(--font-mono, 'Courier New', monospace)",
+            }}
+          >
+            Photography Archive
+          </span>
+          <span 
+            style={{ 
+              fontSize: "10px", 
+              letterSpacing: "0.3em", 
+              textTransform: "uppercase", 
+              color: "rgba(240,235,225,0.5)", 
+              fontFamily: "var(--font-mono, 'Courier New', monospace)",
+            }}
+          >
+            Sardor Sunatullayev
+          </span>
+        </div>
 
-        {/* Unified Non-Breaking Header with Original Colors */}
-        <h1
-          ref={titleRef}
-          style={{
-            fontFamily: "'Editorial New', 'Times New Roman', Georgia, serif",
-            fontSize: "clamp(38px, 11vw, 148px)",
-            fontWeight: 200,
-            letterSpacing: "-0.045em",
-            lineHeight: 0.92,
-            color: "#F0EBE1",
-            marginBottom: "2rem",
-            willChange: "transform",
-            whiteSpace: "nowrap",
+        {/* Center Title Content */}
+        <div 
+          style={{ 
+            textAlign: "center", 
+            width: "100%", 
+            margin: "auto 0" 
           }}
         >
-          <span>
-            {part1.split("").map((char, i) => (
-              <span key={`p1-${i}`} style={{ display: "inline-block", overflow: "hidden", verticalAlign: "bottom" }}>
-                <span
-                  style={{
-                    display: "inline-block",
-                    transform: isLoaded ? "translateY(0)" : "translateY(110%)",
-                    opacity: isLoaded ? 1 : 0,
-                    transition: `transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) ${200 + i * 25}ms, opacity 0.5s ease ${200 + i * 25}ms`,
-                  }}
-                >
-                  {char}
-                </span>
-              </span>
-            ))}
-          </span>
-          
-          <span style={{ color: "#E8421A", fontStyle: "italic" }}>
-            {part2.split("").map((char, i) => {
-              const globalIndex = part1.length + i;
-              return (
-                <span key={`p2-${i}`} style={{ display: "inline-block", overflow: "hidden", verticalAlign: "bottom" }}>
+          <h1
+            ref={titleRef}
+            style={{
+              fontFamily: "'Editorial New', 'Times New Roman', Georgia, serif",
+              fontSize: "clamp(42px, 12vw, 156px)",
+              fontWeight: 200,
+              letterSpacing: "-0.045em",
+              lineHeight: 0.9,
+              color: "#F0EBE1",
+              marginBottom: "1.5rem",
+              willChange: "transform",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span>
+              {part1.split("").map((char, i) => (
+                <span key={`p1-${i}`} style={{ display: "inline-block", overflow: "hidden", verticalAlign: "bottom" }}>
                   <span
                     style={{
                       display: "inline-block",
                       transform: isLoaded ? "translateY(0)" : "translateY(110%)",
                       opacity: isLoaded ? 1 : 0,
-                      transition: `transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) ${200 + globalIndex * 25}ms, opacity 0.5s ease ${200 + globalIndex * 25}ms`,
+                      transition: `transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) ${200 + i * 25}ms, opacity 0.5s ease ${200 + i * 25}ms`,
                     }}
                   >
                     {char}
                   </span>
                 </span>
-              );
-            })}
-          </span>
-        </h1>
+              ))}
+            </span>
+            
+            <span style={{ color: "#E8421A", fontStyle: "italic" }}>
+              {part2.split("").map((char, i) => {
+                const globalIndex = part1.length + i;
+                return (
+                  <span key={`p2-${i}`} style={{ display: "inline-block", overflow: "hidden", verticalAlign: "bottom" }}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        transform: isLoaded ? "translateY(0)" : "translateY(110%)",
+                        opacity: isLoaded ? 1 : 0,
+                        transition: `transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) ${200 + globalIndex * 25}ms, opacity 0.5s ease ${200 + globalIndex * 25}ms`,
+                      }}
+                    >
+                      {char}
+                    </span>
+                  </span>
+                );
+              })}
+            </span>
+          </h1>
 
-        <p
-          ref={subRef}
-          style={{
-            fontFamily: "var(--font-mono, 'Courier New', monospace)",
-            fontSize: "11px",
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: "rgba(240,235,225,0.45)",
-            marginBottom: "3rem",
-            maxWidth: "380px",
-            marginLeft: "auto",
-            marginRight: "auto",
-            willChange: "transform",
-            opacity: isLoaded ? 1 : 0,
-            transform: isLoaded ? "translateY(0)" : "translateY(20px)",
-            transition: "opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s"
-          }}
-        >
-          Exploring light, color, and the world through photography
-        </p>
+          <p
+            ref={subRef}
+            style={{
+              fontFamily: "var(--font-mono, 'Courier New', monospace)",
+              fontSize: "11px",
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: "rgba(240,235,225,0.5)",
+              maxWidth: "420px",
+              marginLeft: "auto",
+              marginRight: "auto",
+              willChange: "transform",
+              opacity: isLoaded ? 1 : 0,
+              transform: isLoaded ? "translateY(0)" : "translateY(20px)",
+              transition: "opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s"
+            }}
+          >
+            Exploring light, form, and atmosphere through the lens
+          </p>
+        </div>
 
-        {/* Action Controls */}
+        {/* Bottom Bar with Enter Gallery on the Right */}
         <div 
           style={{ 
             display: "flex", 
-            alignItems: "center", 
-            justifyContent: "center",
+            justifyContent: "space-between", 
+            alignItems: "flex-end",
+            width: "100%",
             opacity: isLoaded ? 1 : 0,
             transform: isLoaded ? "translateY(0)" : "translateY(20px)",
             transition: "opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.65s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.65s"
           }}
         >
-          <a
-            href="#gallery"
-            onClick={handleScrollToGallery}
-            className="min-h-11 min-w-11 cursor-pointer"
-            style={{
-              display: "inline-flex", 
-              alignItems: "center", 
-              gap: "10px",
-              padding: "14px 30px", 
-              borderRadius: "2px",
-              background: "#F0EBE1", 
-              color: "#050505",
-              fontSize: "10px", 
-              fontWeight: 900, 
-              letterSpacing: "0.18em", 
-              textTransform: "uppercase",
-              fontFamily: "var(--font-mono, 'Courier New', monospace)",
-              transition: "background .25s ease, color .25s ease, transform .25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .25s ease",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-            }}
-            onMouseEnter={e => { 
-              e.currentTarget.style.background = "#E8421A"; 
-              e.currentTarget.style.color = "#F0EBE1";
-              e.currentTarget.style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={e => { 
-              e.currentTarget.style.background = "#F0EBE1"; 
-              e.currentTarget.style.color = "#050505";
-              e.currentTarget.style.transform = "translateY(0)";
-            }}
-          >
-            <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "currentColor", flexShrink: 0 }} />
-            View Frames
-          </a>
-        </div>
-      </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase", fontFamily: "var(--font-mono, 'Courier New', monospace)", color: "rgba(240,235,225,0.4)" }}>
+              Scroll down
+            </span>
+            <div style={{ width: "35px", height: "1px", background: "rgba(240,235,225,0.3)" }} />
+          </div>
 
-      {/* Animated Scroll Down indicator */}
-      <div 
-        style={{ 
-          position: "absolute", 
-          bottom: "2.5rem", 
-          left: "50%", 
-          transform: "translateX(-50%)", 
-          display: "flex", 
-          flexDirection: "column", 
-          alignItems: "center", 
-          gap: "8px", 
-          opacity: isLoaded ? 0.4 : 0,
-          transition: "opacity 1s ease 0.9s",
-          pointerEvents: "none"
-        }}
-      >
-        <span style={{ fontSize: "9px", letterSpacing: "0.22em", textTransform: "uppercase", fontFamily: "var(--font-mono,'Courier New',monospace)", color: "#F0EBE1" }}>
-          Scroll
-        </span>
-        <div style={{ width: "1px", height: "40px", background: "linear-gradient(to bottom, #F0EBE1, transparent)" }} />
+          {/* Enter Gallery Button Forced to Right Side of Content Grid */}
+          <div style={{ marginLeft: "auto" }}>
+            <a
+              href="#gallery"
+              onClick={handleScrollToGallery}
+              style={{
+                display: "inline-flex", 
+                alignItems: "center",
+                gap: "12px",
+                padding: "16px 32px", 
+                borderRadius: "2px",
+                background: "#F0EBE1", 
+                color: "#050505",
+                fontSize: "10px", 
+                fontWeight: 900, 
+                letterSpacing: "0.2em", 
+                textTransform: "uppercase",
+                fontFamily: "var(--font-mono, 'Courier New', monospace)",
+                transition: "background .25s ease, color .25s ease, transform .25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .25s ease",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
+                cursor: "pointer",
+              }}
+              onMouseEnter={e => { 
+                e.currentTarget.style.background = "#E8421A"; 
+                e.currentTarget.style.color = "#F0EBE1";
+                e.currentTarget.style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={e => { 
+                e.currentTarget.style.background = "#F0EBE1"; 
+                e.currentTarget.style.color = "#050505";
+                e.currentTarget.style.transform = "translateY(0)";
+              }}
+            >
+              <span>Enter Gallery</span>
+              <span style={{ fontSize: "12px" }}>→</span>
+            </a>
+          </div>
+        </div>
       </div>
     </section>
   );

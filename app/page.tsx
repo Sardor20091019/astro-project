@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 export default async function CinematicLandingPage() {
   // Updated for a Finland Lapland / Northern Lights theme
   const heroPhoto = {
-    title: "Whisper of the North",
+    title: "Whidd sper of the North",
     location: "Finland Lapland",
     url: "/hero.jpg",
   };

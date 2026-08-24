@@ -168,8 +168,8 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        if (typeof token.id === "string") {
-          session.user.id = token.id;
+        if (token.id !== undefined && token.id !== null) {
+          session.user.id = token.id as any; // Handles both number and string IDs
         }
         if (typeof token.role === "string") {
           session.user.role = token.role;
