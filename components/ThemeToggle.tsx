@@ -1,22 +1,45 @@
 "use client";
 
-import { useTheme } from "./ThemeProvider";
+import { useState, useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
+// Import your theme hook or context here (e.g., next-themes or custom context)
+// import { useTheme } from "next-themes"; 
 
 export default function ThemeToggle() {
-  const { mode, toggleMode } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  // const { theme, setTheme } = useTheme();
+
+  // Ensure component only renders theme-dependent UI on the client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    // Return a matching placeholder skeleton to prevent layout shift during SSR
+    return (
+      <div 
+        className="flex items-center justify-center h-9 w-9 bg-(--surface) border-2 border-(--border)"
+        style={{ borderRadius: "var(--radius, 0.5rem)" }}
+      />
+    );
+  }
+
+  // Determine current theme state (example logic)
+  const isDark = true; // Replace with your actual theme check (e.g., theme === 'dark')
 
   return (
     <button
-      onClick={toggleMode}
-      style={{ borderRadius: "var(--radius-sm)" }}
-      className="flex items-center justify-center h-9 w-9 bg-(--surface) border-2 border-(--border) text-(--text) hover:border-(--accent) hover:text-(--accent) transition-all duration-300 shadow-md active:scale-95 cursor-pointer"
-      title={`Switch to ${mode === "dark" ? "light" : "dark"} mode`}
+      onClick={() => {
+        // Toggle theme logic here
+      }}
+      style={{ borderRadius: "var(--radius, 0.5rem)" }}
+      className="flex items-center justify-center h-9 w-9 bg-(--surface) border-2 border-(--border) transition-colors hover:bg-(--surface-2)"
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
-      {mode === "dark" ? (
-        <Moon className="h-4 w-4 text-(--accent) transition-transform duration-500 hover:-rotate-12" />
+      {isDark ? (
+        <Sun className="h-4 w-4 text-(--accent) transition-transform duration-200" />
       ) : (
-        <Sun className="h-4 w-4 text-(--accent) transition-transform duration-500 hover:rotate-90" />
+        <Moon className="h-4 w-4 text-(--accent) transition-transform duration-200" />
       )}
     </button>
   );
