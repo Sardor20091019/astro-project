@@ -39,7 +39,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 1, 
     src: "/photos/p1.jpg", 
-    title: "Spectrum Frame 01", 
+    title: "Night stars", 
     location: "Astrospectrum Observatory", 
     category: "ASTROPHOTOGRAPHY",
     camera: "Xiaomi 15T Pro",
@@ -52,7 +52,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 2, 
     src: "/photos/p2.jpg", 
-    title: "Spectrum Frame 02", 
+    title: "Beautiful flower", 
     location: "Botanical Canopy", 
     category: "NATURE",
     camera: "Xiaomi 15T Pro",
@@ -65,7 +65,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 3, 
     src: "/photos/p3.jpg", 
-    title: "Spectrum Frame 03", 
+    title: "Warm sky", 
     location: "High Altitude Horizon", 
     category: "SKY",
     camera: "Xiaomi 15T Pro",
@@ -78,7 +78,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 4, 
     src: "/photos/p4.jpg", 
-    title: "Spectrum Frame 04", 
+    title: "Bright moon", 
     location: "Lunar Crater Rim", 
     category: "MOON",
     camera: "Xiaomi 15T Pro",
@@ -91,7 +91,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 5, 
     src: "/photos/p5.jpg", 
-    title: "Spectrum Frame 05", 
+    title: "Golden sunset", 
     location: "Golden Hour Valley", 
     category: "WARM",
     camera: "Xiaomi 15T Pro",
@@ -104,7 +104,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 6, 
     src: "/photos/p6.jpg", 
-    title: "Spectrum Frame 06", 
+    title: "City street", 
     location: "Urban Concrete", 
     category: "STREET",
     camera: "Xiaomi 15T Pro",
@@ -117,7 +117,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 7, 
     src: "/photos/p7.jpg", 
-    title: "Spectrum Frame 07", 
+    title: "Starry night", 
     location: "Deep Space Field", 
     category: "ASTROPHOTOGRAPHY",
     camera: "Xiaomi 15T Pro",
@@ -130,7 +130,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 8, 
     src: "/photos/p8.jpg", 
-    title: "Spectrum Frame 08", 
+    title: "Green forest", 
     location: "Pine Forest Depths", 
     category: "NATURE",
     camera: "Xiaomi 15T Pro",
@@ -143,7 +143,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 9, 
     src: "/photos/p9.jpg", 
-    title: "Spectrum Frame 09", 
+    title: "Blue sky and clouds", 
     location: "Cumulus Layer", 
     category: "SKY",
     camera: "Xiaomi 15T Pro",
@@ -156,7 +156,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 10, 
     src: "/photos/p10.jpg", 
-    title: "Spectrum Frame 10", 
+    title: "Crescent moon", 
     location: "Nightfall Crescent", 
     category: "MOON",
     camera: "Xiaomi 15T Pro",
@@ -169,7 +169,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 11, 
     src: "/photos/p11.jpg", 
-    title: "Spectrum Frame 11", 
+    title: "Warm evening", 
     location: "Dusk Silhouette", 
     category: "WARM",
     camera: "Xiaomi 15T Pro",
@@ -182,7 +182,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 12, 
     src: "/photos/p12.jpg", 
-    title: "Spectrum Frame 12", 
+    title: "Shadows on wall", 
     location: "Geometric Shadows", 
     category: "ABSTRACT",
     camera: "Xiaomi 15T Pro",
@@ -195,7 +195,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 13, 
     src: "/photos/p13.jpg", 
-    title: "Spectrum Frame 13", 
+    title: "Night sky stars", 
     location: "Stellar Constellation", 
     category: "ASTROPHOTOGRAPHY",
     camera: "Xiaomi 15T Pro",
@@ -208,7 +208,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 14, 
     src: "/photos/p14.jpg", 
-    title: "Spectrum Frame 14", 
+    title: "Mountain view", 
     location: "Alpine Ridge", 
     category: "NATURE",
     camera: "Xiaomi 15T Pro",
@@ -221,7 +221,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 15, 
     src: "/photos/p15.jpg", 
-    title: "Spectrum Frame 15", 
+    title: "Cloudy sky", 
     location: "Overcast Atmosphere", 
     category: "SKY",
     camera: "Xiaomi 15T Pro",
@@ -234,7 +234,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 16, 
     src: "/photos/p16.jpg", 
-    title: "Spectrum Frame 16", 
+    title: "Full moon", 
     location: "Full Moon Glow", 
     category: "MOON",
     camera: "Xiaomi 15T Pro",
@@ -247,7 +247,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 17, 
     src: "/photos/p17.jpg", 
-    title: "Spectrum Frame 17", 
+    title: "Warm horizon", 
     location: "Amber Horizon", 
     category: "WARM",
     camera: "Xiaomi 15T Pro",
@@ -260,7 +260,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 18, 
     src: "/photos/p18.jpg", 
-    title: "Spectrum Frame 18", 
+    title: "City alley", 
     location: "Metropolitan Alley", 
     category: "STREET",
     camera: "Xiaomi 15T Pro",
@@ -273,7 +273,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 19, 
     src: "/photos/p19.jpg", 
-    title: "Spectrum Frame 19", 
+    title: "Water reflection", 
     location: "Liquid Light", 
     category: "ABSTRACT",
     camera: "Xiaomi 15T Pro",
@@ -286,7 +286,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 20, 
     src: "/photos/p20.jpg", 
-    title: "Spectrum Frame 20", 
+    title: "Milky way", 
     location: "Milky Way Arch", 
     category: "ASTROPHOTOGRAPHY",
     camera: "Xiaomi 15T Pro",
@@ -299,7 +299,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 21, 
     src: "/photos/p21.jpg", 
-    title: "Spectrum Frame 21", 
+    title: "River side", 
     location: "River Valley", 
     category: "NATURE",
     camera: "Xiaomi 15T Pro",
@@ -312,7 +312,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 22, 
     src: "/photos/p22.jpg", 
-    title: "Spectrum Frame 22", 
+    title: "Morning sky", 
     location: "Morning Stratus", 
     category: "SKY",
     camera: "Xiaomi 15T Pro",
@@ -325,7 +325,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 23, 
     src: "/photos/p23.jpg", 
-    title: "Spectrum Frame 23", 
+    title: "Moon phase", 
     location: "Lunar Eclipse Phase", 
     category: "MOON",
     camera: "Xiaomi 15T Pro",
@@ -338,7 +338,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 24, 
     src: "/photos/p24.jpg", 
-    title: "Spectrum Frame 24", 
+    title: "Sunset view", 
     location: "Sunset Glow", 
     category: "WARM",
     camera: "Xiaomi 15T Pro",
@@ -351,7 +351,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 25, 
     src: "/photos/p25.jpg", 
-    title: "Spectrum Frame 25", 
+    title: "Busy crosswalk", 
     location: "Downtown Crosswalk", 
     category: "STREET",
     camera: "Xiaomi 15T Pro",
@@ -364,7 +364,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 26, 
     src: "/photos/p26.jpg", 
-    title: "Spectrum Frame 26", 
+    title: "Abstract pattern", 
     location: "Monochrome Patterns", 
     category: "ABSTRACT",
     camera: "Xiaomi 15T Pro",
@@ -377,7 +377,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 27, 
     src: "/photos/p27.jpg", 
-    title: "Spectrum Frame 27", 
+    title: "Starry sky", 
     location: "Deep Cosmos", 
     category: "ASTROPHOTOGRAPHY",
     camera: "Xiaomi 15T Pro",
@@ -390,7 +390,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 28, 
     src: "/photos/p28.jpg", 
-    title: "Spectrum Frame 28", 
+    title: "Forest floor", 
     location: "Mossy Glade", 
     category: "NATURE",
     camera: "Xiaomi 15T Pro",
@@ -403,7 +403,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 29, 
     src: "/photos/p29.jpg", 
-    title: "Spectrum Frame 29", 
+    title: "White clouds", 
     location: "Cirrus Trails", 
     category: "SKY",
     camera: "Xiaomi 15T Pro",
@@ -416,7 +416,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 30, 
     src: "/photos/p30.jpg", 
-    title: "Spectrum Frame 30", 
+    title: "Warm fire", 
     location: "Evening Fire", 
     category: "WARM",
     camera: "Xiaomi 15T Pro",
@@ -429,7 +429,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 31, 
     src: "/photos/p31.jpg", 
-    title: "Spectrum Frame 31", 
+    title: "Clear moon", 
     location: "Solitary Moon", 
     category: "MOON",
     camera: "Xiaomi 15T Pro",
@@ -442,7 +442,7 @@ export const photos: PhotoItem[] = [
   { 
     id: 32, 
     src: "/photos/p32.jpg", 
-    title: "Spectrum Frame 32", 
+    title: "Light reflection", 
     location: "Prismatic Light", 
     category: "ABSTRACT",
     camera: "Xiaomi 15T Pro",
