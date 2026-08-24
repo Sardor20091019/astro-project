@@ -27,7 +27,7 @@ export default function PhotoDetailPage({ params }: PageProps) {
 
   const photo = photos[currentIndex];
   
-  // Looping indices (wraps around: first goes to last, last goes to first)
+  // Looping indices
   const prevIndex = currentIndex > 0 ? currentIndex - 1 : photos.length - 1;
   const nextIndex = currentIndex < photos.length - 1 ? currentIndex + 1 : 0;
   const prevPhoto = photos[prevIndex];
@@ -35,7 +35,15 @@ export default function PhotoDetailPage({ params }: PageProps) {
   
   const categoryObj = CATEGORIES.find((c) => c.value === photo.category);
 
-  // Keyboard Navigation Support (Looping & Escape Fullscreen)
+  const goToPrev = () => {
+    router.push(`/creator/photos/${prevPhoto.id}`);
+  };
+
+  const goToNext = () => {
+    router.push(`/creator/photos/${nextPhoto.id}`);
+  };
+
+  // Keyboard Navigation Support
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isFullscreen) {
@@ -43,30 +51,18 @@ export default function PhotoDetailPage({ params }: PageProps) {
         return;
       }
       
-      // Only trigger gallery navigation when NOT in fullscreen mode
       if (!isFullscreen) {
         if (e.key === "ArrowLeft") {
-          router.push(`/creator/photos/${prevPhoto.id}`);
+          goToPrev();
         } else if (e.key === "ArrowRight") {
-          router.push(`/creator/photos/${nextPhoto.id}`);
+          goToNext();
         }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isFullscreen, prevPhoto, nextPhoto, router]);
-
-  // Mobile Swipe Handling (Looping)
-  const handleDragEnd = (e: any, { offset }: any) => {
-    if (isFullscreen) return;
-    const swipeThreshold = 50;
-    if (offset.x > swipeThreshold) {
-      router.push(`/creator/photos/${prevPhoto.id}`);
-    } else if (offset.x < -swipeThreshold) {
-      router.push(`/creator/photos/${nextPhoto.id}`);
-    }
-  };
+  }, [isFullscreen, prevPhoto, nextPhoto]);
 
   const handleShare = async () => {
     const shareData = {
@@ -98,139 +94,134 @@ export default function PhotoDetailPage({ params }: PageProps) {
       <div className="flex items-center justify-between mb-6 sm:mb-8 gap-4">
         <Link
           href="/creator/photos"
-          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-(--text-dim) hover:text-(--text) transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
         >
           <ArrowLeft size={16} /> <span className="hidden sm:inline">Gallery Archive</span><span className="sm:hidden">Back</span>
         </Link>
 
         {/* Looping Prev / Next Switcher & Counter */}
         <div className="flex items-center gap-2">
-          <Link
-            href={`/creator/photos/${prevPhoto.id}`}
-            className="flex items-center gap-1 px-3 py-2 sm:py-1.5 rounded-xl border border-(--border) bg-(--surface) text-xs font-mono text-(--text-dim) hover:text-(--text) hover:bg-(--surface-2) transition"
+          <button
+            onClick={goToPrev}
+            className="flex items-center gap-1 px-3 py-2 sm:py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-xs font-mono text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition cursor-pointer"
             title="Previous Frame"
           >
             <ChevronLeft size={14} /> <span className="hidden sm:inline">Prev</span>
-          </Link>
+          </button>
 
-          <span className="font-mono text-xs text-(--text-muted) px-2">
+          <span className="font-mono text-xs text-[var(--text-muted)] px-2">
             {currentIndex + 1} / {photos.length}
           </span>
 
-          <Link
-            href={`/creator/photos/${nextPhoto.id}`}
-            className="flex items-center gap-1 px-3 py-2 sm:py-1.5 rounded-xl border border-(--border) bg-(--surface) text-xs font-mono text-(--text-dim) hover:text-(--text) hover:bg-(--surface-2) transition"
+          <button
+            onClick={goToNext}
+            className="flex items-center gap-1 px-3 py-2 sm:py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-xs font-mono text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition cursor-pointer"
             title="Next Frame"
           >
             <span className="hidden sm:inline">Next</span> <ChevronRight size={14} />
-          </Link>
+          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-        {/* Main Immersive Image Container (Swipeable on Mobile) */}
-        <div className="lg:col-span-8 rounded-3xl overflow-hidden border border-(--border) bg-(--surface) shadow-2xl flex items-center justify-center p-2 sm:p-4 touch-pan-y relative group">
+        {/* Main Immersive Image Container with Fixed Height Stage */}
+        <div className="lg:col-span-8 rounded-3xl overflow-hidden border border-[var(--border)] bg-[var(--surface)] shadow-2xl flex items-center justify-center p-2 sm:p-4 relative group">
           
           {/* Desktop Hover Arrows */}
-          <div className="absolute left-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block pointer-events-none">
-            <Link href={`/creator/photos/${prevPhoto.id}`} className="pointer-events-auto bg-black/60 p-3 rounded-full text-white backdrop-blur-md border border-white/10 hover:bg-black/90 transition shadow-lg flex items-center justify-center">
+          <div className="absolute left-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block">
+            <button 
+              onClick={goToPrev} 
+              className="bg-black/60 p-3 rounded-full text-white backdrop-blur-md border border-white/10 hover:bg-black/90 transition shadow-lg flex items-center justify-center cursor-pointer"
+            >
               <ChevronLeft size={24} />
-            </Link>
+            </button>
           </div>
           
-          <div className="absolute right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block pointer-events-none">
-            <Link href={`/creator/photos/${nextPhoto.id}`} className="pointer-events-auto bg-black/60 p-3 rounded-full text-white backdrop-blur-md border border-white/10 hover:bg-black/90 transition shadow-lg flex items-center justify-center">
+          <div className="absolute right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block">
+            <button 
+              onClick={goToNext} 
+              className="bg-black/60 p-3 rounded-full text-white backdrop-blur-md border border-white/10 hover:bg-black/90 transition shadow-lg flex items-center justify-center cursor-pointer"
+            >
               <ChevronRight size={24} />
-            </Link>
+            </button>
           </div>
 
-          <div className="relative w-full overflow-hidden rounded-2xl bg-black/40 flex items-center justify-center min-h-[320px] sm:min-h-[480px] max-h-[80vh]">
-            <AnimatePresence mode="popLayout" custom={currentIndex}>
-              <motion.img
-                key={photo.id}
-                src={photo.src}
-                alt={photo.title}
-                drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.7}
-                onDragEnd={handleDragEnd}
-                onClick={() => setIsFullscreen(true)}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25 }}
-                className="w-full h-auto max-h-[75vh] object-contain select-none cursor-zoom-in hover:opacity-95 transition"
-                title="Click to view fullscreen"
-              />
-            </AnimatePresence>
+          <div className="relative w-full h-[450px] sm:h-[550px] lg:h-[600px] overflow-hidden rounded-2xl bg-black/60 flex items-center justify-center">
+            <img
+              src={photo.src}
+              alt={photo.title}
+              onClick={() => setIsFullscreen(true)}
+              className="w-full h-full object-contain select-none cursor-zoom-in hover:opacity-95"
+              title="Click to view fullscreen"
+            />
           </div>
         </div>
 
         {/* Sidebar Metadata & EXIF Specs */}
-        <div className="lg:col-span-4 rounded-3xl border border-(--border) bg-(--surface) p-5 sm:p-8 shadow-2xl flex flex-col gap-5 sm:gap-6">
+        <div className="lg:col-span-4 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-8 shadow-2xl flex flex-col gap-5 sm:gap-6">
           <div>
             <div className="flex items-center gap-2 mb-3 flex-wrap">
               {categoryObj && (
-                <span className="text-[10px] font-black uppercase tracking-[0.16em] bg-(--surface-2) border border-(--border) text-(--accent) px-3 py-1.5 rounded-xl">
+                <span className="text-[10px] font-black uppercase tracking-[0.16em] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--accent)] px-3 py-1.5 rounded-xl">
                   {categoryObj.icon} {categoryObj.label}
                 </span>
               )}
-              <span className="font-mono text-[10px] tracking-widest text-(--text-muted) px-3 py-1.5 rounded-xl bg-(--surface-2) border border-(--border)">
+              <span className="font-mono text-[10px] tracking-widest text-[var(--text-muted)] px-3 py-1.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border)]">
                 FRAME #{String(photo.id).padStart(2, "0")}
               </span>
             </div>
             
-            <h1 className="text-2xl sm:text-3xl font-bold uppercase tracking-tight text-(--text) mb-2 leading-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold uppercase tracking-tight text-[var(--text)] mb-2 leading-tight">
               {photo.title}
             </h1>
 
             {photo.location && (
-              <div className="flex items-center gap-1.5 text-xs uppercase tracking-[0.15em] text-(--text-dim) mt-2">
-                <MapPin size={14} className="text-(--accent) shrink-0" />
+              <div className="flex items-center gap-1.5 text-xs uppercase tracking-[0.15em] text-[var(--text-dim)] mt-2">
+                <MapPin size={14} className="text-[var(--accent)] shrink-0" />
                 <span className="truncate">{photo.location}</span>
               </div>
             )}
           </div>
 
-          <hr className="border-(--border)" />
+          <hr className="border-[var(--border)]" />
 
           {/* Technical EXIF Grid */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-2xl bg-(--surface-2) border border-(--border)/60 flex flex-col gap-1">
-              <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-(--text-muted)">
-                <Camera size={12} className="text-(--accent)" /> Camera
+            <div className="p-3 rounded-2xl bg-[var(--surface-2)] border border-[var(--border)]/60 flex flex-col gap-1">
+              <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+                <Camera size={12} className="text-[var(--accent)]" /> Camera
               </span>
-              <span className="text-xs font-bold text-(--text) truncate" title={photo.camera}>{photo.camera || "Xiaomi 15T Pro"}</span>
+              <span className="text-xs font-bold text-[var(--text)] truncate" title={photo.camera}>{photo.camera || "Xiaomi 15T Pro"}</span>
             </div>
 
-            <div className="p-3 rounded-2xl bg-(--surface-2) border border-(--border)/60 flex flex-col gap-1">
-              <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-(--text-muted)">
-                <Aperture size={12} className="text-(--accent)" /> Aperture
+            <div className="p-3 rounded-2xl bg-[var(--surface-2)] border border-[var(--border)]/60 flex flex-col gap-1">
+              <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+                <Aperture size={12} className="text-[var(--accent)]" /> Aperture
               </span>
-              <span className="text-xs font-mono font-bold text-(--text)">{photo.aperture || "f/1.7"}</span>
+              <span className="text-xs font-mono font-bold text-[var(--text)]">{photo.aperture || "f/1.7"}</span>
             </div>
 
-            <div className="p-3 rounded-2xl bg-(--surface-2) border border-(--border)/60 flex flex-col gap-1">
-              <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-(--text-muted)">
-                <Clock size={12} className="text-(--accent)" /> Shutter Speed
+            <div className="p-3 rounded-2xl bg-[var(--surface-2)] border border-[var(--border)]/60 flex flex-col gap-1">
+              <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+                <Clock size={12} className="text-[var(--accent)]" /> Shutter Speed
               </span>
-              <span className="text-xs font-mono font-bold text-(--text)">{photo.shutter || "1/250s"}</span>
+              <span className="text-xs font-mono font-bold text-[var(--text)]">{photo.shutter || "1/250s"}</span>
             </div>
 
-            <div className="p-3 rounded-2xl bg-(--surface-2) border border-(--border)/60 flex flex-col gap-1">
-              <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-(--text-muted)">
-                <Disc size={12} className="text-(--accent)" /> Sensitivity
+            <div className="p-3 rounded-2xl bg-[var(--surface-2)] border border-[var(--border)]/60 flex flex-col gap-1">
+              <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+                <Disc size={12} className="text-[var(--accent)]" /> Sensitivity
               </span>
-              <span className="text-xs font-mono font-bold text-(--text)">{photo.iso || "ISO 100"}</span>
+              <span className="text-xs font-mono font-bold text-[var(--text)]">{photo.iso || "ISO 100"}</span>
             </div>
           </div>
 
           {photo.date && (
-            <div className="flex items-center justify-between text-xs py-2.5 px-3.5 rounded-xl bg-(--surface-2)/50 border border-(--border)/40">
-              <span className="text-(--text-muted) uppercase tracking-wider flex items-center gap-1.5">
+            <div className="flex items-center justify-between text-xs py-2.5 px-3.5 rounded-xl bg-[var(--surface-2)]/50 border border-[var(--border)]/40">
+              <span className="text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1.5">
                 <Calendar size={12} /> Captured Date
               </span>
-              <span className="font-mono text-(--text)">{photo.date}</span>
+              <span className="font-mono text-[var(--text)]">{photo.date}</span>
             </div>
           )}
 
@@ -241,14 +232,14 @@ export default function PhotoDetailPage({ params }: PageProps) {
               download
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-(--text) text-(--bg) text-xs font-black uppercase tracking-widest hover:opacity-90 transition shadow-lg"
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-[var(--text)] text-[var(--bg)] text-xs font-black uppercase tracking-widest hover:opacity-90 transition shadow-lg"
             >
               <Download size={15} /> Download
             </a>
             
             <button
               onClick={handleShare}
-              className="flex items-center justify-center gap-2 py-3.5 px-5 rounded-2xl bg-(--surface-2) border border-(--border) text-(--text) text-xs font-bold uppercase tracking-widest hover:bg-(--surface-3) hover:border-(--border-hover) transition"
+              className="flex items-center justify-center gap-2 py-3.5 px-5 rounded-2xl bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] text-xs font-bold uppercase tracking-widest hover:bg-[var(--surface-3)] hover:border-[var(--border-hover)] transition cursor-pointer"
             >
               {copied ? <Check size={15} className="text-green-400" /> : <Share2 size={15} />}
               <span>{copied ? "Copied!" : "Share"}</span>
@@ -270,7 +261,7 @@ export default function PhotoDetailPage({ params }: PageProps) {
             {/* Close Button */}
             <button
               onClick={() => setIsFullscreen(false)}
-              className="absolute top-6 right-6 z-50 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-md border border-white/10 transition shadow-lg"
+              className="absolute top-6 right-6 z-50 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-md border border-white/10 transition shadow-lg cursor-pointer"
               title="Close Fullscreen (Esc)"
             >
               <X size={24} />
@@ -278,9 +269,9 @@ export default function PhotoDetailPage({ params }: PageProps) {
 
             {/* Fullscreen Image */}
             <motion.img
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               src={photo.src}
               alt={photo.title}

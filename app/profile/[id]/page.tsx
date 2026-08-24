@@ -97,7 +97,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
               Images
             </h2>
             <span className="font-mono text-[10px] uppercase tracking-widest bg-[var(--surface)] border border-[var(--border)] px-3.5 py-1 rounded-full text-[var(--text-dim)] shadow-sm">
-              {photos.length} {photos.length === 1 ? "frame with image" : "frames with images"}
+              {photos.length} {photos.length === 1 ? "image posted" : "images"}
             </span>
           </div>
 

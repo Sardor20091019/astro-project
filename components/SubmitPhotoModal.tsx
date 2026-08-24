@@ -226,7 +226,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                 {/* Author Name */}
                 <div className="flex items-center bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl focus-within:border-(--accent) transition-all">
                   <User size={16} className="text-(--text-muted) shrink-0 mr-3 pointer-events-none" />
-                  <input name="authorName" defaultValue={session?.user?.name ?? ""} placeholder="Artist / Creator Name" required className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
+                  <input name="authorName" defaultValue={session?.user?.name ?? ""} placeholder="Artist / Author Name" required className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
                 </div>
 
                 {/* Title */}

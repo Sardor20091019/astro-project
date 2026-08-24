@@ -109,7 +109,7 @@ export default function Navbar() {
               <NavLink href="/photos" active={pathname === "/photos"}>Photos</NavLink>
               <NavLink href="/leaderboard" active={pathname === "/leaderboard"}>Leaderboard</NavLink>
               {user && (
-                <NavLink href="/creator/photos" active={pathname === "/creator/photos"}>Creator Photos</NavLink>
+                <NavLink href="/creator/photos" active={pathname === "/creator/photos"}>Author Photos</NavLink>
               )}
               <div className="flex items-center pl-4 border-l border-[var(--border)]">
                 <UserSearchTrigger />
@@ -305,7 +305,7 @@ export default function Navbar() {
                 </Link>
                 {user && (
                   <Link href="/creator/photos" className="text-sm uppercase tracking-[0.2em] font-semibold text-[var(--accent)] flex items-center justify-between group py-1">
-                    <span>Creator Photos</span>
+                    <span>Author Photos</span>
                     <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[var(--accent)]">→</span>
                   </Link>
                 )}
