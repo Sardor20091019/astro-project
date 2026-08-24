@@ -98,7 +98,7 @@ export default function PhotoDetailPage({ params }: PageProps) {
       <div className="flex items-center justify-between mb-6 sm:mb-8 gap-4">
         <Link
           href="/creator/photos"
-          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-(--text-dim) hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-(--text-dim) hover:text-(--text) transition-colors"
         >
           <ArrowLeft size={16} /> <span className="hidden sm:inline">Gallery Archive</span><span className="sm:hidden">Back</span>
         </Link>
@@ -107,7 +107,7 @@ export default function PhotoDetailPage({ params }: PageProps) {
         <div className="flex items-center gap-2">
           <Link
             href={`/creator/photos/${prevPhoto.id}`}
-            className="flex items-center gap-1 px-3 py-2 sm:py-1.5 rounded-xl border border-(--border) bg-(--surface-1) text-xs font-mono text-(--text-dim) hover:text-white hover:bg-(--surface-2) transition"
+            className="flex items-center gap-1 px-3 py-2 sm:py-1.5 rounded-xl border border-(--border) bg-(--surface) text-xs font-mono text-(--text-dim) hover:text-(--text) hover:bg-(--surface-2) transition"
             title="Previous Frame"
           >
             <ChevronLeft size={14} /> <span className="hidden sm:inline">Prev</span>
@@ -119,7 +119,7 @@ export default function PhotoDetailPage({ params }: PageProps) {
 
           <Link
             href={`/creator/photos/${nextPhoto.id}`}
-            className="flex items-center gap-1 px-3 py-2 sm:py-1.5 rounded-xl border border-(--border) bg-(--surface-1) text-xs font-mono text-(--text-dim) hover:text-white hover:bg-(--surface-2) transition"
+            className="flex items-center gap-1 px-3 py-2 sm:py-1.5 rounded-xl border border-(--border) bg-(--surface) text-xs font-mono text-(--text-dim) hover:text-(--text) hover:bg-(--surface-2) transition"
             title="Next Frame"
           >
             <span className="hidden sm:inline">Next</span> <ChevronRight size={14} />
@@ -129,7 +129,7 @@ export default function PhotoDetailPage({ params }: PageProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         {/* Main Immersive Image Container (Swipeable on Mobile) */}
-        <div className="lg:col-span-8 rounded-3xl overflow-hidden border border-(--border) bg-(--surface-1) shadow-2xl flex items-center justify-center p-2 sm:p-4 touch-pan-y relative group">
+        <div className="lg:col-span-8 rounded-3xl overflow-hidden border border-(--border) bg-(--surface) shadow-2xl flex items-center justify-center p-2 sm:p-4 touch-pan-y relative group">
           
           {/* Desktop Hover Arrows */}
           <div className="absolute left-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block pointer-events-none">
@@ -167,7 +167,7 @@ export default function PhotoDetailPage({ params }: PageProps) {
         </div>
 
         {/* Sidebar Metadata & EXIF Specs */}
-        <div className="lg:col-span-4 rounded-3xl border border-(--border) bg-(--surface-1) p-5 sm:p-8 shadow-2xl flex flex-col gap-5 sm:gap-6">
+        <div className="lg:col-span-4 rounded-3xl border border-(--border) bg-(--surface) p-5 sm:p-8 shadow-2xl flex flex-col gap-5 sm:gap-6">
           <div>
             <div className="flex items-center gap-2 mb-3 flex-wrap">
               {categoryObj && (
@@ -180,7 +180,7 @@ export default function PhotoDetailPage({ params }: PageProps) {
               </span>
             </div>
             
-            <h1 className="text-2xl sm:text-3xl font-bold uppercase tracking-tight text-white mb-2 leading-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold uppercase tracking-tight text-(--text) mb-2 leading-tight">
               {photo.title}
             </h1>
 
@@ -200,28 +200,28 @@ export default function PhotoDetailPage({ params }: PageProps) {
               <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-(--text-muted)">
                 <Camera size={12} className="text-(--accent)" /> Camera
               </span>
-              <span className="text-xs font-bold text-white truncate" title={photo.camera}>{photo.camera || "Xiaomi 15T Pro"}</span>
+              <span className="text-xs font-bold text-(--text) truncate" title={photo.camera}>{photo.camera || "Xiaomi 15T Pro"}</span>
             </div>
 
             <div className="p-3 rounded-2xl bg-(--surface-2) border border-(--border)/60 flex flex-col gap-1">
               <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-(--text-muted)">
                 <Aperture size={12} className="text-(--accent)" /> Aperture
               </span>
-              <span className="text-xs font-mono font-bold text-white">{photo.aperture || "f/1.7"}</span>
+              <span className="text-xs font-mono font-bold text-(--text)">{photo.aperture || "f/1.7"}</span>
             </div>
 
             <div className="p-3 rounded-2xl bg-(--surface-2) border border-(--border)/60 flex flex-col gap-1">
               <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-(--text-muted)">
                 <Clock size={12} className="text-(--accent)" /> Shutter Speed
               </span>
-              <span className="text-xs font-mono font-bold text-white">{photo.shutter || "1/250s"}</span>
+              <span className="text-xs font-mono font-bold text-(--text)">{photo.shutter || "1/250s"}</span>
             </div>
 
             <div className="p-3 rounded-2xl bg-(--surface-2) border border-(--border)/60 flex flex-col gap-1">
               <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-(--text-muted)">
                 <Disc size={12} className="text-(--accent)" /> Sensitivity
               </span>
-              <span className="text-xs font-mono font-bold text-white">{photo.iso || "ISO 100"}</span>
+              <span className="text-xs font-mono font-bold text-(--text)">{photo.iso || "ISO 100"}</span>
             </div>
           </div>
 
@@ -230,7 +230,7 @@ export default function PhotoDetailPage({ params }: PageProps) {
               <span className="text-(--text-muted) uppercase tracking-wider flex items-center gap-1.5">
                 <Calendar size={12} /> Captured Date
               </span>
-              <span className="font-mono text-white">{photo.date}</span>
+              <span className="font-mono text-(--text)">{photo.date}</span>
             </div>
           )}
 
@@ -241,14 +241,14 @@ export default function PhotoDetailPage({ params }: PageProps) {
               download
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-white text-black text-xs font-black uppercase tracking-widest hover:bg-zinc-200 transition shadow-lg shadow-white/5"
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-(--text) text-(--bg) text-xs font-black uppercase tracking-widest hover:opacity-90 transition shadow-lg"
             >
               <Download size={15} /> Download
             </a>
             
             <button
               onClick={handleShare}
-              className="flex items-center justify-center gap-2 py-3.5 px-5 rounded-2xl bg-(--surface-2) border border-(--border) text-white text-xs font-bold uppercase tracking-widest hover:bg-(--surface-3) hover:border-(--border-hover) transition"
+              className="flex items-center justify-center gap-2 py-3.5 px-5 rounded-2xl bg-(--surface-2) border border-(--border) text-(--text) text-xs font-bold uppercase tracking-widest hover:bg-(--surface-3) hover:border-(--border-hover) transition"
             >
               {copied ? <Check size={15} className="text-green-400" /> : <Share2 size={15} />}
               <span>{copied ? "Copied!" : "Share"}</span>

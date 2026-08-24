@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession, signIn } from "next-auth/react";
-import { CheckCircle2, MapPin, User, Camera, Tag, X, ImagePlus, ShieldCheck, Sparkles } from "lucide-react";
+import { CheckCircle2, MapPin, User, Camera, Tag, X, ImagePlus, ShieldCheck } from "lucide-react";
 import { CATEGORIES } from "@/data/photos";
 import { UploadButton } from "@uploadthing/react";
 import { OurFileRouter } from "@/app/api/uploadthing/core";
@@ -81,59 +81,60 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ type: "spring", stiffness: 350, damping: 30 }}
-          className="relative w-full max-w-2xl bg-(--surface) border border-(--border) rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.5)] overflow-hidden z-10 max-h-[94vh] flex flex-col"
+          className="relative w-full max-w-xl bg-(--surface) border border-(--border) rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.5)] overflow-hidden z-10 max-h-[90vh] flex flex-col"
         >
           {/* Header Bar */}
-          <div className="flex items-center justify-between px-6 sm:px-8 py-5 border-b border-(--border) bg-(--surface)/90 sticky top-0 z-20 backdrop-blur-md">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-(--border) bg-(--surface)/90 sticky top-0 z-20 backdrop-blur-md">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-(--surface-2) border border-(--border) flex items-center justify-center text-(--accent)">
-                <Camera size={20} />
+              <div className="w-9 h-9 rounded-xl bg-(--surface-2) border border-(--border) flex items-center justify-center text-(--accent) shadow-xs">
+                <Camera size={18} />
               </div>
-              <h2 className="text-lg font-black uppercase tracking-tight text-(--text)">
+              <h2 className="text-sm font-black uppercase tracking-tight text-(--text)">
                 Submit New Frame
               </h2>
             </div>
             <button
               onClick={handleClose}
-              className="w-10 h-10 rounded-full bg-(--surface-2) hover:bg-(--surface-3) text-(--text-dim) hover:text-(--text) transition-colors cursor-pointer border border-(--border) flex items-center justify-center shrink-0"
+              className="w-9 h-9 rounded-full bg-(--surface-2) hover:bg-(--surface-3) text-(--text-dim) hover:text-(--text) transition-colors cursor-pointer border border-(--border) flex items-center justify-center shrink-0"
               aria-label="Close modal"
             >
-              <X size={18} />
+              <X size={16} />
             </button>
           </div>
 
           {/* Modal Body */}
-          <div className="p-6 sm:p-8 overflow-y-auto flex-1">
+          <div className="p-6 overflow-y-auto flex-1">
             {submitted ? (
-              <div className="text-center py-12 flex flex-col items-center">
-                <div className="w-20 h-20 bg-(--accent)/10 border border-(--accent)/30 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-                  <CheckCircle2 size={32} className="text-(--accent)" />
+              <div className="text-center py-10 flex flex-col items-center">
+                <div className="w-16 h-16 bg-(--accent)/10 border border-(--accent)/30 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                  <CheckCircle2 size={28} className="text-(--accent)" />
                 </div>
-                <h3 className="text-xl font-black uppercase tracking-tight mb-2 text-(--text)">
+                <h3 className="text-base font-black uppercase tracking-tight mb-2 text-(--text)">
                   Frame Published
                 </h3>
-                <p className="text-(--text-dim) font-mono text-xs uppercase tracking-[0.15em] mb-8 max-w-md leading-relaxed">
+                <p className="text-(--text-dim) font-mono text-[11px] uppercase tracking-[0.15em] mb-6 max-w-sm leading-relaxed">
                   Your capture is now indexed and live in the gallery archive.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
+                <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
                   <button
                     onClick={() => { setSubmitted(false); setUploadedUrl(null); }}
-                    className="flex-1 px-6 py-4 rounded-xl border border-(--border) font-mono text-xs font-bold uppercase tracking-[0.15em] text-(--text-dim) hover:text-(--text) hover:border-(--border-hover) transition-all cursor-pointer bg-(--surface-2)"
+                    className="flex-1 px-4 py-3 rounded-xl border border-(--border) font-mono text-[11px] font-bold uppercase tracking-[0.15em] text-(--text-dim) hover:text-(--text) hover:border-(--border-hover) transition-all cursor-pointer bg-(--surface-2)"
                   >
                     Submit Another
                   </button>
                   <button
                     onClick={handleClose}
-                    className="flex-1 px-6 py-4 rounded-xl bg-(--text) text-(--bg) font-mono text-xs font-bold uppercase tracking-[0.15em] hover:bg-(--accent) hover:text-(--bg) transition-all cursor-pointer shadow-lg"
+                    className="flex-1 px-4 py-3 rounded-xl bg-(--text) text-(--bg) font-mono text-[11px] font-bold uppercase tracking-[0.15em] hover:bg-(--accent) hover:text-(--bg) transition-all cursor-pointer shadow-md"
                   >
                     Close
                   </button>
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="flex items-center justify-between bg-(--surface-2) border border-(--border) px-5 py-4 rounded-xl backdrop-blur-md">
-                  <p className="text-(--text-dim) font-mono text-xs uppercase tracking-[0.1em]">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                {/* Session Notice */}
+                <div className="flex items-center justify-between bg-(--surface-2) border border-(--border) px-4 py-3 rounded-xl backdrop-blur-md shadow-xs">
+                  <p className="text-(--text-dim) font-mono text-[11px] uppercase tracking-[0.1em]">
                     {session?.user ? (
                       <span className="text-(--accent)">Credited to: {session.user.name}</span>
                     ) : (
@@ -145,39 +146,44 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                       </span>
                     )}
                   </p>
-                  <ShieldCheck size={18} className="text-(--accent)" />
+                  <ShieldCheck size={16} className="text-(--accent)" />
                 </div>
 
                 {/* Upload Zone */}
-                <div className="relative overflow-hidden rounded-xl border-2 border-dashed border-(--border) bg-(--surface-2) p-8 sm:p-12 flex flex-col items-center justify-center min-h-[220px] transition-all hover:border-(--border-hover) group">
+                <div className="relative overflow-hidden rounded-xl border border-dashed border-(--border) bg-(--surface-2) p-6 flex flex-col items-center justify-center min-h-[170px] transition-all hover:border-(--border-hover) group">
                   {uploadedUrl ? (
                     <div className="relative w-full">
-                      <img src={uploadedUrl} alt="Preview" className="w-full max-h-72 object-cover rounded-xl border border-(--border) shadow-xl" />
+                      <img src={uploadedUrl} alt="Preview" className="w-full max-h-56 object-cover rounded-xl border border-(--border) shadow-md" />
                       <input type="hidden" name="photoUrl" value={uploadedUrl} />
                       <div className="absolute top-3 right-3">
                         <button 
                           type="button" 
                           onClick={() => setUploadedUrl(null)}
-                          className="bg-(--surface) backdrop-blur-md border border-(--border) text-(--text) font-mono text-xs px-4 py-2 rounded-full uppercase tracking-wider font-bold hover:bg-rose-500 hover:text-white transition-all cursor-pointer shadow-xl"
+                          className="bg-(--surface) backdrop-blur-md border border-(--border) text-(--text) font-mono text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider font-bold hover:bg-rose-500 hover:text-white transition-all cursor-pointer shadow-lg"
                         >
                           Replace File
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center gap-3 text-center">
-                      <div className="w-14 h-14 rounded-xl bg-(--surface-3) border border-(--border) flex items-center justify-center text-(--accent) group-hover:scale-110 transition-transform">
-                        <ImagePlus size={24} />
+                    <div className="flex flex-col items-center gap-3 text-center w-full py-2">
+                      {/* Icon Block Object */}
+                      <div className="w-12 h-12 rounded-xl bg-(--surface-3) border border-(--border) flex items-center justify-center text-(--accent) group-hover:scale-105 transition-transform shadow-xs">
+                        <ImagePlus size={22} />
                       </div>
+
+                      {/* Text Description Block Object */}
                       <div className="flex flex-col gap-1">
-                        <span className="font-mono text-xs uppercase tracking-[0.15em] text-(--text) font-bold">
+                        <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-(--text) font-bold">
                           Drop image or upload file
                         </span>
-                        <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-(--text-muted)">
+                        <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-(--text-muted)">
                           Supports high-res RAW, JPG, PNG
                         </span>
                       </div>
-                      <div className="mt-2">
+                      
+                      {/* Upload Button Slot Object with distinct spacing */}
+                      <div className="mt-1 w-full max-w-xs bg-(--surface) border border-(--border) p-3 rounded-xl flex items-center justify-center shadow-xs">
                         <UploadButton<OurFileRouter, "imageUploader">
                           endpoint="imageUploader"
                           onUploadBegin={() => setLoading(true)}
@@ -198,7 +204,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                             setLoading(false);
                           }}
                           appearance={{
-                            button: "bg-(--text) text-(--bg) font-mono text-xs uppercase tracking-[0.15em] font-bold px-6 py-3 rounded-xl hover:bg-(--accent) hover:text-(--bg) transition-all cursor-pointer shadow-md",
+                            button: "bg-(--text) text-(--bg) font-mono text-[11px] uppercase tracking-[0.15em] font-bold px-4 py-2.5 rounded-lg hover:bg-(--accent) hover:text-(--bg) transition-all cursor-pointer shadow-sm",
                             allowedContent: "hidden"
                           }}
                         />
@@ -210,40 +216,40 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                 {/* Technical Metadata Inputs */}
                 {uploadedUrl && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-in fade-in duration-500">
-                    <input name="camera" placeholder="Camera (Sony)" className="bg-(--surface-2) border border-(--border) px-4 py-3 rounded-xl font-mono text-xs text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" />
-                    <input name="iso" placeholder="ISO (800)" type="number" className="bg-(--surface-2) border border-(--border) px-4 py-3 rounded-xl font-mono text-xs text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" />
-                    <input name="aperture" placeholder="Aperture (f/2.8)" className="bg-(--surface-2) border border-(--border) px-4 py-3 rounded-xl font-mono text-xs text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" />
-                    <input name="shutter" placeholder="Shutter (1/500s)" className="bg-(--surface-2) border border-(--border) px-4 py-3 rounded-xl font-mono text-xs text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" />
+                    <input name="camera" placeholder="Camera (Sony)" className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" />
+                    <input name="iso" placeholder="ISO (800)" type="number" className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" />
+                    <input name="aperture" placeholder="Aperture (f/2.8)" className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" />
+                    <input name="shutter" placeholder="Shutter (1/500s)" className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" />
                   </div>
                 )}
 
                 {/* Author Name */}
-                <div className="flex items-center bg-(--surface-2) border border-(--border) px-4 py-3 rounded-xl focus-within:border-(--accent) transition-all">
+                <div className="flex items-center bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl focus-within:border-(--accent) transition-all">
                   <User size={16} className="text-(--text-muted) shrink-0 mr-3 pointer-events-none" />
-                  <input name="authorName" defaultValue={session?.user?.name ?? ""} placeholder="Artist / Creator Name" required className="w-full bg-transparent font-mono text-xs uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
+                  <input name="authorName" defaultValue={session?.user?.name ?? ""} placeholder="Artist / Creator Name" required className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
                 </div>
 
                 {/* Title */}
-                <div className="flex items-center bg-(--surface-2) border border-(--border) px-4 py-3 rounded-xl focus-within:border-(--accent) transition-all">
+                <div className="flex items-center bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl focus-within:border-(--accent) transition-all">
                   <Camera size={16} className="text-(--text-muted) shrink-0 mr-3 pointer-events-none" />
-                  <input name="title" placeholder="Frame Title" required className="w-full bg-transparent font-mono text-xs uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
+                  <input name="title" placeholder="Frame Title" required className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
                 </div>
 
                 {/* Location & Coordinates Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-center bg-(--surface-2) border border-(--border) px-4 py-3 rounded-xl focus-within:border-(--accent) transition-all">
+                  <div className="flex items-center bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl focus-within:border-(--accent) transition-all">
                     <MapPin size={16} className="text-(--text-muted) shrink-0 mr-3 pointer-events-none" />
-                    <input name="location" placeholder="Location (Tien Shan)" className="w-full bg-transparent font-mono text-xs uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
+                    <input name="location" placeholder="Location (Tien Shan)" className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
                   </div>
-                  <div className="flex items-center bg-(--surface-2) border border-(--border) px-4 py-3 rounded-xl focus-within:border-(--accent) transition-all">
-                    <input name="coordinates" placeholder="Coordinates (Optional)" className="w-full bg-transparent font-mono text-xs uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
+                  <div className="flex items-center bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl focus-within:border-(--accent) transition-all">
+                    <input name="coordinates" placeholder="Coordinates (Optional)" className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
                   </div>
                 </div>
 
                 {/* Category Select */}
-                <div className="flex items-center bg-(--surface-2) border border-(--border) px-4 py-3 rounded-xl focus-within:border-(--accent) transition-all">
+                <div className="flex items-center bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl focus-within:border-(--accent) transition-all">
                   <Tag size={16} className="text-(--text-muted) shrink-0 mr-3 pointer-events-none" />
-                  <select name="category" defaultValue="OTHER" className="w-full appearance-none bg-transparent font-mono text-xs uppercase tracking-[0.1em] text-(--text) outline-none cursor-pointer">
+                  <select name="category" defaultValue="OTHER" className="w-full appearance-none bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none cursor-pointer">
                     {CATEGORIES.filter(c => c.value !== "ALL").map(cat => (
                       <option key={cat.value} value={cat.value} className="bg-(--surface) text-(--text) font-mono">
                         {cat.label}
@@ -255,7 +261,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                 <button 
                   type="submit" 
                   disabled={loading || !uploadedUrl} 
-                  className="w-full bg-(--text) text-(--bg) py-4 rounded-xl font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-(--accent) hover:text-(--bg) transition-all shadow-xl disabled:opacity-40 disabled:cursor-not-allowed mt-4 cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full bg-(--text) text-(--bg) py-3 rounded-xl font-mono text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-(--accent) hover:text-(--bg) transition-all shadow-md disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2 mt-1"
                 >
                   {loading ? "POSTING THE PHOTO..." : "POST THE PHOTO"}
                 </button>

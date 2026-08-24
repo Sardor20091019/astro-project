@@ -8,7 +8,7 @@ export default function PhotosPage() {
   return (
     <div className="main-wrapper py-6 sm:py-12 px-4 sm:px-6 max-w-7xl mx-auto">
       <div className="flex flex-col gap-2 mb-8">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-(--text)">
           Gallery Archive
         </h1>
         <p className="text-xs sm:text-sm text-(--text-dim) font-mono uppercase tracking-[0.15em]">
