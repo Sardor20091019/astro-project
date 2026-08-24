@@ -84,24 +84,19 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
     setLoading(true);
 
     try {
-      // 1. Extract ALL EXIF metadata locally before uploading (pass `true` to parse everything)
+      // 1. Extract standard technical EXIF metadata locally
       const exif = await exifr.parse(file, true);
 
       if (exif) {
-        // Camera Make & Model + Focal Length
         const make = exif.Make || "";
         const model = exif.Model || "";
         const focal = exif.FocalLength ? ` • ${exif.FocalLength}mm` : "";
         const cameraString = `${make} ${model}${focal}`.trim();
         if (cameraString) setCamera(cameraString);
 
-        // ISO
         if (exif.ISO) setIso(String(exif.ISO));
-
-        // Aperture (f-stop)
         if (exif.FNumber) setAperture(`f/${exif.FNumber}`);
 
-        // Shutter Speed (Format nicely into fractions if less than 1s)
         if (exif.ExposureTime) {
           const exp = exif.ExposureTime;
           if (exp < 1) {
@@ -111,21 +106,22 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
             setShutter(`${exp}s`);
           }
         }
+      }
 
-        // GPS Coordinates
-        if (exif.latitude && exif.longitude) {
-          const coordsStr = `${exif.latitude}, ${exif.longitude}`;
-          setRawExifCoords(coordsStr);
-          if (shareLocation) {
-            setCoordinates(coordsStr);
-          }
+      // 2. Extract GPS coordinates explicitly using exifr.gps()
+      const gps = await exifr.gps(file);
+      if (gps && gps.latitude && gps.longitude) {
+        const coordsStr = `${gps.latitude}, ${gps.longitude}`;
+        setRawExifCoords(coordsStr);
+        if (shareLocation) {
+          setCoordinates(coordsStr);
         }
       }
     } catch (err) {
       console.log("Could not parse EXIF metadata locally:", err);
     }
 
-    // 2. Automatically trigger UploadThing upload
+    // 3. Automatically trigger UploadThing upload
     await startUpload([file]);
   }
 
