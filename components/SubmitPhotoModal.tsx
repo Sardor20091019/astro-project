@@ -4,12 +4,13 @@
 
 import { useState, useEffect } from "react";
 import { useSession, signIn } from "next-auth/react";
-import { CheckCircle2, MapPin, User, Camera, Tag, X, ImagePlus, ShieldCheck } from "lucide-react";
+import { CheckCircle2, MapPin, User, Camera, Tag, X, ImagePlus, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { CATEGORIES } from "@/data/photos";
 import { UploadButton } from "@uploadthing/react";
 import { OurFileRouter } from "@/app/api/uploadthing/core";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import exifr from "exifr";
 
 interface SubmitPhotoModalProps {
   isOpen: boolean;
@@ -22,10 +23,18 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  
+  // Location & EXIF states
+  const [coordinates, setCoordinates] = useState("");
+  const [rawExifCoords, setRawExifCoords] = useState("");
+  const [shareLocation, setShareLocation] = useState(true);
 
   const handleClose = () => {
     setSubmitted(false);
     setUploadedUrl(null);
+    setCoordinates("");
+    setRawExifCoords("");
+    setShareLocation(true);
     onClose();
   };
 
@@ -117,7 +126,13 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
                   <button
-                    onClick={() => { setSubmitted(false); setUploadedUrl(null); }}
+                    onClick={() => { 
+                      setSubmitted(false); 
+                      setUploadedUrl(null); 
+                      setCoordinates(""); 
+                      setRawExifCoords(""); 
+                      setShareLocation(true); 
+                    }}
                     className="flex-1 px-4 py-3 rounded-xl border border-(--border) font-mono text-[11px] font-bold uppercase tracking-[0.15em] text-(--text-dim) hover:text-(--text) hover:border-(--border-hover) transition-all cursor-pointer bg-(--surface-2)"
                   >
                     Submit Another
@@ -158,7 +173,12 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                       <div className="absolute top-3 right-3">
                         <button 
                           type="button" 
-                          onClick={() => setUploadedUrl(null)}
+                          onClick={() => { 
+                            setUploadedUrl(null); 
+                            setCoordinates(""); 
+                            setRawExifCoords(""); 
+                            setShareLocation(true); 
+                          }}
                           className="bg-(--surface) backdrop-blur-md border border-(--border) text-(--text) font-mono text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider font-bold hover:bg-rose-500 hover:text-white transition-all cursor-pointer shadow-lg"
                         >
                           Replace File
@@ -167,12 +187,10 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-3 text-center w-full py-2">
-                      {/* Icon Block Object */}
                       <div className="w-12 h-12 rounded-xl bg-(--surface-3) border border-(--border) flex items-center justify-center text-(--accent) group-hover:scale-105 transition-transform shadow-xs">
                         <ImagePlus size={22} />
                       </div>
 
-                      {/* Text Description Block Object */}
                       <div className="flex flex-col gap-1">
                         <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-(--text) font-bold">
                           Drop image or upload file
@@ -182,19 +200,33 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                         </span>
                       </div>
                       
-                      {/* Upload Button Slot Object with distinct spacing */}
                       <div className="mt-1 w-full max-w-xs bg-(--surface) border border-(--border) p-3 rounded-xl flex items-center justify-center shadow-xs">
                         <UploadButton<OurFileRouter, "imageUploader">
                           endpoint="imageUploader"
                           onUploadBegin={() => setLoading(true)}
-                          onClientUploadComplete={(res) => {
+                          onClientUploadComplete={async (res) => {
                             if (res && res[0]) {
                               const serverData = res[0].serverData as { isSafe: boolean; error: string | null } | undefined;
                               if (serverData && serverData.isSafe === false) {
                                 alert("Upload rejected: Content does not meet safety guidelines.");
                                 setUploadedUrl(null);
                               } else {
-                                setUploadedUrl(res[0].ufsUrl || res[0].url);
+                                const url = res[0].ufsUrl || res[0].url;
+                                setUploadedUrl(url);
+
+                                // Extract GPS coordinates from EXIF metadata automatically
+                                try {
+                                  const gps = await exifr.gps(url);
+                                  if (gps && gps.latitude && gps.longitude) {
+                                    const coordsStr = `${gps.latitude}, ${gps.longitude}`;
+                                    setRawExifCoords(coordsStr);
+                                    if (shareLocation) {
+                                      setCoordinates(coordsStr);
+                                    }
+                                  }
+                                } catch (err) {
+                                  console.log("No EXIF GPS data found or inaccessible.");
+                                }
                               }
                             }
                             setLoading(false);
@@ -239,12 +271,46 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-center bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl focus-within:border-(--accent) transition-all">
                     <MapPin size={16} className="text-(--text-muted) shrink-0 mr-3 pointer-events-none" />
-                    <input name="location" placeholder="Location (Uzbekistan)" className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
+                    <input name="location" placeholder="Location Name (Optional)" className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
                   </div>
                   <div className="flex items-center bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl focus-within:border-(--accent) transition-all">
-                    <input name="coordinates" placeholder="Coordinates (Optional)" className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
+                    <input 
+                      name="coordinates" 
+                      value={coordinates}
+                      onChange={(e) => {
+                        setCoordinates(e.target.value);
+                        if (!rawExifCoords) setRawExifCoords(e.target.value);
+                      }}
+                      placeholder="Coordinates (Auto or Manual)" 
+                      className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" 
+                    />
                   </div>
                 </div>
+
+                {/* EXIF Privacy Toggle Button (Appears only when EXIF GPS is discovered) */}
+                {rawExifCoords && (
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-(--surface-2) border border-(--border) rounded-xl animate-in fade-in">
+                    <span className="font-mono text-[10px] text-(--text-dim) uppercase tracking-wider flex items-center gap-1.5">
+                      <MapPin size={13} className="text-(--accent)" /> EXIF GPS Discovered
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextState = !shareLocation;
+                        setShareLocation(nextState);
+                        setCoordinates(nextState ? rawExifCoords : "");
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer border ${
+                        shareLocation 
+                          ? "bg-(--accent)/10 border-(--accent)/30 text-(--accent)" 
+                          : "bg-(--surface-3) border-(--border) text-(--text-muted)"
+                      }`}
+                    >
+                      {shareLocation ? <Eye size={13} /> : <EyeOff size={13} />}
+                      {shareLocation ? "Sharing on Map" : "Hidden from Map"}
+                    </button>
+                  </div>
+                )}
 
                 {/* Category Select */}
                 <div className="flex items-center bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl focus-within:border-(--accent) transition-all">

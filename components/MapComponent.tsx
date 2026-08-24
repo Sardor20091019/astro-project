@@ -23,7 +23,6 @@ type MapPhoto = {
   avgRating?: number;
 };
 
-
 function MapResizer({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => {
@@ -52,7 +51,6 @@ export default function MapComponent({ photos }: { photos: MapPhoto[] }) {
     );
   }
 
-
   const mappedPhotos = photos
     .map((photo) => {
       if (!photo.coordinates) return null;
@@ -67,12 +65,10 @@ export default function MapComponent({ photos }: { photos: MapPhoto[] }) {
     })
     .filter(Boolean) as (MapPhoto & { position: [number, number] })[];
 
-
   const defaultCenter: [number, number] =
     mappedPhotos.length > 0
       ? mappedPhotos[0].position
       : [41.2995, 69.2401];
-
 
   const createCustomMarker = (url: string) => {
     return L.divIcon({
@@ -154,7 +150,7 @@ export default function MapComponent({ photos }: { photos: MapPhoto[] }) {
         ))}
 
         {mappedPhotos.length === 0 && (
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center bg-(--bg)/60 backdrop-blur-sm z-1000">
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center bg-(--bg)/60 backdrop-blur-sm z-[1000]">
             <div className="world-card p-6 text-center max-w-xs">
               <span className="text-xl block mb-2">🗺️</span>
               <p className="world-text-bold mb-1 tracking-widest">No Geo-tagged Submissions</p>
