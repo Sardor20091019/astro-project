@@ -13,7 +13,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   const { id: userId } = await params;
   const session = await getServerSession(authOptions);
 
-  const [user, photos, followersData, followingData] = await Promise.all([
+  const [user, rawPhotos, followersData, followingData] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
     prisma.photo.findMany({
       where: { userId, status: "APPROVED" },
@@ -31,6 +31,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   ]);
 
   if (!user) notFound();
+
+  // Convert photo IDs from number to string to match ProfilePhotoStream expectations
+  const photos = rawPhotos.map((p) => ({
+    ...p,
+    id: String(p.id),
+  }));
 
   let viewerFollowingIds = new Set<string>();
   if (session?.user?.id) {

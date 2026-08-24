@@ -77,7 +77,7 @@ export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType
         <p className="text-[10px] uppercase tracking-[0.2em] text-(--text-muted) font-bold">
           {filtered.length === 0 
             ? "No photos in this category" 
-            : `Showing ${Math.min(visibleCount, filtered.length)} of ${filtered.length} frames`
+            : `Showing ${Math.min(visibleCount, filtered.length)} of ${filtered.length} images`
           }
         </p>
         {activeCategory !== "ALL" && (
