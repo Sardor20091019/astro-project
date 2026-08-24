@@ -328,7 +328,7 @@ export default function GallerySection({
             {isLoading && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-(--accent)/10 border border-(--accent)/30 text-[9px] uppercase tracking-[0.14em] text-(--accent) font-mono font-bold animate-pulse">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                Loading frames...
+                Loading images...
               </span>
             )}
           </div>
@@ -351,7 +351,7 @@ export default function GallerySection({
           </div>
         ) : photos.length === 0 ? (
           <div className="border border-dashed border-white/10 rounded-2xl px-6 py-24 text-center text-[10px] uppercase tracking-[0.18em] text-(--text-muted)">
-            No frames found matching criteria
+            No images found matching criteria
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
