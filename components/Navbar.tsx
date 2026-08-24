@@ -93,7 +93,7 @@ export default function Navbar() {
           ? "bg-[var(--bg)]/85 backdrop-blur-2xl border-b border-[var(--border)] shadow-md" 
           : "bg-gradient-to-b from-[var(--bg)]/90 via-[var(--bg)]/40 to-transparent backdrop-blur-md"
       }`}>
-        <div className="mx-auto flex items-center justify-between h-[76px] w-full max-w-[96vw] sm:max-w-[92vw] px-4 sm:px-6">
+        <div className="mx-auto flex items-center justify-between h-[76px] w-full max-w-[96vw] sm:max-w-[92vw] px-3 sm:px-6">
           
           {/* LEFT SIDE: Logo Only */}
           <Link href="/" className="flex items-center h-full text-xs sm:text-sm font-black uppercase tracking-[0.25em] hover:opacity-80 transition-opacity shrink-0">
@@ -101,7 +101,7 @@ export default function Navbar() {
           </Link>
 
           {/* RIGHT SIDE: Navigation Links, Search, Theme Toggle, and Profile/Auth */}
-          <div className="flex items-center h-full gap-5 sm:gap-6">
+          <div className="flex items-center h-full gap-2.5 sm:gap-4 lg:gap-6">
             
             {/* Desktop Links & Search Trigger */}
             <div className="hidden lg:flex items-center h-full gap-6">
@@ -117,11 +117,11 @@ export default function Navbar() {
             </div>
 
             {/* Mobile Search Trigger Icon */}
-            <div className="lg:hidden flex items-center">
+            <div className="lg:hidden flex items-center shrink-0">
               <UserSearchTrigger />
             </div>
 
-            <div className="flex items-center">
+            <div className="flex items-center shrink-0">
               <ThemeToggle />
             </div>
 
@@ -146,10 +146,10 @@ export default function Navbar() {
             {/* Mobile Menu Toggle */}
             <button 
               onClick={() => { setMobileMenuOpen(!mobileMenuOpen); setIsEditingProfile(false); }} 
-              className="lg:hidden flex items-center justify-center p-2 text-[var(--text)] hover:bg-[var(--surface-2)] rounded-xl transition-colors cursor-pointer border border-[var(--border)]"
+              className="lg:hidden flex items-center justify-center p-2.5 text-[var(--text)] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] rounded-xl transition-colors cursor-pointer border border-[var(--border)] shrink-0 shadow-sm"
               aria-label="Toggle menu"
             >
-              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
 
