@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 
 export default async function CinematicLandingPage() {
   const heroPhoto = {
-    title: "Whisper of the North",
+    title: "A quiet Forest",
     location: "Finland Lapland",
     url: "/hero.jpg",
   };
@@ -43,7 +43,7 @@ export default async function CinematicLandingPage() {
               {heroPhoto.title}
             </h1>
             <p className="text-xs sm:text-sm text-white/70 font-mono tracking-wider max-w-md leading-relaxed">
-              Sub-zero wilderness beneath the aurora borealis. A study in celestial light, frozen pines, and silence.
+              A quiet, freezing forest under the northern lights. A look at starry skies, cold trees, and deep peace.
             </p>
           </div>
 
