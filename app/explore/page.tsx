@@ -5,7 +5,6 @@ import MapComponent from "@/components/MapWrapper";
 export const dynamic = "force-dynamic";
 
 export default async function ExplorePage() {
-  // Fetch only approved photos that contain valid location coordinates
   const photos = await prisma.photo.findMany({
     where: { 
       status: "APPROVED",
@@ -18,12 +17,12 @@ export default async function ExplorePage() {
   });
 
   return (
-    <div className="bg-(--bg) text-(--text) min-h-screen transition-colors duration-300">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 flex flex-col items-center text-center">
+    <div className="bg-(--bg) text-(--text) min-h-screen transition-colors duration-300 flex flex-col items-center">
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-20 flex flex-col items-center text-center">
         
         {/* Centered Header Section */}
-        <header className="mb-12 max-w-2xl flex flex-col items-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-(--surface-2) border border-(--border) mb-4 shadow-xs">
+        <header className="mb-12 max-w-2xl flex flex-col items-center text-center mx-auto">
+          <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-full bg-(--surface-2) border border-(--border) mb-4 shadow-xs">
             <span className="w-2 h-2 rounded-full bg-(--accent) animate-pulse" />
             <p className="text-[10px] font-mono font-bold uppercase tracking-[0.25em] text-(--accent)">
               Interactive Cartography
@@ -32,21 +31,21 @@ export default async function ExplorePage() {
           <h1 className="text-4xl font-black uppercase tracking-tight md:text-6xl mb-4 text-(--text)">
             Geomapping
           </h1>
-          <p className="text-xs sm:text-sm leading-relaxed text-(--text-dim) font-mono uppercase tracking-wider max-w-lg">
+          <p className="text-xs sm:text-sm leading-relaxed text-(--text-dim) font-mono uppercase tracking-wider max-w-lg mx-auto">
             Explore ASTROSPECTRUM photographic frames mapped in real-time. Hover over pins to inspect metadata specifications or tap to enter cinematic viewports.
           </p>
         </header>
 
         {/* Centered Map Component Container */}
-        <div className="w-full max-w-5xl mb-16 bg-(--surface) border border-(--border) p-3 rounded-2xl shadow-xl backdrop-blur-md">
+        <div className="w-full max-w-5xl mb-16 bg-(--surface) border border-(--border) p-3 rounded-2xl shadow-xl backdrop-blur-md mx-auto">
           <div className="w-full rounded-xl overflow-hidden border border-(--border)">
             <MapComponent photos={photos} />
           </div>
         </div>
 
         {/* Centered Photo Grid Section */}
-        <div className="w-full border-t border-(--border) pt-12 flex flex-col items-center">
-          <div className="inline-flex items-center justify-center gap-2 mb-8 px-4 py-2 rounded-xl bg-(--surface-2) border border-(--border)">
+        <div className="w-full max-w-5xl border-t border-(--border) pt-12 flex flex-col items-center mx-auto">
+          <div className="inline-flex items-center justify-center gap-2 mb-8 px-4 py-2 rounded-xl bg-(--surface-2) border border-(--border) mx-auto">
             <span className="w-1.5 h-1.5 rounded-full bg-(--accent)" />
             <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-(--text-dim)">
               Geotagged Gallery Archive ({photos.length})
@@ -54,12 +53,14 @@ export default async function ExplorePage() {
           </div>
 
           {photos.length === 0 ? (
-            <div className="w-full max-w-md rounded-2xl border border-dashed border-(--border) bg-(--surface-2) px-6 py-16 text-center text-(--text-muted) font-mono text-xs uppercase tracking-wider">
+            <div className="w-full max-w-md rounded-2xl border border-dashed border-(--border) bg-(--surface-2) px-6 py-16 text-center text-(--text-muted) font-mono text-xs uppercase tracking-wider mx-auto">
               No geotagged frames have been approved yet.
             </div>
           ) : (
-            <div className="w-full">
-              <PhotoGrid initialPhotos={photos} />
+            <div className="w-full flex justify-center">
+              <div className="w-full">
+                <PhotoGrid initialPhotos={photos} />
+              </div>
             </div>
           )}
         </div>
