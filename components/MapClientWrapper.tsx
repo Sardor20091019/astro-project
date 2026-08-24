@@ -1,25 +1,17 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import React from "react";
 
-const MapWrapper = dynamic(() => import("@/components/MapWrapper"), {
+const MapComponent = dynamic(() => import("@/components/MapComponent"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-[450px] bg-(--surface-2) rounded-xl flex items-center justify-center font-mono text-xs uppercase tracking-wider text-(--text-muted)">
-      Loading Cartography...
+    <div className="w-full h-[55vh] rounded-[2.5rem] bg-zinc-900 border border-white/10 flex items-center justify-center text-zinc-500">
+      <span className="text-xs uppercase tracking-widest font-black">Initializing Cartography...</span>
     </div>
   ),
 });
 
-interface Photo {
-  id: string;
-  title: string;
-  photoUrl: string;
-  coordinates: string | null;
-  location?: string | null;
-  authorName?: string;
-}
-
-export default function MapClientWrapper({ photos }: { photos: Photo[] }) {
-  return <MapWrapper photos={photos} />;
+export default function MapClientWrapper({ photos }: { photos: Array<Record<string, any>> }) {
+  return <MapComponent photos={photos} />;
 }

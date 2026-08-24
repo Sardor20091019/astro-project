@@ -1,31 +1,10 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  previewFeatures = ["driverAdapters", "partialIndexes"]
 }
 
 datasource db {
   provider = "postgresql"
-}
-
-enum PhotoStatus {
-  PENDING
-  APPROVED
-}
-
-enum PhotoCategory {
-  ASTROPHOTOGRAPHY
-  NATURE
-  SKY
-  MOON
-  WARM
-  STREET
-  ABSTRACT
-  OTHER
-}
-
-enum Role {
-  USER
-  ADMIN
 }
 
 model Account {
@@ -34,15 +13,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -63,20 +41,18 @@ model User {
   image            String?
   customImage      String?
   role             Role      @default(USER)
-
-  accounts         Account[]
-  sessions         Session[]
-  ratings          Rating[]
-  likes            Like[]
-  comments         Comment[]
-  photos           Photo[]
   telegramId       String?   @unique
   telegramUsername String?
+  accounts         Account[]
+  comments         Comment[]
   following        Follows[] @relation("follower")
   followers        Follows[] @relation("following")
-  
-  sentMessages     Message[] @relation("SentMessages")
+  likes            Like[]
   receivedMessages Message[] @relation("ReceivedMessages")
+  sentMessages     Message[] @relation("SentMessages")
+  photos           Photo[]
+  ratings          Rating[]
+  sessions         Session[]
 }
 
 model VerificationToken {
@@ -101,39 +77,35 @@ model Photo {
   authorName  String?
   category    PhotoCategory @default(OTHER)
   status      PhotoStatus   @default(APPROVED)
-  views       Int           @default(0)
   userId      String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @default(now()) @updatedAt
-  
-  ratings     Rating[]
-  likes       Like[]
+  views       Int           @default(0)
   comments    Comment[]
+  likes       Like[]
   user        User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ratings     Rating[]
 }
 
 model Follows {
   followerId  String
   followingId String
   createdAt   DateTime @default(now())
-
-  follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
-  following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@id([followerId, followingId])
 }
 
 model Message {
   id         String   @id @default(cuid())
-  text       String   @db.Text
+  text       String
   createdAt  DateTime @default(now())
   isRead     Boolean  @default(false)
-  
   senderId   String
-  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  
   receiverId String
   receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([senderId])
   @@index([receiverId])
@@ -147,11 +119,10 @@ model Rating {
   value          Int
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
   photo          Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
   user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([photoId, userId], name: "photoId_userId_unique")
+  @@unique([photoId, userId], name: "photoId_userId_unique", where: raw("(\"userId\" IS NOT NULL)"))
   @@unique([photoId, anonymousToken], name: "photoId_anonymousToken_unique")
   @@index([photoId])
 }
@@ -162,11 +133,10 @@ model Like {
   userId         String?
   anonymousToken String?
   createdAt      DateTime @default(now())
-
   photo          Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
   user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([photoId, userId], name: "photoId_userId_unique")
+  @@unique([photoId, userId], name: "photoId_userId_unique", where: raw("(\"userId\" IS NOT NULL)"))
   @@unique([photoId, anonymousToken], name: "photoId_anonymousToken_unique")
   @@index([photoId])
 }
@@ -175,7 +145,7 @@ model Comment {
   id        Int      @id @default(autoincrement())
   photoId   Int
   userId    String
-  body      String   @db.Text
+  body      String
   createdAt DateTime @default(now())
   photo     Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -195,4 +165,25 @@ model OtpToken {
 
   @@unique([email, token])
   @@map("otptoken")
+}
+
+enum PhotoStatus {
+  PENDING
+  APPROVED
+}
+
+enum PhotoCategory {
+  ASTROPHOTOGRAPHY
+  NATURE
+  SKY
+  MOON
+  WARM
+  STREET
+  ABSTRACT
+  OTHER
+}
+
+enum Role {
+  USER
+  ADMIN
 }
