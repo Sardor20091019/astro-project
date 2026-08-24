@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession, signIn } from "next-auth/react";
-import { CheckCircle2, MapPin, User, Camera, Tag, X, ImagePlus, ShieldCheck, Eye, EyeOff, Loader2 } from "lucide-react";
+import { CheckCircle2, MapPin, User, Camera, Tag, X, ImagePlus, ShieldCheck, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { CATEGORIES } from "@/data/photos";
 import { useUploadThing } from "@/utils/uploadthing";
 import { AnimatePresence, motion } from "framer-motion";
@@ -32,6 +32,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
   const [coordinates, setCoordinates] = useState("");
   const [rawExifCoords, setRawExifCoords] = useState("");
   const [shareLocation, setShareLocation] = useState(true);
+  const [exifStatus, setExifStatus] = useState<"idle" | "has-gps" | "no-gps">("idle");
 
   const { startUpload, isUploading } = useUploadThing("imageUploader", {
     onClientUploadComplete: (res) => {
@@ -62,6 +63,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
     setCoordinates("");
     setRawExifCoords("");
     setShareLocation(true);
+    setExifStatus("idle");
     onClose();
   };
 
@@ -82,6 +84,9 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
     if (!file) return;
 
     setLoading(true);
+    setExifStatus("idle");
+    setCoordinates("");
+    setRawExifCoords("");
 
     try {
       // 1. Extract standard technical EXIF metadata locally
@@ -108,17 +113,19 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
         }
       }
 
-      // 2. Extract GPS coordinates explicitly using exifr.gps()
+      // 2. Strictly extract GPS coordinates using exifr.gps()
       const gps = await exifr.gps(file);
-      if (gps && gps.latitude && gps.longitude) {
+      if (gps && typeof gps.latitude === "number" && typeof gps.longitude === "number") {
         const coordsStr = `${gps.latitude}, ${gps.longitude}`;
         setRawExifCoords(coordsStr);
-        if (shareLocation) {
-          setCoordinates(coordsStr);
-        }
+        setCoordinates(coordsStr);
+        setExifStatus("has-gps");
+      } else {
+        setExifStatus("no-gps");
       }
     } catch (err) {
       console.log("Could not parse EXIF metadata locally:", err);
+      setExifStatus("no-gps");
     }
 
     // 3. Automatically trigger UploadThing upload
@@ -206,7 +213,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                       setSubmitted(false); 
                       setUploadedUrl(null); 
                       setCamera(""); setIso(""); setAperture(""); setShutter("");
-                      setCoordinates(""); setRawExifCoords(""); setShareLocation(true); 
+                      setCoordinates(""); setRawExifCoords(""); setShareLocation(true); setExifStatus("idle"); 
                     }}
                     className="flex-1 px-4 py-3 rounded-xl border border-(--border) font-mono text-[11px] font-bold uppercase tracking-[0.15em] text-(--text-dim) hover:text-(--text) hover:border-(--border-hover) transition-all cursor-pointer bg-(--surface-2)"
                   >
@@ -251,7 +258,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                           onClick={() => { 
                             setUploadedUrl(null); 
                             setCamera(""); setIso(""); setAperture(""); setShutter("");
-                            setCoordinates(""); setRawExifCoords(""); setShareLocation(true); 
+                            setCoordinates(""); setRawExifCoords(""); setShareLocation(true); setExifStatus("idle"); 
                           }}
                           className="bg-(--surface) backdrop-blur-md border border-(--border) text-(--text) font-mono text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider font-bold hover:bg-rose-500 hover:text-white transition-all cursor-pointer shadow-lg"
                         >
@@ -267,10 +274,10 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
 
                       <div className="flex flex-col gap-1">
                         <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-(--text) font-bold">
-                          {isUploading || loading ? "Extracting EXIF & Uploading..." : "Drop image or click to browse"}
+                          {isUploading || loading ? "Extracting EXIF & Uploading..." : "Drop original photo or click to browse"}
                         </span>
                         <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-(--text-muted)">
-                          Auto-extracts Camera, ISO, Aperture, Shutter & GPS
+                          Requires original file with embedded EXIF GPS data
                         </span>
                       </div>
                       
@@ -332,31 +339,30 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                   <input name="title" placeholder="Frame Title" required className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
                 </div>
 
-                {/* Location & Coordinates Grid */}
+                {/* Location Name & Locked EXIF Coordinates */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-center bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl focus-within:border-(--accent) transition-all">
                     <MapPin size={16} className="text-(--text-muted) shrink-0 mr-3 pointer-events-none" />
-                    <input name="location" placeholder="Location Name (Optional)" className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
+                    <input name="location" placeholder="Location Name (e.g. Tashkent)" className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" />
                   </div>
-                  <div className="flex items-center bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl focus-within:border-(--accent) transition-all">
+                  
+                  {/* Strictly Locked EXIF Coordinates Input */}
+                  <div className="flex items-center bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl opacity-90">
                     <input 
                       name="coordinates" 
                       value={coordinates}
-                      onChange={(e) => {
-                        setCoordinates(e.target.value);
-                        if (!rawExifCoords) setRawExifCoords(e.target.value);
-                      }}
-                      placeholder="Coordinates (Auto or Manual)" 
-                      className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text) outline-none placeholder:text-(--text-muted)" 
+                      readOnly
+                      placeholder="GPS (Strictly EXIF Only)" 
+                      className="w-full bg-transparent font-mono text-[11px] uppercase tracking-[0.1em] text-(--text-dim) outline-none placeholder:text-(--text-muted) cursor-not-allowed" 
                     />
                   </div>
                 </div>
 
-                {/* EXIF Privacy Toggle Button */}
-                {rawExifCoords && (
+                {/* EXIF GPS Status & Privacy Toggle */}
+                {uploadedUrl && exifStatus === "has-gps" && (
                   <div className="flex items-center justify-between px-4 py-2.5 bg-(--surface-2) border border-(--border) rounded-xl animate-in fade-in">
                     <span className="font-mono text-[10px] text-(--text-dim) uppercase tracking-wider flex items-center gap-1.5">
-                      <MapPin size={13} className="text-(--accent)" /> EXIF GPS Discovered
+                      <MapPin size={13} className="text-(--accent)" /> EXIF GPS Discovered & Locked
                     </span>
                     <button
                       type="button"
@@ -374,6 +380,13 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                       {shareLocation ? <Eye size={13} /> : <EyeOff size={13} />}
                       {shareLocation ? "Sharing on Map" : "Hidden from Map"}
                     </button>
+                  </div>
+                )}
+
+                {uploadedUrl && exifStatus === "no-gps" && (
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 font-mono text-[10px] uppercase tracking-wider">
+                    <AlertCircle size={14} className="shrink-0" />
+                    <span>No GPS tags found in this image file. It will upload successfully, but will not appear on the map.</span>
                   </div>
                 )}
 

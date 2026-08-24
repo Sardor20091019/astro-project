@@ -11,19 +11,6 @@ import { Camera, MapPin } from "lucide-react";
 // @ts-ignore
 import "leaflet/dist/leaflet.css";
 
-const LOCATION_FALLBACKS: Record<string, [number, number]> = {
-  uzbekistan: [41.2995, 69.2401],
-  tashkent: [41.2995, 69.2401],
-  japan: [36.2048, 138.2529],
-  tokyo: [35.6762, 139.6503],
-  nigeria: [9.0820, 8.6753],
-  angola: [-11.2027, 17.8739],
-  usa: [37.0902, -95.7129],
-  uk: [55.3781, -3.4360],
-  germany: [51.1657, 10.4515],
-  france: [46.6034, 1.8883],
-};
-
 function MapResizer({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => {
@@ -52,56 +39,31 @@ export default function MapComponent({ photos }: { photos: Array<Record<string, 
     );
   }
 
+  // Only keep photos that have valid, true EXIF GPS coordinates
   const mappedPhotos = (photos || [])
-    .map((photo, index) => {
-      let coords: [number, number] | null = null;
-      let isApproximate = false;
-
-      // 1. Try exact coordinates first if available
-      if (photo.coordinates && typeof photo.coordinates === "string") {
-        const parts = photo.coordinates.split(",").map((p: string) => parseFloat(p.trim()));
-        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-          coords = [parts[0], parts[1]];
-        }
+    .map((photo) => {
+      if (!photo.coordinates || typeof photo.coordinates !== "string") return null;
+      const parts = photo.coordinates.split(",").map((p: string) => parseFloat(p.trim()));
+      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        return {
+          ...photo,
+          position: [parts[0], parts[1]] as [number, number],
+        };
       }
-
-      // 2. Fallback: If no coordinates, check location string and scatter randomly inside that region
-      if (!coords && photo.location && typeof photo.location === "string") {
-        const normalized = photo.location.toLowerCase().trim();
-        for (const [key, baseCoords] of Object.entries(LOCATION_FALLBACKS)) {
-          if (normalized.includes(key)) {
-            // Use photo ID or index as a seed so the random spot stays consistent on re-renders
-            const seed = Number(photo.id) || index + 1;
-            const latOffset = Math.sin(seed * 99.1) * 1.8;
-            const lngOffset = Math.cos(seed * 43.3) * 1.8;
-
-            coords = [baseCoords[0] + latOffset, baseCoords[1] + lngOffset];
-            isApproximate = true;
-            break;
-          }
-        }
-      }
-
-      if (!coords || !photo.url) return null;
-
-      return {
-        ...photo,
-        position: coords,
-        isApproximate,
-      };
+      return null;
     })
-    .filter(Boolean) as Array<Record<string, any> & { position: [number, number]; isApproximate: boolean }>;
+    .filter(Boolean) as Array<Record<string, any> & { position: [number, number] }>;
 
   const defaultCenter: [number, number] =
     mappedPhotos.length > 0
       ? mappedPhotos[0].position
-      : [41.2995, 69.2401];
+      : [41.2995, 69.2401]; // Default fallback if no photos have GPS yet
 
-  const createCustomMarker = (url: string, isApproximate: boolean) => {
+  const createCustomMarker = (url: string) => {
     return L.divIcon({
       className: "custom-leaflet-marker",
       html: `
-        <div class="relative w-12 h-12 rounded-full ${isApproximate ? 'border-2 border-dashed border-amber-400' : 'border-2 border-red-500'} overflow-hidden shadow-[0_0_15px_rgba(239,68,68,0.5)] transition-transform duration-300 hover:scale-110 bg-zinc-900">
+        <div class="relative w-12 h-12 rounded-full border-2 border-red-500 overflow-hidden shadow-[0_0_15px_rgba(239,68,68,0.5)] transition-transform duration-300 hover:scale-110 bg-zinc-900">
           <img src="${url}" class="w-full h-full object-cover" />
           <div class="absolute inset-0 border border-black/10 rounded-full"></div>
         </div>
@@ -116,7 +78,7 @@ export default function MapComponent({ photos }: { photos: Array<Record<string, 
     <div className="relative w-full h-[55vh] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl bg-black">
       <MapContainer
         center={defaultCenter}
-        zoom={5}
+        zoom={mappedPhotos.length > 0 ? 10 : 3}
         scrollWheelZoom={false}
         className="w-full h-full"
       >
@@ -132,7 +94,7 @@ export default function MapComponent({ photos }: { photos: Array<Record<string, 
           <Marker
             key={photo.id}
             position={photo.position}
-            icon={createCustomMarker(photo.url, photo.isApproximate)}
+            icon={createCustomMarker(photo.url)}
           >
             <Popup className="custom-popup">
               <div className="w-64 bg-zinc-950/95 text-white p-3 rounded-2xl border border-white/10 shadow-2xl backdrop-blur-xl">
@@ -153,14 +115,10 @@ export default function MapComponent({ photos }: { photos: Array<Record<string, 
                   {photo.title}
                 </h3>
                 
-                <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 mb-2">
-                  <MapPin size={11} className={photo.isApproximate ? "text-amber-400" : "text-red-500"} />
-                  <span className="truncate">{photo.location || "Unknown"}</span>
-                </div>
-
-                {photo.isApproximate && (
-                  <div className="text-[9px] text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1 mb-3">
-                    ⚠️ Approximate region placement (country-level)
+                {photo.location && (
+                  <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 mb-2">
+                    <MapPin size={11} className="text-red-500" />
+                    <span className="truncate">{photo.location}</span>
                   </div>
                 )}
 
@@ -186,8 +144,8 @@ export default function MapComponent({ photos }: { photos: Array<Record<string, 
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center bg-black/60 backdrop-blur-sm z-[1000]">
             <div className="p-6 text-center max-w-xs bg-zinc-900/90 rounded-2xl border border-white/10">
               <span className="text-xl block mb-2">🗺️</span>
-              <p className="font-bold text-sm mb-1 tracking-widest text-white">No Submissions Found</p>
-              <p className="text-[10px] text-zinc-400">Publish images with locations to populate this map.</p>
+              <p className="font-bold text-sm mb-1 tracking-widest text-white">No GPS Submissions</p>
+              <p className="text-[10px] text-zinc-400">Upload raw photos containing embedded GPS EXIF data to populate this map.</p>
             </div>
           </div>
         )}
