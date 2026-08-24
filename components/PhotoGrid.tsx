@@ -92,7 +92,7 @@ export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType
 
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-(--border) px-6 py-24 text-center text-(--text-muted) text-xs uppercase tracking-widest">
-          No frames found in this category yet.
+          No images found in this category yet.
         </div>
       ) : (
         <>
@@ -157,7 +157,7 @@ export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType
           {hasMore && (
             <div className="mt-12 flex flex-col items-center gap-3">
               <p className="text-[10px] text-(--text-muted) uppercase tracking-widest font-bold">
-                {filtered.length - visibleCount} more frames remaining
+                {filtered.length - visibleCount} more images remaining
               </p>
               <button
                 onClick={() => setVisibleCount(v => v + PAGE_SIZE)}

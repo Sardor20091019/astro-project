@@ -62,7 +62,7 @@ export default function ProfilePhotoStream({ photos, canDelete }: ProfilePhotoSt
     return (
       <div className="w-full py-20 bg-[var(--surface)] border border-[var(--border)] rounded-3xl text-center flex flex-col items-center gap-3">
         <p className="font-mono text-xs uppercase tracking-widest text-[var(--text-muted)]">
-          No frames published yet.
+          No images published yet.
         </p>
       </div>
     );

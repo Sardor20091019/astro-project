@@ -37,7 +37,7 @@ export default function ProfilePhotoGrid({ photos: initial, canDelete }: { photo
   if (photos.length === 0) {
     return (
       <div className="rounded-4xl border border-dashed border-white/8 py-20 text-center text-zinc-600 text-sm">
-        No frames published yet.
+        No images published yet.
       </div>
     );
   }

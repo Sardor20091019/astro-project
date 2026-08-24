@@ -26,7 +26,7 @@ export default async function ExplorePage() {
             </h1>
           </div>
           <p className="max-w-md text-xs leading-relaxed text-white/45">
-            Explore ASTROSPECTRUM photographic frames mapped in real-time. Hover over pins to see meta specifications and tap to load cinematic viewports.
+            Explore ASTROSPECTRUM photographic images mapped in real-time. Hover over pins to see meta specifications and tap to load cinematic viewports.
           </p>
         </header>
 

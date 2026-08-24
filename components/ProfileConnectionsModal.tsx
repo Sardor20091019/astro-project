@@ -69,10 +69,10 @@ export default function ProfileConnectionsModal({
       {/* Sleek Stats Pill - High Contrast in Light & Dark Mode */}
       <div className="flex items-center justify-center bg-[var(--surface-2)] border border-[var(--border)] p-2 rounded-2xl w-full shadow-inner divide-x divide-[var(--border)]">
         
-        {/* Frames Stat */}
+        {/* Images Stat */}
         <div className="flex flex-col items-center flex-1 py-1">
           <p className="text-lg sm:text-xl font-black text-[var(--text)]">{photosCount}</p>
-          <p className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-widest font-bold mt-0.5">Frames</p>
+          <p className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-widest font-bold mt-0.5">Images</p>
         </div>
 
         {/* Followers Button */}

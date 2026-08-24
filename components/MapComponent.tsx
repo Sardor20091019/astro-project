@@ -158,7 +158,7 @@ export default function MapComponent({ photos }: { photos: MapPhoto[] }) {
             <div className="world-card p-6 text-center max-w-xs">
               <span className="text-xl block mb-2">🗺️</span>
               <p className="world-text-bold mb-1 tracking-widest">No Geo-tagged Submissions</p>
-              <p className="text-[10px] world-text-muted">Publish frames with coordinates to populate this map.</p>
+              <p className="text-[10px] world-text-muted">Publish images with coordinates to populate this map.</p>
             </div>
           </div>
         )}

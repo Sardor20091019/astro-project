@@ -107,7 +107,7 @@ export default function PhotosClientView({
             Gallery Archive
           </h1>
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-(--text-muted)">
-            Curated visual frames and optical captures
+          Selected photos
           </p>
         </div>
 
@@ -192,7 +192,7 @@ export default function PhotosClientView({
         {paginatedPhotos.length === 0 ? (
           <div className="w-full max-w-lg border border-dashed border-(--border) rounded-2xl py-20 px-6 text-center flex flex-col items-center justify-center gap-4 bg-(--surface) backdrop-blur-md mt-2">
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-(--text-muted)">
-              No frames found matching your criteria.
+              No images found matching your criteria.
             </p>
             <button
               onClick={() => { setActiveCategory("ALL"); setActiveSort("latest"); }}
