@@ -5,47 +5,62 @@ import MapComponent from "@/components/MapWrapper";
 export const dynamic = "force-dynamic";
 
 export default async function ExplorePage() {
-
+  // Fetch only approved photos that contain valid location coordinates
   const photos = await prisma.photo.findMany({
-    where: { status: "APPROVED" },
+    where: { 
+      status: "APPROVED",
+      AND: [
+        { coordinates: { not: null } },
+        { coordinates: { not: "" } }
+      ]
+    },
     orderBy: { createdAt: "desc" },
   });
 
   return (
-    <div className="bg-black text-white min-h-screen">
-      <div className="max-w-7xl mx-auto px-6 py-24">
+    <div className="bg-(--bg) text-(--text) min-h-screen transition-colors duration-300">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 flex flex-col items-center text-center">
         
-        {/* Header */}
-        <header className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.34em] text-red-500">
+        {/* Centered Header Section */}
+        <header className="mb-12 max-w-2xl flex flex-col items-center">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-(--surface-2) border border-(--border) mb-4 shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-(--accent) animate-pulse" />
+            <p className="text-[10px] font-mono font-bold uppercase tracking-[0.25em] text-(--accent)">
               Interactive Cartography
             </p>
-            <h1 className="text-4xl font-black uppercase tracking-tight md:text-6xl">
-              Geomapping
-            </h1>
           </div>
-          <p className="max-w-md text-xs leading-relaxed text-white/45">
-            Explore ASTROSPECTRUM photographic images mapped in real-time. Hover over pins to see meta specifications and tap to load cinematic viewports.
+          <h1 className="text-4xl font-black uppercase tracking-tight md:text-6xl mb-4 text-(--text)">
+            Geomapping
+          </h1>
+          <p className="text-xs sm:text-sm leading-relaxed text-(--text-dim) font-mono uppercase tracking-wider max-w-lg">
+            Explore ASTROSPECTRUM photographic frames mapped in real-time. Hover over pins to inspect metadata specifications or tap to enter cinematic viewports.
           </p>
         </header>
 
-        {/* Leaflet Dark Mode Map Component */}
-        <div className="mb-14">
-          <MapComponent photos={photos} />
+        {/* Centered Map Component Container */}
+        <div className="w-full max-w-5xl mb-16 bg-(--surface) border border-(--border) p-3 rounded-2xl shadow-xl backdrop-blur-md">
+          <div className="w-full rounded-xl overflow-hidden border border-(--border)">
+            <MapComponent photos={photos} />
+          </div>
         </div>
 
-        {/* Photo Grid Section */}
-        <div className="border-t border-white/10 pt-10">
-          <h2 className="text-sm font-bold uppercase tracking-[0.2em] mb-8 text-white/70">
-            Tagged gallery items ({photos.length})
-          </h2>
+        {/* Centered Photo Grid Section */}
+        <div className="w-full border-t border-(--border) pt-12 flex flex-col items-center">
+          <div className="inline-flex items-center justify-center gap-2 mb-8 px-4 py-2 rounded-xl bg-(--surface-2) border border-(--border)">
+            <span className="w-1.5 h-1.5 rounded-full bg-(--accent)" />
+            <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-(--text-dim)">
+              Geotagged Gallery Archive ({photos.length})
+            </h2>
+          </div>
+
           {photos.length === 0 ? (
-            <div className="rounded-4xl border border-dashed border-white/15 px-6 py-20 text-center text-white/45">
-              No photos have been uploaded and approved yet.
+            <div className="w-full max-w-md rounded-2xl border border-dashed border-(--border) bg-(--surface-2) px-6 py-16 text-center text-(--text-muted) font-mono text-xs uppercase tracking-wider">
+              No geotagged frames have been approved yet.
             </div>
           ) : (
-            <PhotoGrid initialPhotos={photos} />
+            <div className="w-full">
+              <PhotoGrid initialPhotos={photos} />
+            </div>
           )}
         </div>
 
