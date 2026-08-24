@@ -5,7 +5,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 interface Photo {
-  id: string;
+  id: string | number;
   title: string;
   photoUrl?: string;
   imageUrl?: string;
@@ -14,6 +14,7 @@ interface Photo {
   coordinates: string | null;
   location?: string | null;
   authorName?: string;
+  [key: string]: any; // Safely accepts extra DB fields (views, status, createdAt, etc.)
 }
 
 interface MapWrapperProps {
@@ -35,7 +36,7 @@ const LOCATION_FALLBACKS: Record<string, [number, number]> = {
 
 function getPhotoUrl(photo: Photo): string | null {
   const url = photo.photoUrl || photo.imageUrl || photo.url || photo.image;
-  return url && url.trim() !== "" ? url : null;
+  return url && typeof url === "string" && url.trim() !== "" ? url : null;
 }
 
 export default function MapWrapper({ photos }: MapWrapperProps) {
