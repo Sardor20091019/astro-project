@@ -4,10 +4,9 @@
 
 import { useState, useEffect } from "react";
 import { useSession, signIn } from "next-auth/react";
-import { CheckCircle2, MapPin, User, Camera, Tag, X, ImagePlus, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import { CheckCircle2, MapPin, User, Camera, Tag, X, ImagePlus, ShieldCheck, Eye, EyeOff, Loader2 } from "lucide-react";
 import { CATEGORIES } from "@/data/photos";
-import { UploadButton } from "@uploadthing/react";
-import { OurFileRouter } from "@/app/api/uploadthing/core";
+import { useUploadThing } from "@/utils/uploadthing"; // Ensure this matches your project's helper path
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import exifr from "exifr";
@@ -20,18 +19,46 @@ interface SubmitPhotoModalProps {
 export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalProps) {
   const { data: session } = useSession();
   const router = useRouter();
+  
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
-  
-  // Location & EXIF states
+
+  // Auto-extracted EXIF Form States
+  const [camera, setCamera] = useState("");
+  const [iso, setIso] = useState("");
+  const [aperture, setAperture] = useState("");
+  const [shutter, setShutter] = useState("");
   const [coordinates, setCoordinates] = useState("");
   const [rawExifCoords, setRawExifCoords] = useState("");
   const [shareLocation, setShareLocation] = useState(true);
 
+  const { startUpload, isUploading } = useUploadThing("imageUploader", {
+    onClientUploadComplete: (res) => {
+      if (res && res[0]) {
+        const serverData = res[0].serverData as { isSafe: boolean; error: string | null } | undefined;
+        if (serverData && serverData.isSafe === false) {
+          alert("Upload rejected: Content does not meet safety guidelines.");
+          setUploadedUrl(null);
+        } else {
+          setUploadedUrl(res[0].ufsUrl || res[0].url);
+        }
+      }
+      setLoading(false);
+    },
+    onUploadError: (error: Error) => {
+      alert(`Upload Failed: ${error.message}`);
+      setLoading(false);
+    },
+  });
+
   const handleClose = () => {
     setSubmitted(false);
     setUploadedUrl(null);
+    setCamera("");
+    setIso("");
+    setAperture("");
+    setShutter("");
     setCoordinates("");
     setRawExifCoords("");
     setShareLocation(true);
@@ -48,6 +75,63 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
+
+  // Handle local file selection, EXIF extraction, and instant upload
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+
+    try {
+      // 1. Extract ALL EXIF metadata locally before uploading
+      const exif = await exifr.parse(file, {
+        gps: true,
+        ifd0: true,
+        exif: true,
+      });
+
+      if (exif) {
+        // Camera Make & Model + Focal Length
+        const make = exif.Make || "";
+        const model = exif.Model || "";
+        const focal = exif.FocalLength ? ` • ${exif.FocalLength}mm` : "";
+        const cameraString = `${make} ${model}${focal}`.trim();
+        if (cameraString) setCamera(cameraString);
+
+        // ISO
+        if (exif.ISO) setIso(String(exif.ISO));
+
+        // Aperture (f-stop)
+        if (exif.FNumber) setAperture(`f/${exif.FNumber}`);
+
+        // Shutter Speed (Format nicely into fractions if less than 1s)
+        if (exif.ExposureTime) {
+          const exp = exif.ExposureTime;
+          if (exp < 1) {
+            const denom = Math.round(1 / exp);
+            setShutter(`1/${denom}s`);
+          } else {
+            setShutter(`${exp}s`);
+          }
+        }
+
+        // GPS Coordinates
+        if (exif.latitude && exif.longitude) {
+          const coordsStr = `${exif.latitude}, ${exif.longitude}`;
+          setRawExifCoords(coordsStr);
+          if (shareLocation) {
+            setCoordinates(coordsStr);
+          }
+        }
+      }
+    } catch (err) {
+      console.log("Could not parse EXIF metadata locally:", err);
+    }
+
+    // 2. Automatically trigger UploadThing upload
+    await startUpload([file]);
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -129,9 +213,8 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                     onClick={() => { 
                       setSubmitted(false); 
                       setUploadedUrl(null); 
-                      setCoordinates(""); 
-                      setRawExifCoords(""); 
-                      setShareLocation(true); 
+                      setCamera(""); setIso(""); setAperture(""); setShutter("");
+                      setCoordinates(""); setRawExifCoords(""); setShareLocation(true); 
                     }}
                     className="flex-1 px-4 py-3 rounded-xl border border-(--border) font-mono text-[11px] font-bold uppercase tracking-[0.15em] text-(--text-dim) hover:text-(--text) hover:border-(--border-hover) transition-all cursor-pointer bg-(--surface-2)"
                   >
@@ -175,9 +258,8 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                           type="button" 
                           onClick={() => { 
                             setUploadedUrl(null); 
-                            setCoordinates(""); 
-                            setRawExifCoords(""); 
-                            setShareLocation(true); 
+                            setCamera(""); setIso(""); setAperture(""); setShutter("");
+                            setCoordinates(""); setRawExifCoords(""); setShareLocation(true); 
                           }}
                           className="bg-(--surface) backdrop-blur-md border border-(--border) text-(--text) font-mono text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider font-bold hover:bg-rose-500 hover:text-white transition-all cursor-pointer shadow-lg"
                         >
@@ -186,72 +268,63 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center gap-3 text-center w-full py-2">
+                    <label className="flex flex-col items-center gap-3 text-center w-full py-2 cursor-pointer">
                       <div className="w-12 h-12 rounded-xl bg-(--surface-3) border border-(--border) flex items-center justify-center text-(--accent) group-hover:scale-105 transition-transform shadow-xs">
-                        <ImagePlus size={22} />
+                        {isUploading || loading ? <Loader2 size={22} className="animate-spin text-(--accent)" /> : <ImagePlus size={22} />}
                       </div>
 
                       <div className="flex flex-col gap-1">
                         <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-(--text) font-bold">
-                          Drop image or upload file
+                          {isUploading || loading ? "Extracting EXIF & Uploading..." : "Drop image or click to browse"}
                         </span>
                         <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-(--text-muted)">
-                          Supports high-res RAW, JPG, PNG
+                          Auto-extracts Camera, ISO, Aperture, Shutter & GPS
                         </span>
                       </div>
                       
-                      <div className="mt-1 w-full max-w-xs bg-(--surface) border border-(--border) p-3 rounded-xl flex items-center justify-center shadow-xs">
-                        <UploadButton<OurFileRouter, "imageUploader">
-                          endpoint="imageUploader"
-                          onUploadBegin={() => setLoading(true)}
-                          onClientUploadComplete={async (res) => {
-                            if (res && res[0]) {
-                              const serverData = res[0].serverData as { isSafe: boolean; error: string | null } | undefined;
-                              if (serverData && serverData.isSafe === false) {
-                                alert("Upload rejected: Content does not meet safety guidelines.");
-                                setUploadedUrl(null);
-                              } else {
-                                const url = res[0].ufsUrl || res[0].url;
-                                setUploadedUrl(url);
-
-                                // Extract GPS coordinates from EXIF metadata automatically
-                                try {
-                                  const gps = await exifr.gps(url);
-                                  if (gps && gps.latitude && gps.longitude) {
-                                    const coordsStr = `${gps.latitude}, ${gps.longitude}`;
-                                    setRawExifCoords(coordsStr);
-                                    if (shareLocation) {
-                                      setCoordinates(coordsStr);
-                                    }
-                                  }
-                                } catch (err) {
-                                  console.log("No EXIF GPS data found or inaccessible.");
-                                }
-                              }
-                            }
-                            setLoading(false);
-                          }}
-                          onUploadError={(error: Error) => {
-                            alert(`Upload Failed: ${error.message}`);
-                            setLoading(false);
-                          }}
-                          appearance={{
-                            button: "bg-(--text) text-(--bg) font-mono text-[11px] uppercase tracking-[0.15em] font-bold px-4 py-2.5 rounded-lg hover:bg-(--accent) hover:text-(--bg) transition-all cursor-pointer shadow-sm",
-                            allowedContent: "hidden"
-                          }}
-                        />
-                      </div>
-                    </div>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleFileSelect} 
+                        disabled={isUploading || loading}
+                        className="hidden" 
+                      />
+                    </label>
                   )}
                 </div>
 
-                {/* Technical Metadata Inputs */}
+                {/* Technical Metadata Inputs (Auto-filled from EXIF) */}
                 {uploadedUrl && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-in fade-in duration-500">
-                    <input name="camera" placeholder="Camera (Sony)" className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" />
-                    <input name="iso" placeholder="ISO (800)" type="number" className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" />
-                    <input name="aperture" placeholder="Aperture (f/2.8)" className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" />
-                    <input name="shutter" placeholder="Shutter (1/500s)" className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" />
+                    <input 
+                      name="camera" 
+                      value={camera} 
+                      onChange={(e) => setCamera(e.target.value)} 
+                      placeholder="Camera" 
+                      className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" 
+                    />
+                    <input 
+                      name="iso" 
+                      value={iso} 
+                      onChange={(e) => setIso(e.target.value)} 
+                      placeholder="ISO" 
+                      type="text" 
+                      className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" 
+                    />
+                    <input 
+                      name="aperture" 
+                      value={aperture} 
+                      onChange={(e) => setAperture(e.target.value)} 
+                      placeholder="Aperture (f/2.8)" 
+                      className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" 
+                    />
+                    <input 
+                      name="shutter" 
+                      value={shutter} 
+                      onChange={(e) => setShutter(e.target.value)} 
+                      placeholder="Shutter (1/500s)" 
+                      className="bg-(--surface-2) border border-(--border) px-3.5 py-2.5 rounded-xl font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) outline-none focus:border-(--accent) transition-all" 
+                    />
                   </div>
                 )}
 
@@ -287,7 +360,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                   </div>
                 </div>
 
-                {/* EXIF Privacy Toggle Button (Appears only when EXIF GPS is discovered) */}
+                {/* EXIF Privacy Toggle Button */}
                 {rawExifCoords && (
                   <div className="flex items-center justify-between px-4 py-2.5 bg-(--surface-2) border border-(--border) rounded-xl animate-in fade-in">
                     <span className="font-mono text-[10px] text-(--text-dim) uppercase tracking-wider flex items-center gap-1.5">
@@ -326,10 +399,10 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
 
                 <button 
                   type="submit" 
-                  disabled={loading || !uploadedUrl} 
+                  disabled={loading || !uploadedUrl || isUploading} 
                   className="w-full bg-(--text) text-(--bg) py-3 rounded-xl font-mono text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-(--accent) hover:text-(--bg) transition-all shadow-md disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2 mt-1"
                 >
-                  {loading ? "POSTING THE PHOTO..." : "POST THE PHOTO"}
+                  {loading || isUploading ? "PROCESSING EXIF & UPLOADING..." : "POST THE PHOTO"}
                 </button>
               </form>
             )}
