@@ -93,10 +93,10 @@ export default function Navbar() {
           ? "bg-[var(--bg)]/85 backdrop-blur-2xl border-b border-[var(--border)] shadow-md" 
           : "bg-gradient-to-b from-[var(--bg)]/90 via-[var(--bg)]/40 to-transparent backdrop-blur-md"
       }`}>
-        <div className="flex items-center justify-between h-[76px] w-full px-4 sm:px-8">
+        <div className="flex items-center justify-between h-[72px] w-full px-3 sm:px-6">
           
           {/* LEFT SIDE: Logo Only */}
-          <Link href="/" className="flex items-center h-full text-xs sm:text-sm font-black uppercase tracking-[0.25em] hover:opacity-80 transition-opacity shrink-0">
+          <Link href="/" className="flex items-center h-full text-[11px] sm:text-sm font-black uppercase tracking-[0.2em] sm:tracking-[0.25em] hover:opacity-80 transition-opacity shrink-0">
             <span>Astro<span className="text-[var(--accent)]">spectrum</span></span>
           </Link>
 
@@ -117,11 +117,11 @@ export default function Navbar() {
             </div>
 
             {/* Mobile Search Trigger Icon */}
-            <div className="lg:hidden flex items-center shrink-0">
+            <div className="lg:hidden flex items-center shrink-0 scale-90 sm:scale-100">
               <UserSearchTrigger />
             </div>
 
-            <div className="flex items-center shrink-0">
+            <div className="flex items-center shrink-0 scale-90 sm:scale-100">
               <ThemeToggle />
             </div>
 
@@ -143,13 +143,13 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Mobile Menu Toggle */}
+            {/* Mobile Menu Toggle (Scaled & Compact) */}
             <button 
               onClick={() => { setMobileMenuOpen(!mobileMenuOpen); setIsEditingProfile(false); }} 
-              className="lg:hidden flex items-center justify-center p-2.5 text-[var(--text)] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] rounded-xl transition-colors cursor-pointer border border-[var(--border)] shrink-0 shadow-sm"
+              className="lg:hidden flex items-center justify-center p-2 text-[var(--text)] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] rounded-xl transition-colors cursor-pointer border border-[var(--border)] shrink-0 shadow-sm"
               aria-label="Toggle menu"
             >
-              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
           </div>
 
@@ -164,7 +164,7 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             exit={{ opacity: 0, y: -15, filter: "blur(8px)" }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 top-[76px] z-40 flex flex-col bg-[var(--bg)]/98 backdrop-blur-3xl p-6 lg:hidden overflow-y-auto border-b border-[var(--border)] shadow-2xl"
+            className="fixed inset-0 top-[72px] z-40 flex flex-col bg-[var(--bg)]/98 backdrop-blur-3xl p-6 lg:hidden overflow-y-auto border-b border-[var(--border)] shadow-2xl"
           >
             {/* Mobile User Profile Section */}
             <div className="flex flex-col pb-6 border-b border-[var(--border)] gap-4">
@@ -315,7 +315,7 @@ export default function Navbar() {
       </AnimatePresence>
       
       {/* Navbar Spacer */}
-      <div className="h-[76px]" />
+      <div className="h-[72px]" />
     </>
   );
 }
