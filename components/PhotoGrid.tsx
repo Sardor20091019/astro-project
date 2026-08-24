@@ -13,12 +13,12 @@ type PhotoType = {
   imageUrl?: string; 
   image_url?: string; 
   title: string;
-  location: string | null;
+  location?: string | null;
   coordinates?: string | null;
   category?: string | null;
 };
 
-const PAGE_SIZE = 12; // 12 items per page for a balanced 3x4 grid
+const PAGE_SIZE = 12;
 
 export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType[] }) {
   const allPhotos = (initialPhotos || []) as PhotoType[];
@@ -32,8 +32,6 @@ export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType
   }, [allPhotos, activeCategory]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
-
-  // Ensure current page is valid when filter changes
   const safeCurrentPage = Math.min(currentPage, totalPages);
 
   const paginatedPhotos = useMemo(() => {
