@@ -108,6 +108,7 @@ export default function Navbar() {
               <NavLink href="/" active={pathname === "/"}>Gallery</NavLink> 
               <NavLink href="/photos" active={pathname === "/photos"}>Photos</NavLink>
               <NavLink href="/leaderboard" active={pathname === "/leaderboard"}>Leaderboard</NavLink>
+              <NavLink href="/explore" active={pathname === "/explore"}>Explore</NavLink>
               {user && (
                 <NavLink href="/creator/photos" active={pathname === "/creator/photos"}>Author Photos</NavLink>
               )}
