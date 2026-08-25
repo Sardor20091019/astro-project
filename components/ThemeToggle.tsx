@@ -1,46 +1,51 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Sun, Moon } from "lucide-react";
-// Import your theme hook or context here (e.g., next-themes or custom context)
-// import { useTheme } from "next-themes"; 
 
 export default function ThemeToggle() {
+  const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
-  // const { theme, setTheme } = useTheme();
 
-  // Ensure component only renders theme-dependent UI on the client
   useEffect(() => {
     setMounted(true);
+    // Check initial theme from localStorage or system preference
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+      setIsDark(true);
+      document.documentElement.classList.add("dark");
+    } else {
+      setIsDark(false);
+      document.documentElement.classList.remove("dark");
+    }
   }, []);
 
-  if (!mounted) {
-    // Return a matching placeholder skeleton to prevent layout shift during SSR
-    return (
-      <div 
-        className="flex items-center justify-center h-9 w-9 bg-(--surface) border-2 border-(--border)"
-        style={{ borderRadius: "var(--radius, 0.5rem)" }}
-      />
-    );
-  }
+  const toggleTheme = () => {
+    const nextDark = !isDark;
+    setIsDark(nextDark);
+    if (nextDark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  };
 
-  // Determine current theme state (example logic)
-  const isDark = true; // Replace with your actual theme check (e.g., theme === 'dark')
+  // Prevent layout shift during SSR hydration
+  if (!mounted) {
+    return <div className="w-9 h-9 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] animate-pulse" />;
+  }
 
   return (
     <button
-      onClick={() => {
-        // Toggle theme logic here
-      }}
-      style={{ borderRadius: "var(--radius, 0.5rem)" }}
-      className="flex items-center justify-center h-9 w-9 bg-(--surface) border-2 border-(--border) transition-colors hover:bg-(--surface-2)"
-      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      onClick={toggleTheme}
+      className="flex items-center justify-center w-9 h-9 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text)] transition-colors cursor-pointer border border-[var(--border)] shadow-sm"
+      aria-label="Toggle theme"
     >
-      {isDark ? (
-        <Sun className="h-4 w-4 text-(--accent) transition-transform duration-200" />
-      ) : (
-        <Moon className="h-4 w-4 text-(--accent) transition-transform duration-200" />
-      )}
+      {isDark ? <Sun size={17} className="text-[var(--accent)]" /> : <Moon size={17} className="text-[var(--text-dim)]" />}
     </button>
   );
 }
