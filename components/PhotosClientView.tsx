@@ -634,10 +634,10 @@ export default function PhotosClientView({
                 isActive 
                   ? "w-8 h-[2.5px] bg-(--accent) shadow-[0_0_15px_var(--accent)] scale-125" 
                   : isMajor
-                  ? "w-5 h-[1.5px] bg-white/60"
+                  ? "w-5 h-[1.5px] bg-[var(--text)]/60"
                   : isSemiMajor
-                  ? "w-3.5 h-[1.2px] bg-white/35"
-                  : "w-2 h-[1px] bg-white/15"
+                  ? "w-3.5 h-[1.2px] bg-[var(--text)]/35"
+                  : "w-2 h-[1px] bg-[var(--text)]/15"
               }`}
             />
           );
@@ -958,7 +958,7 @@ export default function PhotosClientView({
                     {activeLightboxPhoto.category || "Photo"} // {lightboxIndex + 1} of {filteredPhotos.length}
                   </span>
                   <span className="text-(--text-dim)">•</span>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-(--text-muted) truncate max-w-[200px] sm:max-w-md">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-(--text-muted) truncate max-w-[200px] sm:max-w-md">
                     {activeLightboxPhoto.title}
                   </span>
                 </div>
