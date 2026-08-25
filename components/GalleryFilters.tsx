@@ -92,6 +92,7 @@ export default function GalleryFilters({
         ref={buttonRef}
         onClick={handleToggle}
         aria-expanded={isOpen}
+        aria-label="Sort gallery options"
         className="group relative inline-flex items-center justify-between gap-4 px-5 py-3.5 rounded-2xl bg-[var(--surface)] backdrop-blur-3xl border border-[var(--border)] text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text)] hover:border-[var(--accent)] hover:bg-[var(--surface-2)] transition-all duration-300 shadow-md active:scale-[0.98] cursor-pointer"
       >
         <span className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)]/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
