@@ -22,7 +22,6 @@ export default async function CinematicLandingPage() {
             alt={heroPhoto.title}
             fill
             priority
-            unoptimized={true}
             className="object-cover scale-105 filter brightness-90 contrast-110 transition-transform duration-1000 ease-out hover:scale-100"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/60" />

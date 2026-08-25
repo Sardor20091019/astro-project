@@ -97,7 +97,6 @@ const PhotoCard = memo(function PhotoCard({
           src={photo.url}
           alt={photo.title}
           fill
-          unoptimized={true}
           priority={index < 3}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
@@ -905,7 +904,6 @@ export default function PhotosClientView({
                   src={activeLightboxPhoto.url}
                   alt={activeLightboxPhoto.title}
                   fill
-                  unoptimized={true}
                   className="object-contain rounded-xl shadow-2xl"
                 />
               </div>

@@ -208,7 +208,7 @@ export default function ProfileHeaderCard({
                 onClick={() => setIsUploadOpen(true)} 
                 className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-[var(--text)] text-[var(--bg)] text-xs font-mono font-bold uppercase tracking-widest hover:bg-[var(--accent)] hover:text-[var(--bg)] transition-all duration-300 shadow-xl cursor-pointer hover:scale-[1.02]"
               >
-                <Camera size={15} /> Add New Frame
+                <Camera size={15} /> Post New Image
               </button>
             ) : currentUserId ? (
               <button

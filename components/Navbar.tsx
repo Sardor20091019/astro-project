@@ -192,7 +192,6 @@ export default function Navbar() {
                           alt="Avatar preview" 
                           fill
                           sizes="80px"
-                          unoptimized
                           className="object-cover" 
                         />
                       </div>
@@ -241,7 +240,7 @@ export default function Navbar() {
                     <div className="flex items-center gap-3.5">
                       <div className="relative h-13 w-13 shrink-0 rounded-full bg-[var(--surface-2)] border-2 border-[var(--border)] flex items-center justify-center overflow-hidden text-[var(--text-dim)]">
                         {user.image ? (
-                          <Image src={user.image} alt="" fill sizes="52px" unoptimized className="object-cover" />
+                          <Image src={user.image} alt="" fill sizes="52px" className="object-cover" />
                         ) : (
                           <UserIcon className="h-6 w-6" />
                         )}
