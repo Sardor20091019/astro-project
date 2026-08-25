@@ -6,11 +6,58 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 export default function CinematicLandingPage() {
-  const heroPhoto = {
-    title: "A quiet Forest",
-    location: "Finland Lapland",
-    url: "/hero.jpg",
-  };
+  const [isLightMode, setIsLightMode] = useState(false);
+
+  // Robust Theme Detection (HTML classes, data attributes, localStorage, & system preference)
+  useEffect(() => {
+    const root = document.documentElement;
+
+    const checkTheme = () => {
+      const storedTheme = typeof window !== "undefined" ? localStorage.getItem("theme") : null;
+      
+      const isLight = 
+        storedTheme === "light" ||
+        root.classList.contains("light") || 
+        root.classList.contains("theme-light") ||
+        root.getAttribute("data-theme") === "light" || 
+        ((!storedTheme && !root.classList.contains("dark")) && window.matchMedia("(prefers-color-scheme: light)").matches);
+
+      setIsLightMode(isLight);
+    };
+
+    checkTheme();
+
+    // Observe changes to html class or data-theme attributes
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(root, { attributes: true, attributeFilter: ["class", "data-theme"] });
+
+    // Listen for storage changes (if theme is toggled via localStorage)
+    window.addEventListener("storage", checkTheme);
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
+    mediaQuery.addEventListener("change", checkTheme);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("storage", checkTheme);
+      mediaQuery.removeEventListener("change", checkTheme);
+    };
+  }, []);
+
+  // Dynamic content based on theme mode (Aurora for night, Cherry Flower for light)
+  const heroPhoto = isLightMode
+    ? {
+        title: "Blooming Sakura",
+        location: "Kyoto, Japan",
+        url: "/photos/p1.jpg",
+        description: "Soft pink petals unfurling under the morning sun. A delicate moment of spring awakening in quiet elegance.",
+      }
+    : {
+        title: "A quiet Forest",
+        location: "Finland Lapland",
+        url: "/hero.jpg",
+        description: "A quiet, freezing forest under the northern lights. A look at starry skies, cold trees, and deep peace.",
+      };
 
   // Timeline Scrubber Refs & States
   const timelineRef = useRef<HTMLElement>(null);
@@ -127,6 +174,7 @@ export default function CinematicLandingPage() {
         {/* Background Image with Deep Cinematic Gradients */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <Image
+            key={heroPhoto.url}
             src={heroPhoto.url}
             alt={heroPhoto.title}
             fill
@@ -151,7 +199,7 @@ export default function CinematicLandingPage() {
               {heroPhoto.title}
             </h1>
             <p className="text-xs sm:text-sm text-white/70 font-mono tracking-wider max-w-md leading-relaxed">
-              A quiet, freezing forest under the northern lights. A look at starry skies, cold trees, and deep peace.
+              {heroPhoto.description}
             </p>
           </div>
 
