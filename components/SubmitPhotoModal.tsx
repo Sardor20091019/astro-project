@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession, signIn } from "next-auth/react";
-import { CheckCircle2, MapPin, User, Camera, Tag, X, ImagePlus, ShieldCheck, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
+import { CheckCircle2, MapPin, User, Camera, Tag, X, ImagePlus, ShieldCheck, Eye, EyeOff, Loader2, AlertCircle, LogIn } from "lucide-react";
 import { CATEGORIES } from "@/data/photos";
 import { useUploadThing } from "@/utils/uploadthing";
 import { AnimatePresence, motion } from "framer-motion";
@@ -222,7 +222,33 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
 
           {/* Modal Body */}
           <div className="p-6 overflow-y-auto flex-1">
-            {submitted ? (
+            {!session?.user ? (
+              <div className="text-center py-10 flex flex-col items-center">
+                <div className="w-16 h-16 bg-(--accent)/10 border border-(--accent)/30 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                  <LogIn size={26} className="text-(--accent)" />
+                </div>
+                <h3 className="text-base font-black uppercase tracking-tight mb-2 text-(--text)">
+                  Sign In Required
+                </h3>
+                <p className="text-(--text-dim) font-mono text-[11px] uppercase tracking-[0.15em] mb-6 max-w-sm leading-relaxed">
+                  You need to be signed in to your account to submit and attribute new frames to the gallery.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+                  <button
+                    onClick={() => signIn("google")}
+                    className="flex-1 px-4 py-3 rounded-xl bg-(--text) text-(--bg) font-mono text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-(--accent) hover:text-(--bg) transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
+                  >
+                    Log In Now
+                  </button>
+                  <button
+                    onClick={handleClose}
+                    className="flex-1 px-4 py-3 rounded-xl border border-(--border) font-mono text-[11px] font-bold uppercase tracking-[0.15em] text-(--text-dim) hover:text-(--text) hover:border-(--border-hover) transition-all cursor-pointer bg-(--surface-2)"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : submitted ? (
               <div className="text-center py-10 flex flex-col items-center">
                 <div className="w-16 h-16 bg-(--accent)/10 border border-(--accent)/30 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-sm">
                   <CheckCircle2 size={28} className="text-(--accent)" />
@@ -259,16 +285,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                 {/* Session Notice */}
                 <div className="flex items-center justify-between bg-(--surface-2) border border-(--border) px-4 py-3 rounded-xl backdrop-blur-md shadow-xs">
                   <p className="text-(--text-dim) font-mono text-[11px] uppercase tracking-[0.1em]">
-                    {session?.user ? (
-                      <span className="text-(--accent)">Credited to: {session.user.name}</span>
-                    ) : (
-                      <span>
-                        <button type="button" onClick={() => signIn("google")} className="text-(--accent) hover:underline underline-offset-4 font-bold">
-                          Sign in
-                        </button>{" "}
-                        for author attribution.
-                      </span>
-                    )}
+                    <span className="text-(--accent)">Credited to: {session.user?.name}</span>
                   </p>
                   <ShieldCheck size={16} className="text-(--accent)" />
                 </div>
