@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { DM_Mono, DM_Serif_Display } from "next/font/google";
 import { Toaster } from "sonner";
+import Script from "next/script";
 // @ts-ignore
 import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
@@ -9,6 +10,7 @@ import ThemeProvider from "@/components/ThemeProvider";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import DesktopEffects from "@/components/DesktopEffects";
+import GoogleOneTap from "@/components/GoogleOneTap";
 
 const dmSerif = DM_Serif_Display({
   subsets: ["latin"],
@@ -33,8 +35,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${dmSerif.variable} ${dmMono.variable}`} suppressHydrationWarning>
       <body className="bg-[var(--bg)] text-[var(--text)] transition-colors duration-300">
+        {/* Load Google Identity Services script asynchronously */}
+        <Script src="https://accounts.google.com/gsi/client" async defer />
+
         <ThemeProvider>
           <AuthProvider>
+            <GoogleOneTap />
             <DesktopEffects>
               <Navbar />
               <main className="min-h-screen">
