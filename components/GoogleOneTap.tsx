@@ -4,6 +4,13 @@
 import { useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 
+// Tell TypeScript that 'google' will be injected into the window object
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
+
 export default function GoogleOneTap() {
   const { status } = useSession();
 
@@ -12,6 +19,8 @@ export default function GoogleOneTap() {
     if (status !== "unauthenticated") return;
 
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    
+    // Check if window and window.google exist before trying to use them
     if (!clientId || typeof window === "undefined" || !window.google) return;
 
     window.google.accounts.id.initialize({
@@ -23,7 +32,7 @@ export default function GoogleOneTap() {
           redirect: false,
         });
       },
-      auto_select: false, // Set to true if you want auto-login when a single account is remembered
+      auto_select: false, 
       cancel_on_tap_outside: true,
     });
 
