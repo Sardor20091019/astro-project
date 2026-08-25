@@ -23,6 +23,8 @@ import {
   Share2,
   Check,
   Film,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { submitComment as submitCommentAction } from "@/app/actions/comments";
@@ -64,13 +66,17 @@ type Engagement = {
   commentCount: number;
 };
 
-// --- Film Stock Definitions ---
+// --- Expanded Film Stock Definitions ---
 export const FILM_STOCKS = [
   { id: "normal", label: "Original", filter: "none" },
   { id: "portra", label: "Portra 400 (Warm)", filter: "sepia(0.15) saturate(1.2) contrast(1.05)" },
-  { id: "cinestill", label: "CineStill 800T (Teal & Glow)", filter: "hue-rotate(15deg) saturate(1.3) brightness(0.95)" },
-  { id: "monochrome", label: "Ilford HP5 (Noir)", filter: "grayscale(1) contrast(1.3) brightness(1.05)" },
+  { id: "ektar", label: "Ektar 100 (Vibrant)", filter: "saturate(1.4) contrast(1.1) brightness(1.02)" },
+  { id: "provia", label: "Provia 100F (Cool)", filter: "hue-rotate(-10deg) saturate(1.15) contrast(1.1)" },
+  { id: "cinestill", label: "CineStill 800T (Teal)", filter: "hue-rotate(15deg) saturate(1.3) brightness(0.95)" },
+  { id: "acros", label: "Acros 100 (Fine B&W)", filter: "grayscale(1) contrast(1.2) brightness(1.02)" },
+  { id: "monochrome", label: "Ilford HP5 (Noir)", filter: "grayscale(1) contrast(1.35) brightness(1.05)" },
   { id: "bleach", label: "Bleach Bypass", filter: "grayscale(0.4) contrast(1.4) brightness(0.9)" },
+  { id: "lomo", label: "Lomo Chrome", filter: "hue-rotate(35deg) saturate(1.5) contrast(1.2)" },
 ];
 
 const springConfig = { type: "spring" as const, stiffness: 280, damping: 30 };
@@ -124,11 +130,11 @@ function MagneticButton({
   );
 }
 
-const Spinner = () => (
+const Spinner = ({ dark }: { dark?: boolean }) => (
   <motion.div
     animate={{ rotate: 360 }}
     transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
-    className="w-5 h-5 rounded-full border-2 border-white/20 border-t-white"
+    className={`w-5 h-5 rounded-full border-2 ${dark ? "border-zinc-300 border-t-zinc-900" : "border-white/20 border-t-white"}`}
   />
 );
 
@@ -165,7 +171,8 @@ export default function PhotoViewer({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // New state for Film Stock Emulation
+  // Theme & Film Stock states
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [activeFilmStock, setActiveFilmStock] = useState("normal");
 
   const photo = photos[index];
@@ -366,10 +373,7 @@ export default function PhotoViewer({
     const shareUrl = window.location.href;
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: photo.title,
-          url: shareUrl,
-        });
+        await navigator.share({ title: photo.title, url: shareUrl });
         return;
       } catch {
         // Fallback
@@ -424,13 +428,18 @@ export default function PhotoViewer({
   ].filter(Boolean);
 
   const activeFilterStyle = FILM_STOCKS.find((s) => s.id === activeFilmStock)?.filter || "none";
+  const isDark = theme === "dark";
 
   return (
     <div 
       onWheel={handleWheel}
-      className="relative flex h-[100dvh] w-full overflow-hidden bg-black text-white select-none"
+      className={`relative flex h-[100dvh] w-full overflow-hidden select-none transition-colors duration-300 ${
+        isDark ? "bg-black text-white" : "bg-zinc-100 text-zinc-900"
+      }`}
     >
-      <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-zinc-950 via-black to-zinc-950" />
+      <div className={`pointer-events-none absolute inset-0 z-0 transition-colors duration-300 ${
+        isDark ? "bg-gradient-to-b from-zinc-950 via-black to-zinc-950" : "bg-gradient-to-b from-zinc-200 via-zinc-100 to-zinc-200"
+      }`} />
 
       {/* STAGE CONTAINER */}
       <div className="relative z-10 flex flex-1 items-center justify-center overflow-hidden w-full h-full p-4 md:p-12">
@@ -459,10 +468,12 @@ export default function PhotoViewer({
             className="relative flex items-center justify-center touch-none"
           >
             {!imageLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/50 backdrop-blur-md z-20 rounded-xl overflow-hidden min-w-[300px] min-h-[300px]">
+              <div className={`absolute inset-0 flex items-center justify-center backdrop-blur-md z-20 rounded-xl overflow-hidden min-w-[300px] min-h-[300px] ${
+                isDark ? "bg-zinc-900/50" : "bg-zinc-200/50"
+              }`}>
                 <div className="flex flex-col items-center gap-3">
-                  <Spinner />
-                  <span className="text-xs font-medium text-zinc-400">Loading image...</span>
+                  <Spinner dark={!isDark} />
+                  <span className={`text-xs font-medium ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>Loading image...</span>
                 </div>
               </div>
             )}
@@ -474,7 +485,7 @@ export default function PhotoViewer({
               draggable={false}
               onLoad={() => setImageLoaded(true)}
               style={{ filter: activeFilterStyle }}
-              className={`max-h-[85vh] max-w-[90vw] object-contain rounded-lg transition-all duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+              className={`max-h-[85vh] max-w-[90vw] object-contain rounded-lg shadow-2xl transition-all duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
             />
           </motion.div>
         </AnimatePresence>
@@ -486,9 +497,11 @@ export default function PhotoViewer({
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              className="absolute top-20 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/90 border border-zinc-700/80 backdrop-blur-md shadow-2xl text-xs font-medium text-white"
+              className={`absolute top-20 z-50 flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md shadow-2xl text-xs font-medium ${
+                isDark ? "bg-zinc-900/90 border border-zinc-700 text-white" : "bg-white/90 border border-zinc-300 text-zinc-900"
+              }`}
             >
-              <Check size={14} className="text-emerald-400" /> Link copied to clipboard
+              <Check size={14} className="text-emerald-500" /> Link copied to clipboard
             </motion.div>
           )}
         </AnimatePresence>
@@ -511,7 +524,7 @@ export default function PhotoViewer({
         </AnimatePresence>
       </div>
 
-      {/* TOP HEADER CONTROLS (Includes Film Stock Emulation Bar) */}
+      {/* TOP HEADER CONTROLS (Includes Film Stock Selector & Theme Toggle) */}
       <AnimatePresence>
         {hudVisible && (
           <motion.div
@@ -519,34 +532,41 @@ export default function PhotoViewer({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="absolute top-0 inset-x-0 z-40 flex flex-col sm:flex-row items-center justify-between p-4 sm:p-6 bg-gradient-to-b from-black/90 via-black/50 to-transparent pointer-events-auto gap-4"
+            className={`absolute top-0 inset-x-0 z-40 flex flex-col xl:flex-row items-center justify-between p-4 sm:p-6 bg-gradient-to-b pointer-events-auto gap-4 ${
+              isDark ? "from-black/90 via-black/50 to-transparent" : "from-zinc-100/90 via-zinc-100/50 to-transparent"
+            }`}
           >
-            <div className="flex items-center justify-between w-full sm:w-auto gap-4">
+            <div className="flex items-center justify-between w-full xl:w-auto gap-4">
               <div className="flex items-center gap-4">
                 <MagneticButton
                   onClick={() => router.back()}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900/80 text-zinc-300 backdrop-blur-md border border-zinc-800 transition hover:bg-zinc-800 hover:text-white shrink-0"
+                  className={`flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-md border transition shrink-0 ${
+                    isDark ? "bg-zinc-900/80 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:text-white" : "bg-white/80 text-zinc-700 border-zinc-200 hover:bg-white hover:text-black shadow-sm"
+                  }`}
                   title="Back to Gallery"
                 >
                   <X size={18} strokeWidth={2} />
                 </MagneticButton>
                 <div className="hidden sm:flex flex-col">
-                  <h2 className="text-sm font-medium text-zinc-200 truncate max-w-xs">{photo.title}</h2>
-                  <span className="text-xs text-zinc-500">Gallery View</span>
+                  <h2 className={`text-sm font-medium truncate max-w-xs ${isDark ? "text-zinc-200" : "text-zinc-800"}`}>{photo.title}</h2>
+                  <span className={`text-xs ${isDark ? "text-zinc-500" : "text-zinc-400"}`}>Gallery View</span>
                 </div>
               </div>
 
-              {/* Mobile details toggle button */}
-              <div className="flex sm:hidden items-center gap-2">
-                <span className="px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-zinc-800 text-xs font-medium text-zinc-400">
+              <div className="flex xl:hidden items-center gap-2">
+                <span className={`px-3 py-1.5 rounded-full backdrop-blur-md border text-xs font-medium ${
+                  isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-400" : "bg-white/80 border-zinc-200 text-zinc-600 shadow-sm"
+                }`}>
                   {index + 1} / {photos.length}
                 </span>
               </div>
             </div>
 
-            {/* FILM STOCK SELECTOR TOOLBAR */}
-            <div className="flex items-center gap-1 overflow-x-auto max-w-full py-1 px-2 bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 rounded-2xl scrollbar-none">
-              <Film size={14} className="text-amber-400 ml-1.5 mr-1 shrink-0 hidden md:block" />
+            {/* EXPANDED FILM STOCK SELECTOR TOOLBAR */}
+            <div className={`flex items-center gap-1 overflow-x-auto max-w-full py-1.5 px-2.5 backdrop-blur-xl border rounded-2xl scrollbar-none ${
+              isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-300" : "bg-white/90 border-zinc-200 text-zinc-700 shadow-md"
+            }`}>
+              <Film size={14} className="text-amber-500 ml-1.5 mr-1 shrink-0 hidden md:block" />
               {FILM_STOCKS.map((stock) => (
                 <button
                   key={stock.id}
@@ -554,7 +574,9 @@ export default function PhotoViewer({
                   className={`px-3 py-1.5 rounded-xl font-mono text-[10px] uppercase tracking-wider transition-all shrink-0 cursor-pointer ${
                     activeFilmStock === stock.id
                       ? "bg-amber-500 text-black font-bold shadow-md"
-                      : "bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800/50"
+                      : isDark
+                      ? "bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800/50"
+                      : "bg-transparent text-zinc-600 hover:text-black hover:bg-zinc-100"
                   }`}
                 >
                   {stock.label.split(" ")[0]}
@@ -562,13 +584,30 @@ export default function PhotoViewer({
               ))}
             </div>
 
-            <div className="hidden sm:flex items-center gap-3">
-              <span className="px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-zinc-800 text-xs font-medium text-zinc-400">
+            <div className="hidden xl:flex items-center gap-3">
+              <span className={`px-3 py-1.5 rounded-full backdrop-blur-md border text-xs font-medium ${
+                isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-400" : "bg-white/80 border-zinc-200 text-zinc-600 shadow-sm"
+              }`}>
                 {index + 1} / {photos.length}
               </span>
+
+              {/* Theme Toggle Button */}
+              <MagneticButton
+                onClick={() => setTheme(isDark ? "light" : "dark")}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-full backdrop-blur-md border text-xs font-medium transition ${
+                  isDark ? "bg-zinc-900/80 border-zinc-800 text-amber-400 hover:bg-zinc-800" : "bg-white/90 border-zinc-200 text-amber-600 hover:bg-white shadow-sm"
+                }`}
+                title="Toggle Theme"
+              >
+                {isDark ? <Sun size={15} /> : <Moon size={15} />}
+                <span className="hidden sm:inline">{isDark ? "Light" : "Dark"}</span>
+              </MagneticButton>
+
               <MagneticButton
                 onClick={() => setShowDrawer(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/80 hover:bg-zinc-800 backdrop-blur-md border border-zinc-800 text-xs font-medium transition text-zinc-300 hover:text-white"
+                className={`flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md border text-xs font-medium transition ${
+                  isDark ? "bg-zinc-900/85 border-zinc-800 text-zinc-300 hover:bg-zinc-800 hover:text-white" : "bg-white/90 border-zinc-200 text-zinc-700 hover:bg-white hover:text-black shadow-sm"
+                }`}
               >
                 <Info size={14} strokeWidth={2} />
                 <span className="hidden sm:inline">Details</span>
@@ -588,46 +627,48 @@ export default function PhotoViewer({
             transition={{ duration: 0.2 }}
             className="absolute bottom-6 inset-x-0 z-40 flex items-center justify-center pointer-events-none"
           >
-            <div className="pointer-events-auto flex items-center gap-1 px-3 py-2 rounded-full bg-zinc-900/80 backdrop-blur-xl border border-zinc-800/80 shadow-2xl">
+            <div className={`pointer-events-auto flex items-center gap-1 px-3 py-2 backdrop-blur-xl border rounded-full shadow-2xl ${
+              isDark ? "bg-zinc-900/80 border-zinc-800/80 text-zinc-300" : "bg-white/90 border-zinc-200 text-zinc-700"
+            }`}>
               <MagneticButton
                 onClick={() => navigate(-1)}
-                className="p-2.5 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition"
+                className={`p-2.5 rounded-full transition ${isDark ? "hover:bg-zinc-800/50 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
                 title="Previous"
               >
                 <ChevronLeft size={18} strokeWidth={2} />
               </MagneticButton>
 
-              <div className="w-[1px] h-4 bg-zinc-800 mx-1" />
+              <div className={`w-[1px] h-4 mx-1 ${isDark ? "bg-zinc-800" : "bg-zinc-200"}`} />
 
               <MagneticButton
                 onClick={toggleLike}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full hover:bg-zinc-800/50 transition group"
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition group`}
               >
-                <Heart size={16} strokeWidth={engagement.viewerLiked ? 0 : 2} className={`transition-all ${engagement.viewerLiked ? "text-red-500 fill-current scale-110" : "text-zinc-400 group-hover:text-white"}`} />
-                <span className="text-xs font-medium text-zinc-300">{engagement.likeCount}</span>
+                <Heart size={16} strokeWidth={engagement.viewerLiked ? 0 : 2} className={`transition-all ${engagement.viewerLiked ? "text-red-500 fill-current scale-110" : isDark ? "text-zinc-400 group-hover:text-white" : "text-zinc-600 group-hover:text-black"}`} />
+                <span className={`text-xs font-medium ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>{engagement.likeCount}</span>
               </MagneticButton>
 
               <MagneticButton
                 onClick={() => setShowDrawer(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full hover:bg-zinc-800/50 transition group"
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition group`}
               >
-                <Star size={16} strokeWidth={2} className="text-zinc-400 group-hover:text-amber-400 transition-colors" />
-                <span className="text-xs font-medium text-zinc-300">{engagement.ratingAverage.toFixed(1)}</span>
+                <Star size={16} strokeWidth={2} className="text-amber-500 transition-colors" />
+                <span className={`text-xs font-medium ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>{engagement.ratingAverage.toFixed(1)}</span>
               </MagneticButton>
 
               <MagneticButton
                 onClick={() => setShowDrawer(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full hover:bg-zinc-800/50 transition group"
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition group`}
               >
-                <MessageCircle size={16} strokeWidth={2} className="text-zinc-400 group-hover:text-white" />
-                <span className="text-xs font-medium text-zinc-300">{engagement.commentCount}</span>
+                <MessageCircle size={16} strokeWidth={2} className={isDark ? "text-zinc-400 group-hover:text-white" : "text-zinc-600 group-hover:text-black"} />
+                <span className={`text-xs font-medium ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>{engagement.commentCount}</span>
               </MagneticButton>
 
-              <div className="w-[1px] h-4 bg-zinc-800 mx-1" />
+              <div className={`w-[1px] h-4 mx-1 ${isDark ? "bg-zinc-800" : "bg-zinc-200"}`} />
 
               <MagneticButton
                 onClick={handleShare}
-                className="p-2.5 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition"
+                className={`p-2.5 rounded-full transition ${isDark ? "hover:bg-zinc-800/50 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
                 title="Share Photo"
               >
                 <Share2 size={16} strokeWidth={2} />
@@ -635,27 +676,36 @@ export default function PhotoViewer({
 
               <MagneticButton
                 onClick={handleDownload}
-                className="p-2.5 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition"
+                className={`p-2.5 rounded-full transition ${isDark ? "hover:bg-zinc-800/50 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
                 title="Download"
               >
                 <Download size={16} strokeWidth={2} />
               </MagneticButton>
 
+              {/* Mobile theme toggle inside dock */}
+              <MagneticButton
+                onClick={() => setTheme(isDark ? "light" : "dark")}
+                className={`p-2.5 rounded-full xl:hidden transition ${isDark ? "hover:bg-zinc-800/50 text-amber-400" : "hover:bg-zinc-100 text-amber-600"}`}
+                title="Toggle Theme"
+              >
+                {isDark ? <Sun size={16} /> : <Moon size={16} />}
+              </MagneticButton>
+
               {!isMobile && (
                 <MagneticButton
                   onClick={toggleZoom}
-                  className="p-2.5 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition"
+                  className={`p-2.5 rounded-full transition ${isDark ? "hover:bg-zinc-800/50 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
                   title={isZoomed ? "Zoom Out" : "Zoom In"}
                 >
                   {isZoomed ? <Minimize2 size={16} strokeWidth={2} /> : <Maximize2 size={16} strokeWidth={2} />}
                 </MagneticButton>
               )}
 
-              <div className="w-[1px] h-4 bg-zinc-800 mx-1" />
+              <div className={`w-[1px] h-4 mx-1 ${isDark ? "bg-zinc-800" : "bg-zinc-200"}`} />
 
               <MagneticButton
                 onClick={() => navigate(1)}
-                className="p-2.5 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition"
+                className={`p-2.5 rounded-full transition ${isDark ? "hover:bg-zinc-800/50 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
                 title="Next"
               >
                 <ChevronRight size={18} strokeWidth={2} />
@@ -682,13 +732,15 @@ export default function PhotoViewer({
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="absolute right-0 top-0 bottom-0 z-50 w-full sm:w-[420px] bg-zinc-950 border-l border-zinc-800/80 shadow-2xl flex flex-col"
+              className={`absolute right-0 top-0 bottom-0 z-50 w-full sm:w-[420px] shadow-2xl flex flex-col border-l ${
+                isDark ? "bg-zinc-950 border-zinc-800/80 text-white" : "bg-white border-zinc-200 text-zinc-900"
+              }`}
             >
-              <div className="flex items-center justify-between p-6 border-b border-zinc-800/80">
-                <h3 className="text-sm font-semibold text-zinc-200">Photo Details</h3>
+              <div className={`flex items-center justify-between p-6 border-b ${isDark ? "border-zinc-800/80" : "border-zinc-200"}`}>
+                <h3 className={`text-sm font-semibold ${isDark ? "text-zinc-200" : "text-zinc-800"}`}>Photo Details</h3>
                 <MagneticButton
                   onClick={() => setShowDrawer(false)}
-                  className="p-2 rounded-full text-zinc-400 hover:text-white transition"
+                  className={`p-2 rounded-full transition ${isDark ? "text-zinc-400 hover:text-white" : "text-zinc-600 hover:text-black"}`}
                 >
                   <X size={18} strokeWidth={2} />
                 </MagneticButton>
@@ -696,24 +748,28 @@ export default function PhotoViewer({
 
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 <div>
-                  <h2 className="text-2xl font-semibold tracking-tight text-white mb-2">{photo.title}</h2>
+                  <h2 className={`text-2xl font-semibold tracking-tight mb-2 ${isDark ? "text-white" : "text-zinc-900"}`}>{photo.title}</h2>
                   {photo.authorName && (
-                    <p className="text-xs text-zinc-400 mb-2">Captured by {photo.authorName}</p>
+                    <p className={`text-xs mb-2 ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>Captured by {photo.authorName}</p>
                   )}
-                  <p className="text-xs text-zinc-500 flex items-center gap-1.5 mb-6">
-                    <MapPin size={14} className="text-zinc-400" /> {photo.location || "Location not specified"}
+                  <p className={`text-xs flex items-center gap-1.5 mb-6 ${isDark ? "text-zinc-500" : "text-zinc-500"}`}>
+                    <MapPin size={14} className={isDark ? "text-zinc-400" : "text-zinc-600"} /> {photo.location || "Location not specified"}
                   </p>
                   
                   <div className="flex gap-2">
                     <MagneticButton
                       onClick={handleShare}
-                      className="flex-1 flex items-center justify-center gap-2 py-3 bg-zinc-900 border border-zinc-800 text-white hover:bg-zinc-800 text-xs font-medium rounded-xl transition"
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 border text-xs font-medium rounded-xl transition ${
+                        isDark ? "bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800" : "bg-zinc-100 border-zinc-200 text-zinc-800 hover:bg-zinc-200"
+                      }`}
                     >
                       <Share2 size={15} strokeWidth={2} /> Share Link
                     </MagneticButton>
                     <MagneticButton
                       onClick={handleDownload}
-                      className="flex-1 flex items-center justify-center gap-2 py-3 bg-white text-black hover:bg-zinc-200 text-xs font-medium rounded-xl transition"
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium rounded-xl transition ${
+                        isDark ? "bg-white text-black hover:bg-zinc-200" : "bg-zinc-900 text-white hover:bg-zinc-800"
+                      }`}
                     >
                       <Download size={15} strokeWidth={2} /> Download
                     </MagneticButton>
@@ -721,13 +777,15 @@ export default function PhotoViewer({
                 </div>
 
                 {metadata.length > 0 && (
-                  <div className="space-y-3 pt-4 border-t border-zinc-900">
-                    <span className="text-xs font-medium text-zinc-400 flex items-center gap-1.5">
+                  <div className={`space-y-3 pt-4 border-t ${isDark ? "border-zinc-900" : "border-zinc-100"}`}>
+                    <span className={`text-xs font-medium flex items-center gap-1.5 ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>
                       <Camera size={14} /> Camera Settings
                     </span>
                     <div className="grid grid-cols-2 gap-2">
                       {metadata.map((meta, i) => (
-                        <div key={i} className="px-3 py-2 bg-zinc-900/60 border border-zinc-800/60 rounded-lg text-xs text-zinc-300">
+                        <div key={i} className={`px-3 py-2 border rounded-lg text-xs ${
+                          isDark ? "bg-zinc-900/60 border-zinc-800/60 text-zinc-300" : "bg-zinc-50 border-zinc-200 text-zinc-700"
+                        }`}>
                           {meta}
                         </div>
                       ))}
@@ -735,22 +793,24 @@ export default function PhotoViewer({
                   </div>
                 )}
 
-                <div className="space-y-3 pt-4 border-t border-zinc-900">
-                  <span className="text-xs font-medium text-zinc-400">Rating</span>
-                  <div className="flex items-center justify-between p-3 bg-zinc-900/60 border border-zinc-800/60 rounded-xl">
+                <div className={`space-y-3 pt-4 border-t ${isDark ? "border-zinc-900" : "border-zinc-100"}`}>
+                  <span className={`text-xs font-medium ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>Rating</span>
+                  <div className={`flex items-center justify-between p-3 border rounded-xl ${
+                    isDark ? "bg-zinc-900/60 border-zinc-800/60" : "bg-zinc-50 border-zinc-200"
+                  }`}>
                     <StarRating value={engagement.viewerRating ?? 0} onSelect={handleRating} />
-                    <div className="text-xs text-zinc-400">
-                      <span className="text-white font-semibold">{engagement.ratingAverage.toFixed(1)}</span> / 5 
-                      <span className="text-zinc-500 ml-1">({engagement.ratingCount})</span>
+                    <div className={`text-xs ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>
+                      <span className={`font-semibold ${isDark ? "text-white" : "text-zinc-900"}`}>{engagement.ratingAverage.toFixed(1)}</span> / 5 
+                      <span className={`ml-1 ${isDark ? "text-zinc-500" : "text-zinc-400"}`}>({engagement.ratingCount})</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-4 border-t border-zinc-900">
-                  <h4 className="text-xs font-medium text-zinc-400 flex items-center gap-1.5">
+                <div className={`space-y-4 pt-4 border-t ${isDark ? "border-zinc-900" : "border-zinc-100"}`}>
+                  <h4 className={`text-xs font-medium flex items-center gap-1.5 ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>
                     <MessageCircle size={14} /> Comments ({engagement.commentCount})
                   </h4>
-                  <CommentsList photoId={photo.id} setEngagement={setEngagement} isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading} />
+                  <CommentsList photoId={photo.id} setEngagement={setEngagement} isLoggedIn={isLoggedIn} isAuthLoading={isAuthLoading} isDark={isDark} />
                 </div>
               </div>
             </motion.div>
@@ -766,12 +826,14 @@ function CommentsList({
   photoId,
   setEngagement,
   isLoggedIn,
-  isAuthLoading
+  isAuthLoading,
+  isDark,
 }: {
   photoId: number;
   setEngagement: React.Dispatch<React.SetStateAction<Engagement>>;
   isLoggedIn: boolean;
   isAuthLoading: boolean;
+  isDark: boolean;
 }) {
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [comment, setComment] = useState("");
@@ -804,28 +866,36 @@ function CommentsList({
   return (
     <div className="flex flex-col gap-3">
       {isAuthLoading ? (
-        <div className="h-10 w-full bg-zinc-900 rounded-xl animate-pulse" />
+        <div className={`h-10 w-full rounded-xl animate-pulse ${isDark ? "bg-zinc-900" : "bg-zinc-200"}`} />
       ) : isLoggedIn ? (
         <div className="flex gap-2">
           <input
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}
-            className="flex-1 h-10 px-3.5 text-xs bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-700 transition-colors rounded-xl"
+            className={`flex-1 h-10 px-3.5 text-xs border transition-colors rounded-xl focus:outline-none ${
+              isDark 
+                ? "bg-zinc-900 border-zinc-800 text-white placeholder-zinc-500 focus:border-zinc-700" 
+                : "bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:border-zinc-300"
+            }`}
             placeholder="Write a comment..."
           />
           <button
             onClick={submit}
             disabled={submitting || !comment.trim()}
-            className="h-10 px-4 bg-white text-black text-xs font-medium transition hover:bg-zinc-200 disabled:opacity-40 rounded-xl flex items-center justify-center min-w-[64px]"
+            className={`h-10 px-4 text-xs font-medium transition disabled:opacity-40 rounded-xl flex items-center justify-center min-w-[64px] ${
+              isDark ? "bg-white text-black hover:bg-zinc-200" : "bg-zinc-900 text-white hover:bg-zinc-800"
+            }`}
           >
-            {submitting ? <Spinner /> : "Post"}
+            {submitting ? <Spinner dark={!isDark} /> : "Post"}
           </button>
         </div>
       ) : (
         <button
           onClick={() => signIn("google", { callbackUrl: window.location.pathname })}
-          className="w-full border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800 rounded-xl"
+          className={`w-full border px-4 py-2.5 text-xs font-medium transition rounded-xl ${
+            isDark ? "border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800" : "border-zinc-200 bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
+          }`}
         >
           Sign in to comment
         </button>
@@ -834,21 +904,23 @@ function CommentsList({
       <div className="space-y-3 pt-2">
         {loading ? (
           <div className="flex justify-center py-6">
-            <Spinner />
+            <Spinner dark={!isDark} />
           </div>
         ) : comments.length === 0 ? (
-          <p className="text-xs text-zinc-500 text-center py-6">No comments yet.</p>
+          <p className={`text-xs text-center py-6 ${isDark ? "text-zinc-500" : "text-zinc-400"}`}>No comments yet.</p>
         ) : (
           comments.map((item) => (
             <div key={item.id} className="flex gap-3 group">
               <img
                 src={item.user.customImage || item.user.image || "/default-pfp.png"}
                 alt=""
-                className="h-7 w-7 rounded-full object-cover border border-zinc-800 shrink-0"
+                className={`h-7 w-7 rounded-full object-cover border shrink-0 ${isDark ? "border-zinc-800" : "border-zinc-200"}`}
               />
-              <div className="flex-1 min-w-0 bg-zinc-950 border border-zinc-900 p-3 rounded-xl">
-                <p className="text-xs font-medium text-zinc-300 mb-1">{item.user.name || "NOT_AVAILABLE"}</p>
-                <p className="text-xs text-zinc-400 break-words leading-relaxed">{item.body ?? item.comment}</p>
+              <div className={`flex-1 min-w-0 border p-3 rounded-xl ${
+                isDark ? "bg-zinc-950 border-zinc-900" : "bg-zinc-50 border-zinc-200"
+              }`}>
+                <p className={`text-xs font-medium mb-1 ${isDark ? "text-zinc-300" : "text-zinc-800"}`}>{item.user.name || "User"}</p>
+                <p className={`text-xs break-words leading-relaxed ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>{item.body ?? item.comment}</p>
               </div>
             </div>
           ))
