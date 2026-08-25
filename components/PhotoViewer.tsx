@@ -25,6 +25,12 @@ import {
   Film,
   Sun,
   Moon,
+  Play,
+  Pause,
+  HelpCircle,
+  SlidersHorizontal,
+  Activity,
+  Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { submitComment as submitCommentAction } from "@/app/actions/comments";
@@ -167,6 +173,7 @@ export default function PhotoViewer({
   
   const [hudVisible, setHudVisible] = useState(true);
   const [showDrawer, setShowDrawer] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const [hearts, setHearts] = useState<{ id: number; x: number; y: number }[]>([]);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -174,6 +181,12 @@ export default function PhotoViewer({
   // Theme & Film Stock states
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [activeFilmStock, setActiveFilmStock] = useState("normal");
+
+  // New Features: Slideshow & Before/After Split Slider
+  const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(false);
+  const [isComparing, setIsComparing] = useState(false);
+  const [splitPos, setSplitPos] = useState(50); // percentage 0-100
+  const imageContainerRef = useRef<HTMLDivElement>(null);
 
   const photo = photos[index];
   
@@ -202,6 +215,15 @@ export default function PhotoViewer({
     mql.addEventListener("change", handler);
     return () => mql.removeEventListener("change", handler);
   }, []);
+
+  // Slideshow interval timer
+  useEffect(() => {
+    if (!isSlideshowPlaying) return;
+    const interval = setInterval(() => {
+      navigate(1);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isSlideshowPlaying, index, photos.length]);
 
   useEffect(() => {
     setImageLoaded(false);
@@ -240,7 +262,7 @@ export default function PhotoViewer({
   }, [scale]);
 
   useEffect(() => {
-    if (showDrawer) {
+    if (showDrawer || showShortcuts) {
       setHudVisible(true);
       return;
     }
@@ -263,7 +285,7 @@ export default function PhotoViewer({
       window.removeEventListener("keydown", handleActivity);
       clearTimeout(timeout);
     };
-  }, [showDrawer, index]);
+  }, [showDrawer, showShortcuts, index]);
 
   const navigate = useCallback(
     (nextDirection: number) => {
@@ -306,10 +328,19 @@ export default function PhotoViewer({
     }
   };
 
+  // Keyboard Shortcuts Listener
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if (event.key === "ArrowLeft" && !isZoomed) navigate(-1);
       if (event.key === "ArrowRight" && !isZoomed) navigate(1);
+      if (event.key === "i" || event.key === "I") setShowDrawer((prev) => !prev);
+      if (event.key === "f" || event.key === "F") toggleZoom();
+      if (event.key === "p" || event.key === "P") setIsSlideshowPlaying((prev) => !prev);
+      if (event.key === "c" || event.key === "C") setIsComparing((prev) => !prev);
+      if (event.key === "?" || event.key === "/") {
+        event.preventDefault();
+        setShowShortcuts((prev) => !prev);
+      }
       if (event.key === "Escape") {
         if (scale.get() > 1.05) {
           scale.set(1);
@@ -317,6 +348,8 @@ export default function PhotoViewer({
           y.set(0);
         } else if (showDrawer) {
           setShowDrawer(false);
+        } else if (showShortcuts) {
+          setShowShortcuts(false);
         } else {
           router.back();
         }
@@ -324,7 +357,7 @@ export default function PhotoViewer({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [navigate, router, showDrawer, scale, x, y, isZoomed]);
+  }, [navigate, router, showDrawer, showShortcuts, scale, x, y, isZoomed]);
 
   useEffect(() => {
     if (!photo) return;
@@ -417,6 +450,16 @@ export default function PhotoViewer({
     lastTapRef.current = now;
   };
 
+  // Handle Split Slider Dragging
+  const handleSplitDrag = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!imageContainerRef.current) return;
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const xPos = clientX - rect.left;
+    const percentage = Math.max(0, Math.min(100, (xPos / rect.width) * 100));
+    setSplitPos(percentage);
+  };
+
   if (!photo) return <div className="p-8 text-white bg-black min-h-screen">Photo not found.</div>;
 
   const metadata = [
@@ -450,12 +493,12 @@ export default function PhotoViewer({
             onClick={handleTouchOrClick}
             onTouchStart={handleTouchOrClick}
             style={{ x, y, rotate, scale }}
-            drag={mounted ? true : false}
+            drag={mounted && !isComparing ? true : false}
             dragConstraints={isZoomed ? constraints : { left: 0, right: 0, top: 0, bottom: 0 }}
             dragElastic={0.05}
             dragMomentum={false}
             onDragEnd={(_, info) => {
-              if (isZoomed) return;
+              if (isZoomed || isComparing) return;
               const offset = info.offset.x;
               const velocity = info.velocity.x;
               if (offset < -70 || velocity < -400) navigate(1);
@@ -478,15 +521,58 @@ export default function PhotoViewer({
               </div>
             )}
 
-            <img
-              ref={imgRef}
-              src={photo.url}
-              alt={photo.title}
-              draggable={false}
-              onLoad={() => setImageLoaded(true)}
-              style={{ filter: activeFilterStyle }}
-              className={`max-h-[85vh] max-w-[90vw] object-contain rounded-lg shadow-2xl transition-all duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
-            />
+            {/* NORMAL vs SPLIT COMPARISON VIEW */}
+            {isComparing && activeFilmStock !== "normal" ? (
+              <div 
+                ref={imageContainerRef}
+                onMouseMove={handleSplitDrag}
+                onTouchMove={handleSplitDrag}
+                className="relative max-h-[85vh] max-w-[90vw] overflow-hidden rounded-lg shadow-2xl select-none cursor-ew-resize"
+              >
+                {/* Background Image: Original (Unfiltered) */}
+                <img
+                  src={photo.url}
+                  alt={photo.title}
+                  draggable={false}
+                  onLoad={() => setImageLoaded(true)}
+                  className="max-h-[85vh] max-w-[90vw] object-contain block pointer-events-none"
+                />
+
+                {/* Foreground Image: Filtered with Clip Path */}
+                <div 
+                  className="absolute inset-0 overflow-hidden pointer-events-none"
+                  style={{ clipPath: `polygon(0 0, ${splitPos}% 0, ${splitPos}% 100%, 0 100%)` }}
+                >
+                  <img
+                    src={photo.url}
+                    alt={photo.title}
+                    draggable={false}
+                    style={{ filter: activeFilterStyle }}
+                    className="max-h-[85vh] max-w-[90vw] object-contain block max-w-none w-full h-full"
+                  />
+                </div>
+
+                {/* Divider Line & Handle */}
+                <div 
+                  className="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_10px_rgba(0,0,0,0.8)] pointer-events-none flex items-center justify-center"
+                  style={{ left: `${splitPos}%` }}
+                >
+                  <div className="w-7 h-7 rounded-full bg-white text-black shadow-lg flex items-center justify-center text-[10px] font-bold">
+                    VS
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <img
+                ref={imgRef}
+                src={photo.url}
+                alt={photo.title}
+                draggable={false}
+                onLoad={() => setImageLoaded(true)}
+                style={{ filter: activeFilterStyle }}
+                className={`max-h-[85vh] max-w-[90vw] object-contain rounded-lg shadow-2xl transition-all duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
 
@@ -524,7 +610,7 @@ export default function PhotoViewer({
         </AnimatePresence>
       </div>
 
-      {/* TOP HEADER CONTROLS (Includes Film Stock Selector & Theme Toggle) */}
+      {/* TOP HEADER CONTROLS (Includes Film Stock Selector, EXIF Badges, Theme & Slideshow Controls) */}
       <AnimatePresence>
         {hudVisible && (
           <motion.div
@@ -549,7 +635,30 @@ export default function PhotoViewer({
                 </MagneticButton>
                 <div className="hidden sm:flex flex-col">
                   <h2 className={`text-sm font-medium truncate max-w-xs ${isDark ? "text-zinc-200" : "text-zinc-800"}`}>{photo.title}</h2>
-                  <span className={`text-xs ${isDark ? "text-zinc-500" : "text-zinc-400"}`}>Gallery View</span>
+                  
+                  {/* Advanced EXIF Micro Badges in Header */}
+                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    {photo.camera && (
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-400" : "bg-white/80 border-zinc-200 text-zinc-600"}`}>
+                        📷 {photo.camera}
+                      </span>
+                    )}
+                    {photo.focalLength && (
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-400" : "bg-white/80 border-zinc-200 text-zinc-600"}`}>
+                        🔍 {photo.focalLength}
+                      </span>
+                    )}
+                    {photo.aperture && (
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-400" : "bg-white/80 border-zinc-200 text-zinc-600"}`}>
+                        ☀️ {photo.aperture}
+                      </span>
+                    )}
+                    {photo.iso && (
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-400" : "bg-white/80 border-zinc-200 text-zinc-600"}`}>
+                        ISO {photo.iso}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -591,6 +700,20 @@ export default function PhotoViewer({
                 {index + 1} / {photos.length}
               </span>
 
+              {/* Slideshow Toggle Button */}
+              <MagneticButton
+                onClick={() => setIsSlideshowPlaying(!isSlideshowPlaying)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-full backdrop-blur-md border text-xs font-medium transition ${
+                  isSlideshowPlaying 
+                    ? "bg-amber-500 text-black border-amber-400 font-bold shadow-md" 
+                    : isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-300 hover:bg-zinc-800" : "bg-white/90 border-zinc-200 text-zinc-700 hover:bg-white shadow-sm"
+                }`}
+                title="Toggle Slideshow [P]"
+              >
+                {isSlideshowPlaying ? <Pause size={14} /> : <Play size={14} />}
+                <span className="hidden sm:inline">{isSlideshowPlaying ? "Pause" : "Slideshow"}</span>
+              </MagneticButton>
+
               {/* Theme Toggle Button */}
               <MagneticButton
                 onClick={() => setTheme(isDark ? "light" : "dark")}
@@ -603,11 +726,23 @@ export default function PhotoViewer({
                 <span className="hidden sm:inline">{isDark ? "Light" : "Dark"}</span>
               </MagneticButton>
 
+              {/* Shortcuts Guide Button */}
+              <MagneticButton
+                onClick={() => setShowShortcuts(true)}
+                className={`p-2.5 rounded-full backdrop-blur-md border transition ${
+                  isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-400 hover:text-white" : "bg-white/90 border-zinc-200 text-zinc-600 hover:text-black shadow-sm"
+                }`}
+                title="Keyboard Shortcuts [?]"
+              >
+                <HelpCircle size={16} strokeWidth={2} />
+              </MagneticButton>
+
               <MagneticButton
                 onClick={() => setShowDrawer(true)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md border text-xs font-medium transition ${
                   isDark ? "bg-zinc-900/85 border-zinc-800 text-zinc-300 hover:bg-zinc-800 hover:text-white" : "bg-white/90 border-zinc-200 text-zinc-700 hover:bg-white hover:text-black shadow-sm"
                 }`}
+                title="Details [I]"
               >
                 <Info size={14} strokeWidth={2} />
                 <span className="hidden sm:inline">Details</span>
@@ -633,7 +768,7 @@ export default function PhotoViewer({
               <MagneticButton
                 onClick={() => navigate(-1)}
                 className={`p-2.5 rounded-full transition ${isDark ? "hover:bg-zinc-800/50 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
-                title="Previous"
+                title="Previous [←]"
               >
                 <ChevronLeft size={18} strokeWidth={2} />
               </MagneticButton>
@@ -666,6 +801,19 @@ export default function PhotoViewer({
 
               <div className={`w-[1px] h-4 mx-1 ${isDark ? "bg-zinc-800" : "bg-zinc-200"}`} />
 
+              {/* Before/After Split Comparison Toggle Button */}
+              {activeFilmStock !== "normal" && (
+                <MagneticButton
+                  onClick={() => setIsComparing(!isComparing)}
+                  className={`p-2.5 rounded-full transition ${
+                    isComparing ? "bg-amber-500 text-black font-bold" : isDark ? "hover:bg-zinc-800/50 text-zinc-400" : "hover:bg-zinc-100 text-zinc-600"
+                  }`}
+                  title="Toggle Before/After Split View [C]"
+                >
+                  <SlidersHorizontal size={16} strokeWidth={2} />
+                </MagneticButton>
+              )}
+
               <MagneticButton
                 onClick={handleShare}
                 className={`p-2.5 rounded-full transition ${isDark ? "hover:bg-zinc-800/50 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
@@ -695,7 +843,7 @@ export default function PhotoViewer({
                 <MagneticButton
                   onClick={toggleZoom}
                   className={`p-2.5 rounded-full transition ${isDark ? "hover:bg-zinc-800/50 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
-                  title={isZoomed ? "Zoom Out" : "Zoom In"}
+                  title={isZoomed ? "Zoom Out" : "Zoom In [F]"}
                 >
                   {isZoomed ? <Minimize2 size={16} strokeWidth={2} /> : <Maximize2 size={16} strokeWidth={2} />}
                 </MagneticButton>
@@ -706,12 +854,71 @@ export default function PhotoViewer({
               <MagneticButton
                 onClick={() => navigate(1)}
                 className={`p-2.5 rounded-full transition ${isDark ? "hover:bg-zinc-800/50 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
-                title="Next"
+                title="Next [→]"
               >
                 <ChevronRight size={18} strokeWidth={2} />
               </MagneticButton>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* SHORTCUTS GUIDE MODAL */}
+      <AnimatePresence>
+        {showShortcuts && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowShortcuts(false)}
+              className="absolute inset-0 z-50 bg-black/70 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className={`absolute z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md p-6 rounded-2xl border shadow-2xl ${
+                isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-white border-zinc-200 text-zinc-900"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <HelpCircle size={16} className="text-amber-500" /> Keyboard Shortcuts
+                </h3>
+                <button onClick={() => setShowShortcuts(false)} className="text-zinc-400 hover:text-white">
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-2.5 text-xs">
+                <div className="flex justify-between items-center py-1 border-b border-zinc-900">
+                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Next / Previous Photo</span>
+                  <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">← / →</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-zinc-900">
+                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Toggle Details Drawer</span>
+                  <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">I</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-zinc-900">
+                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Toggle Zoom / Fullscreen</span>
+                  <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">F</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-zinc-900">
+                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Play / Pause Slideshow</span>
+                  <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">P</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-zinc-900">
+                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Toggle Before / After Split</span>
+                  <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">C</span>
+                </div>
+                <div className="flex justify-between items-center py-1">
+                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Close / Go Back</span>
+                  <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">Esc</span>
+                </div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
@@ -779,11 +986,11 @@ export default function PhotoViewer({
                 {metadata.length > 0 && (
                   <div className={`space-y-3 pt-4 border-t ${isDark ? "border-zinc-900" : "border-zinc-100"}`}>
                     <span className={`text-xs font-medium flex items-center gap-1.5 ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>
-                      <Camera size={14} /> Camera Settings
+                      <Camera size={14} /> Camera Settings & EXIF
                     </span>
                     <div className="grid grid-cols-2 gap-2">
                       {metadata.map((meta, i) => (
-                        <div key={i} className={`px-3 py-2 border rounded-lg text-xs ${
+                        <div key={i} className={`px-3 py-2 border rounded-lg text-xs font-mono ${
                           isDark ? "bg-zinc-900/60 border-zinc-800/60 text-zinc-300" : "bg-zinc-50 border-zinc-200 text-zinc-700"
                         }`}>
                           {meta}
