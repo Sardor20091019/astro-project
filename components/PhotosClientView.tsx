@@ -31,7 +31,9 @@ import {
   Play,
   Pause,
   Download,
-  ArrowUp
+  ArrowUp,
+  Compass,
+  Sparkles
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import SubmitPhotoModal from "@/components/SubmitPhotoModal";
@@ -42,7 +44,7 @@ interface PhotosClientViewProps {
   sortOptions: { label: string; value: string }[];
 }
 
-// Optimized Memoized Photo Card Component with Mobile-First Action Visibility
+// Optimized Memoized Photo Card Component
 interface PhotoCardProps {
   photo: any;
   index: number;
@@ -257,9 +259,10 @@ export default function PhotosClientView({
 }: PhotosClientViewProps) {
   const router = useRouter();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const timelineRef = useRef<HTMLElement>(null);
+  const isDraggingRef = useRef(false); // Immediate ref tracker for dragging state
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   // Local state for interactive controls & layout preferences
   const [activeCategory, setActiveCategory] = useState("ALL");
@@ -269,6 +272,8 @@ export default function PhotosClientView({
   const [currentPage, setCurrentPage] = useState(1);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [isDraggingTimeline, setIsDraggingTimeline] = useState(false);
   
   // Favorites & Toast state
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -297,11 +302,57 @@ export default function PhotosClientView({
     }
 
     const handleScroll = () => {
+      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (totalHeight > 0) {
+        const progress = (window.scrollY / totalHeight) * 100;
+        setScrollProgress(progress);
+      }
       setShowScrollTop(window.scrollY > 400);
     };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Timeline Scrubbing Logic with instant ref tracking
+  const updateScrollFromClientY = (clientY: number) => {
+    if (!timelineRef.current) return;
+    const rect = timelineRef.current.getBoundingClientRect();
+    const height = rect.height;
+    const offsetY = clientY - rect.top;
+    let percentage = (offsetY / height) * 100;
+    percentage = Math.max(0, Math.min(100, percentage));
+
+    const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+    if (totalHeight > 0) {
+      const targetY = (percentage / 100) * totalHeight;
+      window.scrollTo({ top: targetY, behavior: "auto" });
+    }
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    isDraggingRef.current = true;
+    setIsDraggingTimeline(true);
+    updateScrollFromClientY(e.clientY);
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch (err) {}
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingRef.current) return;
+    updateScrollFromClientY(e.clientY);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false;
+      setIsDraggingTimeline(false);
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch (err) {}
+    }
+  };
 
   const handleGridChange = (cols: 3 | 2) => {
     setGridColumns(cols);
@@ -338,7 +389,6 @@ export default function PhotosClientView({
     setTimeout(() => setCopiedExifText(null), 2000);
   };
 
-  // Robust blob-based download handler to bypass cross-origin restrictions
   const handleDownload = async (photo: any, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -354,7 +404,6 @@ export default function PhotosClientView({
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      // Fallback if CORS blocks fetch
       window.open(photo.url, "_blank");
     }
   };
@@ -400,14 +449,9 @@ export default function PhotosClientView({
         e.preventDefault();
         searchInputRef.current?.focus();
       }
-      if (e.key === "?") {
-        e.preventDefault();
-        setIsHelpOpen((prev) => !prev);
-      }
       if (e.key === "Escape") {
         setLightboxPhotoId(null);
         setShowFavoritesOnly(false);
-        setIsHelpOpen(false);
         setIsSlideshowPlaying(false);
       }
       if (lightboxPhotoId) {
@@ -527,6 +571,16 @@ export default function PhotosClientView({
   return (
     <div className="min-h-screen bg-(--bg) text-(--text) flex flex-col items-center selection:bg-(--accent) selection:text-(--bg)">
       
+      {/* Hide default browser scrollbars */}
+      <style jsx global>{`
+        html {
+          scrollbar-width: none;
+        }
+        body::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+
       {/* Header Bar */}
       <header className="sticky top-0 z-40 w-full border-b border-(--border) bg-(--bg)/85 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between w-full">
@@ -538,11 +592,65 @@ export default function PhotosClientView({
             Home
           </Link>
 
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-(--text-dim)">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-(--text-dim) hidden sm:inline">
             AstroSpectrum Gallery
           </span>
         </div>
       </header>
+
+      {/* High-Density Cinematic Timeline Scrubber (150 Ticks, 50vh, Hold & Drag to Scroll) */}
+      <aside
+        ref={timelineRef}
+        aria-label="Page scroll position scrubber"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        className={`fixed right-4 sm:right-7 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-end justify-between h-[50vh] py-2 px-2 cursor-ns-resize touch-none select-none transition-opacity ${
+          isDraggingTimeline ? "opacity-100 scale-[1.02]" : "opacity-90 hover:opacity-100"
+        }`}
+      >
+        {Array.from({ length: 150 }).map((_, i) => {
+          const tickProgress = (i / 149) * 100;
+          const distance = Math.abs(scrollProgress - tickProgress);
+          const isActive = distance < 2.0;
+          const isMajor = i % 15 === 0;
+          const isSemiMajor = i % 5 === 0;
+
+          return (
+            <span
+              key={i}
+              className={`rounded-full transition-all duration-150 ease-out pointer-events-none ${
+                isActive 
+                  ? "w-7 h-[2.5px] bg-(--accent) shadow-[0_0_12px_var(--accent)] scale-125" 
+                  : isMajor
+                  ? "w-4.5 h-[1.5px] bg-(--text) opacity-50"
+                  : isSemiMajor
+                  ? "w-3 h-[1.2px] bg-(--text-muted) opacity-35"
+                  : "w-1.5 h-[1px] bg-(--text-dim) opacity-20"
+              }`}
+            />
+          );
+        })}
+      </aside>
+
+      {/* Bottom-Left Keyboard Shortcuts Helper */}
+      <div className="fixed bottom-6 left-6 z-40 hidden sm:flex flex-col gap-2 bg-(--surface)/80 backdrop-blur-xl border border-(--border) p-3.5 rounded-2xl shadow-2xl font-mono text-[10px]">
+        <div className="flex items-center justify-between gap-4 pb-1.5 border-b border-(--border) text-(--text-muted) uppercase tracking-widest">
+          <span>Shortcuts</span>
+          <Command className="h-3 w-3 text-(--accent)" />
+        </div>
+        <div className="flex flex-col gap-1.5 text-(--text-dim)">
+          <div className="flex items-center justify-between gap-4">
+            <span>Search</span>
+            <kbd className="px-1.5 py-0.5 rounded bg-(--surface-2) border border-(--border) text-(--text)">/</kbd>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span>Close/Reset</span>
+            <kbd className="px-1.5 py-0.5 rounded bg-(--surface-2) border border-(--border) text-(--text)">Esc</kbd>
+          </div>
+        </div>
+      </div>
 
       {/* Main Content Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-10 flex flex-col items-center text-center gap-8">
@@ -754,273 +862,195 @@ export default function PhotosClientView({
               ))}
             </div>
 
-            {/* Pagination */}
+            {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-8 sm:mt-10 bg-(--surface) border border-(--border) px-4 py-3.5 rounded-2xl shadow-md backdrop-blur-md">
+              <div className="flex items-center justify-center gap-2 mt-8 mb-4">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage <= 1}
-                  className="flex items-center justify-center gap-1 px-3.5 py-2 rounded-xl bg-(--surface-2) border border-(--border) font-mono text-[10px] font-bold text-(--text) hover:bg-(--surface-3) transition-all cursor-pointer disabled:opacity-40"
+                  disabled={currentPage === 1}
+                  className="p-2.5 rounded-xl bg-(--surface) border border-(--border) text-(--text) disabled:opacity-30 disabled:cursor-not-allowed hover:bg-(--surface-2) transition-all cursor-pointer"
                 >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                  Prev
+                  <ChevronLeft className="h-4 w-4" />
                 </button>
-                <span className="px-3 font-mono text-xs font-bold inline-flex items-center justify-center">
-                  {currentPage} / {totalPages}
-                </span>
+                
+                <div className="flex items-center gap-1.5 px-3 py-2 bg-(--surface) border border-(--border) rounded-xl font-mono text-xs">
+                  <span className="text-(--accent) font-bold">{currentPage}</span>
+                  <span className="text-(--text-dim)">/</span>
+                  <span className="text-(--text-muted)">{totalPages}</span>
+                </div>
+
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage >= totalPages}
-                  className="flex items-center justify-center gap-1 px-3.5 py-2 rounded-xl bg-(--surface-2) border border-(--border) font-mono text-[10px] font-bold text-(--text) hover:bg-(--surface-3) transition-all cursor-pointer disabled:opacity-40"
+                  disabled={currentPage === totalPages}
+                  className="p-2.5 rounded-xl bg-(--surface) border border-(--border) text-(--text) disabled:opacity-30 disabled:cursor-not-allowed hover:bg-(--surface-2) transition-all cursor-pointer"
                 >
-                  Next
-                  <ChevronRight className="h-3.5 w-3.5" />
+                  <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
             )}
           </>
         )}
+
       </main>
 
-      {/* Floating Buttons */}
-      <div className="fixed bottom-5 left-5 z-40">
-        <button
-          onClick={() => setIsHelpOpen(true)}
-          className="p-3.5 rounded-2xl bg-(--surface) hover:bg-(--accent) hover:text-(--bg) text-(--text) border border-(--border) shadow-2xl backdrop-blur-xl transition-all cursor-pointer inline-flex items-center justify-center gap-2 font-mono text-[10px] uppercase tracking-wider font-bold"
-          title="Keyboard Shortcuts (?)"
-        >
-          <Command className="h-4 w-4 text-(--accent)" />
-          <span className="hidden sm:inline">Shortcuts</span>
-        </button>
-      </div>
-
+      {/* Scroll to Top Floating Button */}
       <AnimatePresence>
         {showScrollTop && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="fixed bottom-5 right-5 z-40"
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="fixed bottom-6 right-6 z-40 p-3 rounded-2xl bg-(--surface) border border-(--border) text-(--text) shadow-2xl hover:bg-(--accent) hover:text-(--bg) hover:border-(--accent) transition-all cursor-pointer backdrop-blur-xl"
+            title="Scroll to top"
           >
-            <button
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="p-3.5 rounded-2xl bg-(--surface) hover:bg-(--accent) hover:text-(--bg) text-(--text) border border-(--border) shadow-2xl backdrop-blur-xl transition-all cursor-pointer inline-flex items-center justify-center"
-              title="Scroll to top"
-            >
-              <ArrowUp className="h-4 w-4" />
-            </button>
-          </motion.div>
+            <ArrowUp className="h-4 w-4" />
+          </motion.button>
         )}
       </AnimatePresence>
 
-      {/* Lightbox Modal */}
+      {/* Lightbox / Immersive Quick Preview Modal */}
       <AnimatePresence>
-        {activeLightboxPhoto && (
+        {lightboxPhotoId && activeLightboxPhoto && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col items-center justify-between p-3 sm:p-8 overflow-y-auto"
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-6"
+            onClick={() => {
+              setLightboxPhotoId(null);
+              setIsSlideshowPlaying(false);
+            }}
           >
-            <div className="w-full max-w-7xl flex items-center justify-between text-white z-50 py-2">
-              <div className="flex items-center justify-center gap-2 sm:gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-white/70">
-                <span>{lightboxIndex + 1} / {filteredPhotos.length}</span>
-                <span className="hidden sm:inline">•</span>
-                <span className="hidden sm:inline text-(--accent)">{activeLightboxPhoto.category || "photo"}</span>
+            <div
+              className="relative max-w-6xl w-full max-h-[90vh] flex flex-col items-center bg-(--surface) border border-(--border) rounded-3xl overflow-hidden shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Lightbox Header Bar */}
+              <div className="w-full flex items-center justify-between px-6 py-4 border-b border-(--border) bg-(--surface-2)">
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-(--accent)">
+                    {activeLightboxPhoto.category || "Photo"} // {lightboxIndex + 1} of {filteredPhotos.length}
+                  </span>
+                  <span className="text-(--text-dim)">•</span>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-(--text-muted) truncate max-w-[200px] sm:max-w-md">
+                    {activeLightboxPhoto.title}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsSlideshowPlaying(!isSlideshowPlaying)}
+                    title={isSlideshowPlaying ? "Pause Slideshow" : "Play Slideshow"}
+                    className={`px-3 py-1.5 rounded-xl font-mono text-[10px] uppercase tracking-wider border transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+                      isSlideshowPlaying
+                        ? "bg-(--accent) text-(--bg) border-(--accent) font-bold"
+                        : "bg-(--surface) text-(--text) border-(--border) hover:bg-(--surface-3)"
+                    }`}
+                  >
+                    {isSlideshowPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                    <span>{isSlideshowPlaying ? "Playing" : "Slideshow"}</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setLightboxPhotoId(null);
+                      setIsSlideshowPlaying(false);
+                    }}
+                    className="p-2 rounded-xl bg-(--surface) border border-(--border) text-(--text) hover:bg-rose-500 hover:border-rose-500 hover:text-white transition-all cursor-pointer"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
 
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  onClick={() => setIsSlideshowPlaying(!isSlideshowPlaying)}
-                  className={`inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl border font-mono text-[10px] uppercase tracking-wider transition-all cursor-pointer ${
-                    isSlideshowPlaying
-                      ? "bg-(--accent) border-(--accent) text-(--bg) font-bold"
-                      : "bg-white/10 border-white/20 text-white hover:bg-white/20"
-                  }`}
-                  title={isSlideshowPlaying ? "Pause Slideshow" : "Play Slideshow"}
-                >
-                  {isSlideshowPlaying ? <Pause className="h-3.5 w-3.5 fill-current" /> : <Play className="h-3.5 w-3.5 fill-current" />}
-                  <span className="hidden md:inline">{isSlideshowPlaying ? "Pause" : "Slideshow"}</span>
-                </button>
-
-                <button
-                  onClick={(e) => handleDownload(activeLightboxPhoto, e)}
-                  className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 font-mono text-[10px] uppercase tracking-wider text-white transition-all cursor-pointer"
-                  title="Download Original"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">Download</span>
-                </button>
-
-                <button
-                  onClick={(e) => handleShare(activeLightboxPhoto, e)}
-                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 font-mono text-[10px] uppercase tracking-wider text-white transition-all cursor-pointer"
-                >
-                  {copiedId === activeLightboxPhoto.id ? (
-                    <Check className="h-3.5 w-3.5 text-emerald-400" />
-                  ) : (
-                    <Share2 className="h-3.5 w-3.5" />
-                  )}
-                  <span className="hidden md:inline">Share</span>
-                </button>
-
-                <button
-                  onClick={(e) => toggleFavorite(activeLightboxPhoto.id, e)}
-                  className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border font-mono text-[10px] uppercase tracking-wider transition-all cursor-pointer ${
-                    favorites.includes(activeLightboxPhoto.id)
-                      ? "bg-rose-500 border-rose-500 text-white font-bold"
-                      : "bg-white/10 border-white/20 text-white hover:bg-white/20"
-                  }`}
-                >
-                  <Heart className={`h-3.5 w-3.5 ${favorites.includes(activeLightboxPhoto.id) ? "fill-white" : ""}`} />
-                </button>
-
-                <button
-                  onClick={() => {
-                    setLightboxPhotoId(null);
-                    setIsSlideshowPlaying(false);
-                  }}
-                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-all cursor-pointer inline-flex items-center justify-center"
-                  title="Close Lightbox"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            <div className="relative flex-1 w-full max-w-6xl flex items-center justify-center my-2 overflow-hidden px-6 sm:px-10 min-h-[50vh]">
-              {lightboxIndex > 0 && (
-                <button
-                  onClick={() => setLightboxPhotoId(filteredPhotos[lightboxIndex - 1].id)}
-                  className="absolute left-2 sm:left-4 z-40 p-2.5 sm:p-3 rounded-2xl bg-black/70 hover:bg-(--accent) hover:text-(--bg) border border-white/20 text-white transition-all cursor-pointer shadow-2xl inline-flex items-center justify-center"
-                  title="Previous Image"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-              )}
-
-              <div className="relative w-full h-full max-h-[65vh] flex items-center justify-center">
+              {/* Lightbox Image Viewport */}
+              <div className="relative w-full h-[55vh] sm:h-[65vh] bg-black flex items-center justify-center overflow-hidden">
                 <Image
                   src={activeLightboxPhoto.url}
                   alt={activeLightboxPhoto.title}
                   fill
-                  className="object-contain rounded-xl shadow-2xl"
+                  sizes="100vw"
+                  className="object-contain"
+                  priority
                 />
+
+                {/* Left/Right Navigation Arrows */}
+                {lightboxIndex > 0 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLightboxPhotoId(filteredPhotos[lightboxIndex - 1].id);
+                    }}
+                    className="absolute left-4 p-3 rounded-2xl bg-black/60 backdrop-blur-md border border-white/15 text-white hover:bg-(--accent) hover:text-(--bg) transition-all cursor-pointer shadow-lg"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                )}
+                {lightboxIndex < filteredPhotos.length - 1 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLightboxPhotoId(filteredPhotos[lightboxIndex + 1].id);
+                    }}
+                    className="absolute right-4 p-3 rounded-2xl bg-black/60 backdrop-blur-md border border-white/15 text-white hover:bg-(--accent) hover:text-(--bg) transition-all cursor-pointer shadow-lg"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                )}
               </div>
 
-              {lightboxIndex < filteredPhotos.length - 1 && (
-                <button
-                  onClick={() => setLightboxPhotoId(filteredPhotos[lightboxIndex + 1].id)}
-                  className="absolute right-2 sm:right-4 z-40 p-2.5 sm:p-3 rounded-2xl bg-black/70 hover:bg-(--accent) hover:text-(--bg) border border-white/20 text-white transition-all cursor-pointer shadow-2xl inline-flex items-center justify-center"
-                  title="Next Image"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              )}
-            </div>
-
-            <div className="w-full max-w-4xl bg-white/5 border border-white/15 backdrop-blur-xl p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-left mb-2">
-              <div className="flex flex-col gap-1 w-full sm:w-auto">
-                <h2 className="text-sm sm:text-base font-bold text-white tracking-tight line-clamp-1">
-                  {activeLightboxPhoto.title}
-                </h2>
-                <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.15em] text-white/70">
-                  <span className="text-(--accent) truncate">{activeLightboxPhoto.location || "Location N/A"}</span>
-                  <span>•</span>
-                  <span className="truncate">{activeLightboxPhoto.authorName || "Artist"}</span>
+              {/* Lightbox Footer Details */}
+              <div className="w-full p-5 sm:p-6 bg-(--surface) flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-(--border)">
+                <div className="flex flex-col items-start gap-1">
+                  <h3 className="text-base sm:text-lg font-bold text-(--text)">
+                    {activeLightboxPhoto.title}
+                  </h3>
+                  <p className="font-mono text-[11px] text-(--text-dim)">
+                    {activeLightboxPhoto.location || "Location N/A"} • By {activeLightboxPhoto.authorName || "Artist"}
+                  </p>
                 </div>
-              </div>
 
-              <div className="flex flex-wrap items-center justify-start sm:justify-center gap-1.5 w-full sm:w-auto">
-                {activeLightboxPhoto.camera && (
-                  <span className="inline-flex items-center justify-center px-2 py-1 rounded-lg bg-white/10 border border-white/10 font-mono text-[9px] text-white/90 truncate max-w-[140px]">
-                    {activeLightboxPhoto.camera}
-                  </span>
-                )}
-                {activeLightboxPhoto.focalLength && (
-                  <span className="inline-flex items-center justify-center px-2 py-1 rounded-lg bg-white/10 border border-white/10 font-mono text-[9px] text-white/90">
-                    {activeLightboxPhoto.focalLength}
-                  </span>
-                )}
-                {activeLightboxPhoto.aperture && (
-                  <span className="inline-flex items-center justify-center px-2 py-1 rounded-lg bg-white/10 border border-white/10 font-mono text-[9px] text-white/90">
-                    {activeLightboxPhoto.aperture}
-                  </span>
-                )}
+                <div className="flex items-center gap-2.5">
+                  <button
+                    onClick={(e) => handleDownload(activeLightboxPhoto, e)}
+                    className="px-4 py-2 rounded-xl bg-(--surface-2) border border-(--border) hover:border-(--accent) font-mono text-[10px] uppercase tracking-wider text-(--text) transition-all cursor-pointer inline-flex items-center gap-1.5"
+                  >
+                    <Download className="h-3.5 w-3.5 text-(--accent)" />
+                    <span>Download Original</span>
+                  </button>
+
+                  <button
+                    onClick={(e) => toggleFavorite(activeLightboxPhoto.id, e)}
+                    className={`px-4 py-2 rounded-xl border font-mono text-[10px] uppercase tracking-wider transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+                      favorites.includes(activeLightboxPhoto.id)
+                        ? "bg-rose-500 border-rose-500 text-white font-bold"
+                        : "bg-(--surface-2) border-(--border) text-(--text) hover:border-rose-500"
+                    }`}
+                  >
+                    <Heart className={`h-3.5 w-3.5 ${favorites.includes(activeLightboxPhoto.id) ? "fill-white" : ""}`} />
+                    <span>{favorites.includes(activeLightboxPhoto.id) ? "Saved" : "Save"}</span>
+                  </button>
+
+                  <Link
+                    href={`/photos/${activeLightboxPhoto.id}`}
+                    className="px-4 py-2 rounded-xl bg-(--text) text-(--bg) font-mono text-[10px] uppercase tracking-wider font-bold hover:bg-(--accent) transition-all cursor-pointer inline-flex items-center gap-1.5"
+                  >
+                    <span>View Details</span>
+                  </Link>
+                </div>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Keyboard Shortcuts Help Modal */}
-      <AnimatePresence>
-        {isHelpOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4"
-            onClick={() => setIsHelpOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-(--surface) border border-(--border) rounded-2xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-6 text-left"
-            >
-              <div className="flex items-center justify-between border-b border-(--border) pb-4">
-                <div className="flex items-center gap-2">
-                  <Command className="h-4 w-4 text-(--accent)" />
-                  <h3 className="font-mono text-xs uppercase tracking-widest font-bold">Keyboard Shortcuts</h3>
-                </div>
-                <button
-                  onClick={() => setIsHelpOpen(false)}
-                  className="p-1 rounded-lg hover:bg-(--surface-2) text-(--text-dim) hover:text-(--text) transition-colors cursor-pointer inline-flex items-center justify-center"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+      {/* Submit Photo Modal */}
+      <SubmitPhotoModal
+        isOpen={isSubmitOpen}
+        onClose={() => setIsSubmitOpen(false)}
+      />
 
-              <div className="flex flex-col gap-3 font-mono text-[11px]">
-                <div className="flex items-center justify-between py-1.5 border-b border-(--border)/50">
-                  <span className="text-(--text-muted)">Focus Search Bar</span>
-                  <kbd className="px-2 py-1 rounded bg-(--surface-2) border border-(--border) text-(--accent) font-bold inline-flex items-center justify-center">/</kbd>
-                </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-(--border)/50">
-                  <span className="text-(--text-muted)">Navigate Photos</span>
-                  <div className="flex gap-1">
-                    <kbd className="px-2 py-1 rounded bg-(--surface-2) border border-(--border) text-(--accent) font-bold inline-flex items-center justify-center">←</kbd>
-                    <kbd className="px-2 py-1 rounded bg-(--surface-2) border border-(--border) text-(--accent) font-bold inline-flex items-center justify-center">→</kbd>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-(--border)/50">
-                  <span className="text-(--text-muted)">Play / Pause Slideshow</span>
-                  <kbd className="px-2 py-1 rounded bg-(--surface-2) border border-(--border) text-(--accent) font-bold inline-flex items-center justify-center">Space</kbd>
-                </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-(--border)/50">
-                  <span className="text-(--text-muted)">Toggle Shortcuts Modal</span>
-                  <kbd className="px-2 py-1 rounded bg-(--surface-2) border border-(--border) text-(--accent) font-bold inline-flex items-center justify-center">?</kbd>
-                </div>
-                <div className="flex items-center justify-between py-1.5">
-                  <span className="text-(--text-muted)">Close / Exit</span>
-                  <kbd className="px-2 py-1 rounded bg-(--surface-2) border border-(--border) text-(--accent) font-bold inline-flex items-center justify-center">Esc</kbd>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setIsHelpOpen(false)}
-                className="w-full py-2.5 rounded-xl bg-(--accent) text-(--bg) font-mono text-[10px] uppercase tracking-widest font-bold hover:opacity-90 transition-opacity cursor-pointer inline-flex items-center justify-center"
-              >
-                Got it
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <SubmitPhotoModal isOpen={isSubmitOpen} onClose={() => setIsSubmitOpen(false)} />
     </div>
   );
 }

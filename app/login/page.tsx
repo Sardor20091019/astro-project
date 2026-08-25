@@ -5,7 +5,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Chrome, Mail, ShieldCheck, ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { Turnstile } from "@marsidev/react-turnstile";
 import TelegramLogin from "@/components/TelegramLogin";
@@ -22,9 +22,69 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Timeline Scrubber Refs & States
+  const timelineRef = useRef<HTMLElement>(null);
+  const isDraggingRef = useRef(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [isDraggingTimeline, setIsDraggingTimeline] = useState(false);
+
   useEffect(() => {
     if (status === "authenticated") router.replace("/");
   }, [router, status]);
+
+  // Scroll Progress Listener
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (totalHeight > 0) {
+        const progress = (window.scrollY / totalHeight) * 100;
+        setScrollProgress(progress);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Timeline Scrubbing Logic
+  const updateScrollFromClientY = (clientY: number) => {
+    if (!timelineRef.current) return;
+    const rect = timelineRef.current.getBoundingClientRect();
+    const height = rect.height;
+    const offsetY = clientY - rect.top;
+    let percentage = (offsetY / height) * 100;
+    percentage = Math.max(0, Math.min(100, percentage));
+
+    const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+    if (totalHeight > 0) {
+      const targetY = (percentage / 100) * totalHeight;
+      window.scrollTo({ top: targetY, behavior: "auto" });
+    }
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    isDraggingRef.current = true;
+    setIsDraggingTimeline(true);
+    updateScrollFromClientY(e.clientY);
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch (err) {}
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingRef.current) return;
+    updateScrollFromClientY(e.clientY);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false;
+      setIsDraggingTimeline(false);
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch (err) {}
+    }
+  };
 
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,17 +135,64 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="relative min-h-screen bg-(--bg) text-(--text) overflow-hidden flex items-center justify-center p-4">
+    <div className="relative min-h-screen bg-(--bg) text-(--text) flex flex-col items-center justify-center overflow-hidden">
+      
+      {/* Hide default browser scrollbars for clean cinematic aesthetic */}
+      <style jsx global>{`
+        html {
+          scrollbar-width: none;
+        }
+        body::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+
+      {/* High-Density Cinematic Timeline Scrubber */}
+      <aside
+        ref={timelineRef}
+        aria-label="Page scroll position scrubber"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        className={`fixed right-4 sm:right-7 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-end justify-between h-[50vh] py-2 px-2 cursor-ns-resize touch-none select-none transition-opacity ${
+          isDraggingTimeline ? "opacity-100 scale-[1.02]" : "opacity-90 hover:opacity-100"
+        }`}
+      >
+        {Array.from({ length: 150 }).map((_, i) => {
+          const tickProgress = (i / 149) * 100;
+          const distance = Math.abs(scrollProgress - tickProgress);
+          const isActive = distance < 2.0;
+          const isMajor = i % 15 === 0;
+          const isSemiMajor = i % 5 === 0;
+
+          return (
+            <span
+              key={i}
+              className={`rounded-full transition-all duration-150 ease-out pointer-events-none ${
+                isActive 
+                  ? "w-7 h-[2.5px] bg-(--accent) shadow-[0_0_12px_var(--accent)] scale-125" 
+                  : isMajor
+                  ? "w-4.5 h-[1.5px] bg-(--text) opacity-50"
+                  : isSemiMajor
+                  ? "w-3 h-[1.2px] bg-(--text-muted) opacity-35"
+                  : "w-1.5 h-[1px] bg-(--text-dim) opacity-20"
+              }`}
+            />
+          );
+        })}
+      </aside>
+
       {/* Dreamy ethereal background atmosphere */}
-      <div className="absolute inset-0 bg-[url('/hero.jpg')] bg-cover bg-center opacity-20 filter blur-[4px] scale-105" />
-      <div className="absolute inset-0 bg-gradient-to-tr from-(--bg) via-(--bg)/70 to-transparent" />
+      <div className="absolute inset-0 bg-[url('/hero.jpg')] bg-cover bg-center opacity-20 filter blur-[4px] scale-105 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-(--bg) via-(--bg)/70 to-transparent pointer-events-none" />
       
       {/* Soft floating light gradient pools */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-(--accent)/15 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-indigo-500/10 blur-[140px] pointer-events-none" />
 
       {/* Main Glassmorphism Portal Card */}
-      <section className="relative z-10 w-full max-w-lg px-4 py-8 sm:px-6">
+      <main className="relative z-10 w-full max-w-lg px-4 py-8 sm:px-6">
         <motion.div 
           initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
@@ -131,16 +238,17 @@ export default function LoginPage() {
                 onSubmit={handleRequestOtp} 
                 className="space-y-6"
               >
-<div className="relative group">
-  <input 
-    type="email" 
-    placeholder="Enter your email address" 
-    value={email} 
-    onChange={(e) => setEmail(e.target.value)} 
-    required 
-    className="w-full rounded-2xl border border-white/10 bg-(--surface-2)/40 py-1 pl-16 pr-6 text-sm font-medium text-(--text) placeholder:text-(--text-muted) focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all shadow-sm" 
-  />
-</div>
+                <div className="relative group">
+                  <Mail size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-(--text-muted) transition-colors group-focus-within:text-(--accent)" />
+                  <input 
+                    type="email" 
+                    placeholder="Enter your email address" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
+                    required 
+                    className="w-full rounded-2xl border border-white/10 bg-(--surface-2)/40 py-4.5 pl-16 pr-6 text-sm font-medium text-(--text) placeholder:text-(--text-muted) focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/20 transition-all shadow-sm" 
+                  />
+                </div>
                 
                 <div className="flex justify-center py-2">
                   <Turnstile 
@@ -229,7 +337,7 @@ export default function LoginPage() {
             </WorldButton>
           </div>
         </motion.div>
-      </section>
-    </main>
+      </main>
+    </div>
   );
 }

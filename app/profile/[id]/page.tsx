@@ -3,9 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import ProfilePhotoStream from "@/components/ProfilePhotoStream";
-import ProfileHeaderCard from "@/components/ProfileHeaderCard";
 import { isAdmin } from "@/lib/admin";
+import ProfileClientView from "@/components/ProfileClientView";
 
 export const dynamic = "force-dynamic";
 
@@ -75,44 +74,17 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   const canDelete = isSelf || viewerIsAdmin;
 
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--text)] pt-24 pb-20 selection:bg-[var(--accent)] selection:text-[var(--bg)] flex flex-col items-center">
-      <div className="max-w-4xl w-full mx-auto px-6 flex flex-col items-center gap-12">
-
-        {/* Profile Card Header */}
-        <ProfileHeaderCard
-          user={{
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            image: user.image,
-          }}
-          photosCount={photos.length}
-          initialFollowers={followers}
-          initialFollowing={following}
-          currentUserId={session?.user?.id}
-          isSelf={isSelf}
-          viewerIsAdmin={viewerIsAdmin}
-          userId={userId}
-          isFollowingInitial={isFollowing}
-        />
-
-        {/* Images Stream Section */}
-        <div className="w-full flex flex-col items-center gap-6">
-          <div className="flex items-center justify-between w-full border-b border-[var(--border)] pb-4 px-2">
-            <h2 className="font-mono text-xs uppercase tracking-[0.25em] text-[var(--text-muted)] font-bold">
-              Images
-            </h2>
-            <span className="font-mono text-[10px] uppercase tracking-widest bg-[var(--surface)] border border-[var(--border)] px-3.5 py-1 rounded-full text-[var(--text-dim)] shadow-sm">
-              {photos.length} {photos.length === 1 ? "image posted" : "images"}
-            </span>
-          </div>
-
-          <div className="w-full pt-2">
-            <ProfilePhotoStream photos={photos} canDelete={canDelete} />
-          </div>
-        </div>
-
-      </div>
-    </main>
+    <ProfileClientView
+      user={user}
+      photos={photos}
+      followers={followers}
+      following={following}
+      currentUserId={session?.user?.id}
+      isSelf={isSelf}
+      viewerIsAdmin={viewerIsAdmin}
+      userId={userId}
+      isFollowing={isFollowing}
+      canDelete={canDelete}
+    />
   );
 }

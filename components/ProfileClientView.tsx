@@ -1,9 +1,55 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import ProfilePhotoStream from "@/components/ProfilePhotoStream";
+import ProfileHeaderCard from "@/components/ProfileHeaderCard";
 
-export default function PrivacyPolicy() {
-  // Timeline Scrubber Refs & States
+interface UserProfile {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
+}
+
+interface Photo {
+  id: string;
+  url: string;
+  title: string | null;
+  location: string | null;
+}
+
+interface FollowUser {
+  id: string;
+  name: string | null;
+  image: string | null;
+  isFollowing: boolean;
+}
+
+interface ProfileClientViewProps {
+  user: UserProfile;
+  photos: Photo[];
+  followers: FollowUser[];
+  following: FollowUser[];
+  currentUserId?: string;
+  isSelf: boolean;
+  viewerIsAdmin: boolean;
+  userId: string;
+  isFollowing: boolean;
+  canDelete: boolean;
+}
+
+export default function ProfileClientView({
+  user,
+  photos,
+  followers,
+  following,
+  currentUserId,
+  isSelf,
+  viewerIsAdmin,
+  userId,
+  isFollowing,
+  canDelete,
+}: ProfileClientViewProps) {
   const timelineRef = useRef<HTMLElement>(null);
   const isDraggingRef = useRef(false);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -64,7 +110,7 @@ export default function PrivacyPolicy() {
   };
 
   return (
-    <div className="relative min-h-screen bg-(--bg) text-(--text) flex flex-col items-center">
+    <div className="relative min-h-screen bg-[var(--bg)] text-[var(--text)] flex flex-col items-center">
       
       {/* Hide default browser scrollbars for clean cinematic aesthetic */}
       <style jsx global>{`
@@ -100,49 +146,56 @@ export default function PrivacyPolicy() {
               key={i}
               className={`rounded-full transition-all duration-150 ease-out pointer-events-none ${
                 isActive 
-                  ? "w-7 h-[2.5px] bg-(--accent) shadow-[0_0_12px_var(--accent)] scale-125" 
+                  ? "w-7 h-[2.5px] bg-[var(--accent)] shadow-[0_0_12px_var(--accent)] scale-125" 
                   : isMajor
-                  ? "w-4.5 h-[1.5px] bg-(--text) opacity-50"
+                  ? "w-4.5 h-[1.5px] bg-[var(--text)] opacity-50"
                   : isSemiMajor
-                  ? "w-3 h-[1.2px] bg-(--text-muted) opacity-35"
-                  : "w-1.5 h-[1px] bg-(--text-dim) opacity-20"
+                  ? "w-3 h-[1.2px] bg-[var(--text-muted)] opacity-35"
+                  : "w-1.5 h-[1px] bg-[var(--text-dim)] opacity-20"
               }`}
             />
           );
         })}
       </aside>
 
-      <main className="max-w-3xl w-full mx-auto p-8 my-12">
-        <h1 className="text-2xl font-bold mb-4">
-          Privacy Policy <span className="text-sm font-normal text-red-500">(IT DOESNT APPLY YET, IT IS JUST A DRAFT)</span>
-        </h1>
-        <p className="text-sm text-gray-500 mb-6">Last Updated: June 2026</p>
-        
-        <section className="mb-6">
-          <h2 className="text-lg font-semibold">1. Data Collection</h2>
-          <p>We collect minimal data to provide our services. This includes:</p>
-          <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Authentication:</strong> Email addresses and OTP tokens for secure login.</li>
-            <li><strong>Usage Limits:</strong> Your IP address is processed temporarily to enforce rate-limiting (max 3 emails per minute) to prevent spam and bot activity.</li>
-            <li><strong>Profile Info:</strong> Nicknames and names provided by users.</li>
-            <li><strong>Content:</strong> Photos you upload and associated metadata.</li>
-          </ul>
-        </section>
+      <main className="min-h-screen bg-[var(--bg)] text-[var(--text)] pt-24 pb-20 selection:bg-[var(--accent)] selection:text-[var(--bg)] flex flex-col items-center w-full">
+        <div className="max-w-4xl w-full mx-auto px-6 flex flex-col items-center gap-12">
 
-        <section className="mb-6">
-          <h2 className="text-lg font-semibold">2. Automated Moderation & Third Parties</h2>
-          <p>All photos uploaded are automatically processed by a third-party moderation service (<strong>Sightengine</strong>) to ensure content safety. Images that violate community guidelines are blocked at the point of upload and are not stored in our database.</p>
-        </section>
+          {/* Profile Card Header */}
+          <ProfileHeaderCard
+            user={{
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              image: user.image,
+            }}
+            photosCount={photos.length}
+            initialFollowers={followers}
+            initialFollowing={following}
+            currentUserId={currentUserId}
+            isSelf={isSelf}
+            viewerIsAdmin={viewerIsAdmin}
+            userId={userId}
+            isFollowingInitial={isFollowing}
+          />
 
-        <section className="mb-6">
-          <h2 className="text-lg font-semibold">3. Data Retention & Your Rights</h2>
-          <p>We store your data only as long as your account is active. If you delete your account, your personal data and uploaded content will be removed from our systems.</p>
-        </section>
+          {/* Images Stream Section */}
+          <div className="w-full flex flex-col items-center gap-6">
+            <div className="flex items-center justify-between w-full border-b border-[var(--border)] pb-4 px-2">
+              <h2 className="font-mono text-xs uppercase tracking-[0.25em] text-[var(--text-muted)] font-bold">
+                Images
+              </h2>
+              <span className="font-mono text-[10px] uppercase tracking-widest bg-[var(--surface)] border border-[var(--border)] px-3.5 py-1 rounded-full text-[var(--text-dim)] shadow-sm">
+                {photos.length} {photos.length === 1 ? "image posted" : "images"}
+              </span>
+            </div>
 
-        <section className="mb-6">
-          <h2 className="text-lg font-semibold">4. Contact Us</h2>
-          <p>If you have any questions or concerns about this privacy policy or your data, you can contact us at: <a href="mailto:astrospectrum@astrospectrum.uz" className="text-blue-500 underline">astrospectrum@astrospectrum.uz</a></p>
-        </section>
+            <div className="w-full pt-2">
+              <ProfilePhotoStream photos={photos} canDelete={canDelete} />
+            </div>
+          </div>
+
+        </div>
       </main>
     </div>
   );
