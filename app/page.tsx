@@ -27,13 +27,10 @@ export default function CinematicLandingPage() {
 
     checkTheme();
 
-    // Observe changes to html class or data-theme attributes
     const observer = new MutationObserver(checkTheme);
     observer.observe(root, { attributes: true, attributeFilter: ["class", "data-theme"] });
 
-    // Listen for storage changes (if theme is toggled via localStorage)
     window.addEventListener("storage", checkTheme);
-
     const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
     mediaQuery.addEventListener("change", checkTheme);
 
@@ -44,7 +41,7 @@ export default function CinematicLandingPage() {
     };
   }, []);
 
-  // Dynamic content based on theme mode (Aurora for night, Cherry Flower for light)
+  // Dynamic content based on theme mode
   const heroPhoto = isLightMode
     ? {
         title: "Blooming Sakura",
@@ -65,13 +62,21 @@ export default function CinematicLandingPage() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isDraggingTimeline, setIsDraggingTimeline] = useState(false);
 
-  // Scroll Progress Listener
+  // High-performance Scroll Progress Listener with rAF batching
   useEffect(() => {
+    let ticking = false;
+
     const handleScroll = () => {
-      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (totalHeight > 0) {
-        const progress = (window.scrollY / totalHeight) * 100;
-        setScrollProgress(progress);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+          if (totalHeight > 0) {
+            const progress = (window.scrollY / totalHeight) * 100;
+            setScrollProgress(progress);
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
@@ -154,7 +159,7 @@ export default function CinematicLandingPage() {
           return (
             <span
               key={i}
-              className={`rounded-full transition-all duration-150 ease-out pointer-events-none ${
+              className={`rounded-full transition-transform duration-150 ease-out pointer-events-none ${
                 isActive 
                   ? "w-7 h-[2.5px] bg-(--accent) shadow-[0_0_12px_var(--accent)] scale-125" 
                   : isMajor
@@ -171,7 +176,7 @@ export default function CinematicLandingPage() {
       {/* Cinematic Full-Screen Hero Section */}
       <section className="relative w-full h-screen flex flex-col justify-between p-6 sm:p-12 lg:p-16">
         
-        {/* Background Image with Deep Cinematic Gradients */}
+        {/* Background Image with optimized sizes and native fetchPriority */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <Image
             key={heroPhoto.url}
@@ -179,6 +184,8 @@ export default function CinematicLandingPage() {
             alt={heroPhoto.title}
             fill
             priority
+            fetchPriority="high"
+            sizes="(max-width: 1920px) 100vw, 1920px"
             className="object-cover scale-105 filter brightness-90 contrast-110 transition-transform duration-1000 ease-out hover:scale-100"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/60" />
@@ -207,7 +214,7 @@ export default function CinematicLandingPage() {
           <div className="flex flex-col items-center sm:items-end shrink-0 w-full sm:w-auto">
             <Link
               href="/photos"
-              className="group inline-flex items-center justify-center gap-4 px-8 py-4 rounded-xl bg-(--accent) text-(--bg) font-bold text-xs uppercase tracking-[0.2em] shadow-lg hover:scale-[1.02] transition-all duration-300 w-full sm:w-auto"
+              className="group inline-flex items-center justify-center gap-4 px-8 py-4 rounded-xl bg-(--accent) text-(--bg) font-bold text-xs uppercase tracking-[0.2em] shadow-lg hover:scale-[1.02] transition-transform duration-300 w-full sm:w-auto"
             >
               <span>Enter Gallery</span>
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />

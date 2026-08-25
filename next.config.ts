@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/client", "pg"],
   allowedDevOrigins: ['huff-ice-stride.ngrok-free.dev'], 
   images: {
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     remotePatterns: [
       {
         protocol: "https",
