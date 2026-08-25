@@ -31,6 +31,10 @@ import {
   SlidersHorizontal,
   Clock,
   LogIn,
+  RotateCw,
+  RotateCcw,
+  FlipHorizontal,
+  FlipVertical,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { submitComment as submitCommentAction } from "@/app/actions/comments";
@@ -172,24 +176,43 @@ export default function PhotoViewer({
   const [hudVisible, setHudVisible] = useState(true);
   const [showDrawer, setShowDrawer] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false); // In-app sign in modal state
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [hearts, setHearts] = useState<{ id: number; x: number; y: number }[]>([]);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Theme, Film Stock & Slideshow states
+  // Theme, Film Stock, Slideshow & Transformation states
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [activeFilmStock, setActiveFilmStock] = useState("normal");
+  const [rotation, setRotation] = useState<number>(0);
+  const [flipH, setFlipH] = useState<boolean>(false);
+  const [flipV, setFlipV] = useState<boolean>(false);
+
+  // Consider any full 360 rotation cycle (e.g. 360, 720, 0) as original position
+  const isTransformed = (rotation % 360 !== 0) || flipH || flipV;
+
   const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(false);
   const [slideshowIntervalMs, setSlideshowIntervalMs] = useState<number>(4000);
   
-  // Hover & Parked Mouse states
   const [isHovered, setIsHovered] = useState(false);
   const [isMouseStationary, setIsMouseStationary] = useState(false);
   const mouseIdleTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [isComparing, setIsComparing] = useState(false);
   const [splitPos, setSplitPos] = useState(50);
+
+  const showWarning = (msg: string) => {
+    setWarningMessage(msg);
+    setTimeout(() => setWarningMessage(null), 3000);
+  };
+
+  // Automatically turn off comparison mode if user rotates or flips the image
+  useEffect(() => {
+    if (isTransformed && isComparing) {
+      setIsComparing(false);
+    }
+  }, [isTransformed, isComparing]);
 
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const photo = photos[index];
@@ -205,7 +228,7 @@ export default function PhotoViewer({
 
   void stats;
 
-  const rotate = useTransform(x, [-300, 0, 300], isZoomed ? [0, 0, 0] : [-2, 0, 2]);
+  const rotateTilt = useTransform(x, [-300, 0, 300], isZoomed ? [0, 0, 0] : [-2, 0, 2]);
 
   const displayIndex = photos.length - index;
 
@@ -247,11 +270,15 @@ export default function PhotoViewer({
     if (mouseIdleTimerRef.current) clearTimeout(mouseIdleTimerRef.current);
   };
 
+  // Reset image view properties upon switching photos
   useEffect(() => {
     setImageLoaded(false);
     scale.set(1);
     x.set(0);
     y.set(0);
+    setRotation(0);
+    setFlipH(false);
+    setFlipV(false);
   }, [index, scale, x, y]);
 
   useEffect(() => {
@@ -350,7 +377,17 @@ export default function PhotoViewer({
       if (event.key === "i" || event.key === "I") setShowDrawer((prev) => !prev);
       if (event.key === "f" || event.key === "F") toggleZoom();
       if (event.key === "p" || event.key === "P") setIsSlideshowPlaying((prev) => !prev);
-      if (event.key === "c" || event.key === "C") setIsComparing((prev) => !prev);
+      if (event.key === "c" || event.key === "C") {
+        if (isTransformed) {
+          showWarning("Comparison isn't available while image is rotated or mirrored.");
+        } else {
+          setIsComparing((prev) => !prev);
+        }
+      }
+      if (event.key === "r" || event.key === "R") {
+        event.preventDefault();
+        setRotation((prev) => prev + 90);
+      }
       if (event.key === "?" || event.key === "/") {
         event.preventDefault();
         setShowShortcuts((prev) => !prev);
@@ -373,9 +410,8 @@ export default function PhotoViewer({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [navigate, router, showDrawer, showShortcuts, showAuthModal, scale, x, y, isZoomed]);
+  }, [navigate, router, showDrawer, showShortcuts, showAuthModal, scale, x, y, isZoomed, isTransformed]);
 
-  // Fetch engagement data when photo changes
   useEffect(() => {
     if (!photo) return;
     if (photo.id === initialId) {
@@ -389,7 +425,6 @@ export default function PhotoViewer({
       .catch(() => undefined);
   }, [photo, initialId, initialEngagement]);
 
-  // NON-INTRUSIVE AUTH CHECK: Triggers the clean in-app modal instead of a sudden redirect
   const toggleLike = async () => {
     if (!isLoggedIn) {
       setShowAuthModal(true);
@@ -509,6 +544,12 @@ export default function PhotoViewer({
   const activeFilterStyle = FILM_STOCKS.find((s) => s.id === activeFilmStock)?.filter || "none";
   const isDark = theme === "dark";
 
+  // Combined continuous rotation & mirroring style
+  const transformStyle = {
+    transform: `rotate(${rotation}deg) scaleX(${flipH ? -1 : 1}) scaleY(${flipV ? -1 : 1})`,
+    transition: "transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+  };
+
   return (
     <div 
       onWheel={handleWheel}
@@ -522,7 +563,7 @@ export default function PhotoViewer({
 
       {/* STAGE CONTAINER */}
       <div 
-        className="relative z-10 flex flex-1 items-center justify-center overflow-hidden w-full h-full p-4 md:p-12"
+        className="relative z-10 flex flex-1 items-center justify-center overflow-hidden w-full h-full p-2 sm:p-6 md:p-12 pt-28 sm:pt-24 xl:pt-14 pb-28 sm:pb-24"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onMouseMove={handleStageMouseMove}
@@ -550,7 +591,7 @@ export default function PhotoViewer({
         )}
 
         {isSlideshowPlaying && isHovered && !isMouseStationary && (
-          <div className="absolute top-20 z-50 bg-zinc-900/90 border border-amber-500/40 text-amber-400 px-4 py-1.5 rounded-full text-xs font-medium backdrop-blur-md shadow-xl animate-in fade-in">
+          <div className="absolute top-28 xl:top-20 z-50 bg-zinc-900/90 border border-amber-500/40 text-amber-400 px-3.5 py-1.5 rounded-full text-xs font-medium backdrop-blur-md shadow-xl animate-in fade-in">
             Slideshow Paused (Move mouse away or stop for 1s to resume)
           </div>
         )}
@@ -561,7 +602,7 @@ export default function PhotoViewer({
             custom={direction}
             onClick={handleTouchOrClick}
             onTouchStart={handleTouchOrClick}
-            style={{ x, y, rotate, scale }}
+            style={{ x, y, rotate: rotateTilt, scale }}
             drag={mounted && !isComparing ? true : false}
             dragConstraints={isZoomed ? constraints : { left: 0, right: 0, top: 0, bottom: 0 }}
             dragElastic={0.05}
@@ -580,7 +621,7 @@ export default function PhotoViewer({
             className="relative flex items-center justify-center touch-none"
           >
             {!imageLoaded && (
-              <div className={`absolute inset-0 flex items-center justify-center backdrop-blur-md z-20 rounded-xl overflow-hidden min-w-[300px] min-h-[300px] ${
+              <div className={`absolute inset-0 flex items-center justify-center backdrop-blur-md z-20 rounded-xl overflow-hidden min-w-[250px] min-h-[250px] ${
                 isDark ? "bg-zinc-900/50" : "bg-zinc-200/50"
               }`}>
                 <div className="flex flex-col items-center gap-3">
@@ -590,34 +631,37 @@ export default function PhotoViewer({
               </div>
             )}
 
-            {isComparing && activeFilmStock !== "normal" ? (
+            {isComparing && activeFilmStock !== "normal" && !isTransformed ? (
               <div 
                 ref={imageContainerRef}
                 onMouseMove={handleSplitDrag}
                 onTouchMove={handleSplitDrag}
-                className="relative max-h-[85vh] max-w-[90vw] overflow-hidden rounded-lg shadow-2xl select-none cursor-ew-resize"
+                className="relative max-h-[68vh] md:max-h-[82vh] max-w-[92vw] flex items-center justify-center overflow-hidden rounded-xl shadow-2xl select-none border border-white/10 cursor-ew-resize"
               >
-                <img
-                  src={photo.url}
-                  alt={photo.title}
-                  draggable={false}
-                  onLoad={() => setImageLoaded(true)}
-                  className="max-h-[85vh] max-w-[90vw] object-contain block pointer-events-none"
-                />
-                <div 
-                  className="absolute inset-0 overflow-hidden pointer-events-none"
-                  style={{ clipPath: `polygon(0 0, ${splitPos}% 0, ${splitPos}% 100%, 0 100%)` }}
-                >
+                <div style={transformStyle} className="relative flex items-center justify-center">
                   <img
                     src={photo.url}
                     alt={photo.title}
                     draggable={false}
-                    style={{ filter: activeFilterStyle }}
-                    className="max-h-[85vh] max-w-[90vw] object-contain block max-w-none w-full h-full"
+                    onLoad={() => setImageLoaded(true)}
+                    className="max-h-[68vh] md:max-h-[82vh] max-w-[92vw] object-contain block pointer-events-none"
                   />
+                  <div 
+                    className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center"
+                    style={{ clipPath: `polygon(0 0, ${splitPos}% 0, ${splitPos}% 100%, 0 100%)` }}
+                  >
+                    <img
+                      src={photo.url}
+                      alt={photo.title}
+                      draggable={false}
+                      style={{ filter: activeFilterStyle }}
+                      className="max-h-[68vh] md:max-h-[82vh] max-w-[92vw] object-contain block"
+                    />
+                  </div>
                 </div>
+
                 <div 
-                  className="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_10px_rgba(0,0,0,0.8)] pointer-events-none flex items-center justify-center"
+                  className="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_10px_rgba(0,0,0,0.8)] pointer-events-none flex items-center justify-center z-10"
                   style={{ left: `${splitPos}%` }}
                 >
                   <div className="w-7 h-7 rounded-full bg-white text-black shadow-lg flex items-center justify-center text-[10px] font-bold">
@@ -626,15 +670,17 @@ export default function PhotoViewer({
                 </div>
               </div>
             ) : (
-              <img
-                ref={imgRef}
-                src={photo.url}
-                alt={photo.title}
-                draggable={false}
-                onLoad={() => setImageLoaded(true)}
-                style={{ filter: activeFilterStyle }}
-                className={`max-h-[85vh] max-w-[90vw] object-contain rounded-lg shadow-2xl transition-all duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
-              />
+              <div style={transformStyle} className="relative flex items-center justify-center">
+                <img
+                  ref={imgRef}
+                  src={photo.url}
+                  alt={photo.title}
+                  draggable={false}
+                  onLoad={() => setImageLoaded(true)}
+                  style={{ filter: activeFilterStyle }}
+                  className={`max-h-[68vh] md:max-h-[82vh] max-w-[92vw] object-contain rounded-xl shadow-2xl transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+                />
+              </div>
             )}
           </motion.div>
         </AnimatePresence>
@@ -645,11 +691,26 @@ export default function PhotoViewer({
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              className={`absolute top-20 z-50 flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md shadow-2xl text-xs font-medium ${
+              className={`absolute top-28 z-50 flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md shadow-2xl text-xs font-medium ${
                 isDark ? "bg-zinc-900/90 border border-zinc-700 text-white" : "bg-white/90 border border-zinc-300 text-zinc-900"
               }`}
             >
               <Check size={14} className="text-emerald-500" /> Link copied to clipboard
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {warningMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              className={`absolute top-28 z-50 flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md shadow-2xl text-xs font-medium ${
+                isDark ? "bg-amber-950/90 border border-amber-600/50 text-amber-200" : "bg-amber-100/90 border border-amber-300 text-amber-900"
+              }`}
+            >
+              <Info size={14} className="text-amber-500 shrink-0" /> {warningMessage}
             </motion.div>
           )}
         </AnimatePresence>
@@ -679,24 +740,24 @@ export default function PhotoViewer({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className={`absolute top-0 inset-x-0 z-40 flex flex-col xl:flex-row items-center justify-between p-4 sm:p-6 bg-gradient-to-b pointer-events-auto gap-4 ${
-              isDark ? "from-black/90 via-black/50 to-transparent" : "from-zinc-100/90 via-zinc-100/50 to-transparent"
+            className={`absolute top-0 inset-x-0 z-40 flex flex-col items-center p-3 sm:p-5 bg-gradient-to-b pointer-events-auto gap-2 sm:gap-3 ${
+              isDark ? "from-black/95 via-black/80 to-transparent" : "from-zinc-100/95 via-zinc-100/80 to-transparent"
             }`}
           >
-            <div className="flex items-center justify-between w-full xl:w-auto gap-4">
-              <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between w-full gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
                 <MagneticButton
                   onClick={() => router.back()}
-                  className={`flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-md border transition shrink-0 ${
-                    isDark ? "bg-zinc-900/80 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:text-white" : "bg-white/80 text-zinc-700 border-zinc-200 hover:bg-white hover:text-black shadow-sm"
+                  className={`flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-xl border transition shrink-0 ${
+                    isDark ? "bg-zinc-900/90 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:text-white" : "bg-white/90 text-zinc-700 border-zinc-200 hover:bg-white hover:text-black shadow-sm"
                   }`}
                   title="Back to Gallery"
                 >
                   <X size={18} strokeWidth={2} />
                 </MagneticButton>
-                <div className="hidden sm:flex flex-col">
-                  <h2 className={`text-sm font-medium truncate max-w-xs ${isDark ? "text-zinc-200" : "text-zinc-800"}`}>{photo.title}</h2>
-                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                <div className="flex flex-col min-w-0">
+                  <h2 className={`text-xs sm:text-sm font-medium truncate max-w-[170px] sm:max-w-xs ${isDark ? "text-zinc-100" : "text-zinc-900"}`}>{photo.title}</h2>
+                  <div className="hidden sm:flex items-center gap-1.5 mt-0.5 flex-wrap">
                     {photo.camera && (
                       <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-400" : "bg-white/80 border-zinc-200 text-zinc-600"}`}>
                         📷 {photo.camera}
@@ -721,20 +782,90 @@ export default function PhotoViewer({
                 </div>
               </div>
 
-              <div className="flex xl:hidden items-center gap-2">
-                <span className={`px-3 py-1.5 rounded-full backdrop-blur-md border text-xs font-medium ${
-                  isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-400" : "bg-white/80 border-zinc-200 text-zinc-600 shadow-sm"
+              <div className="flex items-center gap-2 shrink-0">
+                <span className={`px-3 py-1.5 rounded-full backdrop-blur-xl border text-xs font-medium ${
+                  isDark ? "bg-zinc-900/90 border-zinc-800 text-zinc-300" : "bg-white/90 border-zinc-200 text-zinc-700 shadow-sm"
                 }`}>
                   {displayIndex} / {photos.length}
                 </span>
+
+                <div className="hidden xl:flex items-center gap-2.5">
+                  <div className={`flex items-center gap-2 p-1.5 px-3 rounded-full backdrop-blur-xl border ${
+                    isDark ? "bg-zinc-900/80 border-zinc-800" : "bg-white/90 border-zinc-200 shadow-sm"
+                  }`}>
+                    <MagneticButton
+                      onClick={() => setIsSlideshowPlaying(!isSlideshowPlaying)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition ${
+                        isSlideshowPlaying 
+                          ? "bg-amber-500 text-black font-bold shadow-md" 
+                          : isDark ? "text-zinc-300 hover:bg-zinc-800" : "text-zinc-700 hover:bg-zinc-100"
+                      }`}
+                      title="Toggle Slideshow [P]"
+                    >
+                      {isSlideshowPlaying ? <Pause size={13} /> : <Play size={13} />}
+                      <span>{isSlideshowPlaying ? "Pause" : "Slideshow"}</span>
+                    </MagneticButton>
+
+                    {isSlideshowPlaying && (
+                      <div className="flex items-center gap-2 pl-2 border-l border-zinc-700/50">
+                        <Clock size={12} className="text-zinc-400" />
+                        <input
+                          type="range"
+                          min="1"
+                          max="12"
+                          step="0.5"
+                          value={slideshowIntervalMs / 1000}
+                          onChange={(e) => setSlideshowIntervalMs(parseFloat(e.target.value) * 1000)}
+                          className="w-20 accent-amber-500 cursor-pointer h-1 bg-zinc-700 rounded-lg"
+                          title={`Interval: ${(slideshowIntervalMs / 1000).toFixed(1)}s`}
+                        />
+                        <span className="text-[10px] font-mono text-amber-400 w-8 font-semibold">
+                          {(slideshowIntervalMs / 1000).toFixed(1)}s
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <MagneticButton
+                    onClick={() => setTheme(isDark ? "light" : "dark")}
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-full backdrop-blur-xl border text-xs font-medium transition ${
+                      isDark ? "bg-zinc-900/80 border-zinc-800 text-amber-400 hover:bg-zinc-800" : "bg-white/90 border-zinc-200 text-amber-600 hover:bg-white shadow-sm"
+                    }`}
+                    title="Toggle Theme"
+                  >
+                    {isDark ? <Sun size={15} /> : <Moon size={15} />}
+                    <span className="hidden sm:inline">{isDark ? "Light" : "Dark"}</span>
+                  </MagneticButton>
+
+                  <MagneticButton
+                    onClick={() => setShowShortcuts(true)}
+                    className={`p-2.5 rounded-full backdrop-blur-xl border transition ${
+                      isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-300 hover:text-white" : "bg-white/90 border-zinc-200 text-zinc-700 hover:text-black shadow-sm"
+                    }`}
+                    title="Keyboard Shortcuts [?]"
+                  >
+                    <HelpCircle size={16} strokeWidth={2} />
+                  </MagneticButton>
+
+                  <MagneticButton
+                    onClick={() => setShowDrawer(true)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-xl border text-xs font-medium transition ${
+                      isDark ? "bg-zinc-900/85 border-zinc-800 text-zinc-200 hover:bg-zinc-800 hover:text-white" : "bg-white/90 border-zinc-200 text-zinc-800 hover:bg-white hover:text-black shadow-sm"
+                    }`}
+                    title="Details [I]"
+                  >
+                    <Info size={14} strokeWidth={2} />
+                    <span className="hidden sm:inline">Details</span>
+                  </MagneticButton>
+                </div>
               </div>
             </div>
 
-            {/* FILM STOCK SELECTOR TOOLBAR */}
-            <div className={`flex items-center gap-1 overflow-x-auto max-w-full py-1.5 px-2.5 backdrop-blur-xl border rounded-2xl scrollbar-none ${
-              isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-300" : "bg-white/90 border-zinc-200 text-zinc-700 shadow-md"
+            {/* FILM STOCK SELECTOR & ROTATION TOOLBAR */}
+            <div className={`flex items-center gap-1.5 overflow-x-auto w-full max-w-full py-1.5 px-2.5 backdrop-blur-2xl border rounded-2xl scrollbar-none shadow-lg ${
+              isDark ? "bg-zinc-900/90 border-zinc-800 text-zinc-300" : "bg-white/95 border-zinc-200 text-zinc-700"
             }`}>
-              <Film size={14} className="text-amber-500 ml-1.5 mr-1 shrink-0 hidden md:block" />
+              <Film size={14} className="text-amber-500 mx-1 shrink-0 hidden sm:block" />
               {FILM_STOCKS.map((stock) => (
                 <button
                   key={stock.id}
@@ -743,89 +874,59 @@ export default function PhotoViewer({
                     activeFilmStock === stock.id
                       ? "bg-amber-500 text-black font-bold shadow-md"
                       : isDark
-                      ? "bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800/50"
+                      ? "bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800/60"
                       : "bg-transparent text-zinc-600 hover:text-black hover:bg-zinc-100"
                   }`}
                 >
                   {stock.label.split(" ")[0]}
                 </button>
               ))}
-            </div>
 
-            <div className="hidden xl:flex items-center gap-3">
-              <span className={`px-3 py-1.5 rounded-full backdrop-blur-md border text-xs font-medium ${
-                isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-400" : "bg-white/80 border-zinc-200 text-zinc-600 shadow-sm"
-              }`}>
-                {displayIndex} / {photos.length}
-              </span>
+              <div className={`w-[1px] h-4 mx-1 shrink-0 ${isDark ? "bg-zinc-800" : "bg-zinc-200"}`} />
 
-              <div className={`flex items-center gap-2 p-1.5 px-3 rounded-full backdrop-blur-md border ${
-                isDark ? "bg-zinc-900/80 border-zinc-800" : "bg-white/90 border-zinc-200 shadow-sm"
-              }`}>
-                <MagneticButton
-                  onClick={() => setIsSlideshowPlaying(!isSlideshowPlaying)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition ${
-                    isSlideshowPlaying 
-                      ? "bg-amber-500 text-black font-bold shadow-md" 
-                      : isDark ? "text-zinc-300 hover:bg-zinc-800" : "text-zinc-700 hover:bg-zinc-100"
-                  }`}
-                  title="Toggle Slideshow [P]"
-                >
-                  {isSlideshowPlaying ? <Pause size={13} /> : <Play size={13} />}
-                  <span>{isSlideshowPlaying ? "Pause" : "Slideshow"}</span>
-                </MagneticButton>
-
-                {isSlideshowPlaying && (
-                  <div className="flex items-center gap-2 pl-2 border-l border-zinc-700/50">
-                    <Clock size={12} className="text-zinc-400" />
-                    <input
-                      type="range"
-                      min="1"
-                      max="12"
-                      step="0.5"
-                      value={slideshowIntervalMs / 1000}
-                      onChange={(e) => setSlideshowIntervalMs(parseFloat(e.target.value) * 1000)}
-                      className="w-20 accent-amber-500 cursor-pointer h-1 bg-zinc-700 rounded-lg"
-                      title={`Interval: ${(slideshowIntervalMs / 1000).toFixed(1)}s`}
-                    />
-                    <span className="text-[10px] font-mono text-amber-400 w-8 font-semibold">
-                      {(slideshowIntervalMs / 1000).toFixed(1)}s
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <MagneticButton
-                onClick={() => setTheme(isDark ? "light" : "dark")}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-full backdrop-blur-md border text-xs font-medium transition ${
-                  isDark ? "bg-zinc-900/80 border-zinc-800 text-amber-400 hover:bg-zinc-800" : "bg-white/90 border-zinc-200 text-amber-600 hover:bg-white shadow-sm"
+              {/* Counter-Clockwise Rotate Button */}
+              <button
+                onClick={() => setRotation((prev) => prev - 90)}
+                className={`p-2 rounded-xl transition cursor-pointer flex items-center justify-center shrink-0 ${
+                  isDark ? "hover:bg-zinc-800 text-zinc-400 hover:text-white" : "hover:bg-zinc-100 text-zinc-600 hover:text-black"
                 }`}
-                title="Toggle Theme"
+                title="Rotate 90° Counter-Clockwise"
               >
-                {isDark ? <Sun size={15} /> : <Moon size={15} />}
-                <span className="hidden sm:inline">{isDark ? "Light" : "Dark"}</span>
-              </MagneticButton>
+                <RotateCcw size={15} />
+              </button>
 
-              <MagneticButton
-                onClick={() => setShowShortcuts(true)}
-                className={`p-2.5 rounded-full backdrop-blur-md border transition ${
-                  isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-400 hover:text-white" : "bg-white/90 border-zinc-200 text-zinc-600 hover:text-black shadow-sm"
+              {/* Clockwise Rotate Button */}
+              <button
+                onClick={() => setRotation((prev) => prev + 90)}
+                className={`p-2 rounded-xl transition cursor-pointer flex items-center justify-center shrink-0 ${
+                  isDark ? "hover:bg-zinc-800 text-zinc-400 hover:text-white" : "hover:bg-zinc-100 text-zinc-600 hover:text-black"
                 }`}
-                title="Keyboard Shortcuts [?]"
+                title="Rotate 90° Clockwise [R]"
               >
-                <HelpCircle size={16} strokeWidth={2} />
-              </MagneticButton>
+                <RotateCw size={15} />
+              </button>
 
-              <MagneticButton
-                onClick={() => setShowDrawer(true)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md border text-xs font-medium transition ${
-                  isDark ? "bg-zinc-900/85 border-zinc-800 text-zinc-300 hover:bg-zinc-800 hover:text-white" : "bg-white/90 border-zinc-200 text-zinc-700 hover:bg-white hover:text-black shadow-sm"
+              {/* Flip Horizontal */}
+              <button
+                onClick={() => setFlipH((prev) => !prev)}
+                className={`p-2 rounded-xl transition cursor-pointer shrink-0 flex items-center justify-center ${
+                  flipH ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" : isDark ? "hover:bg-zinc-800 text-zinc-400 hover:text-white" : "hover:bg-zinc-100 text-zinc-600 hover:text-black"
                 }`}
-                title="Details [I]"
+                title="Mirror Horizontally"
               >
-                <Info size={14} strokeWidth={2} />
-                <span className="hidden sm:inline">Details</span>
-              </MagneticButton>
+                <FlipHorizontal size={15} />
+              </button>
+
+              {/* Flip Vertical */}
+              <button
+                onClick={() => setFlipV((prev) => !prev)}
+                className={`p-2 rounded-xl transition cursor-pointer shrink-0 flex items-center justify-center ${
+                  flipV ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" : isDark ? "hover:bg-zinc-800 text-zinc-400 hover:text-white" : "hover:bg-zinc-100 text-zinc-600 hover:text-black"
+                }`}
+                title="Mirror Vertically"
+              >
+                <FlipVertical size={15} />
+              </button>
             </div>
           </motion.div>
         )}
@@ -839,53 +940,61 @@ export default function PhotoViewer({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 15 }}
             transition={{ duration: 0.2 }}
-            className="absolute bottom-6 inset-x-0 z-40 flex items-center justify-center pointer-events-none"
+            className="absolute bottom-4 sm:bottom-6 inset-x-0 z-40 flex items-center justify-center pointer-events-none px-3"
           >
-            <div className={`pointer-events-auto flex items-center gap-1 px-3 py-2 backdrop-blur-xl border rounded-full shadow-2xl ${
-              isDark ? "bg-zinc-900/80 border-zinc-800/80 text-zinc-300" : "bg-white/90 border-zinc-200 text-zinc-700"
+            <div className={`pointer-events-auto flex items-center gap-1 sm:gap-1.5 px-3 py-2 backdrop-blur-2xl border rounded-full shadow-2xl max-w-full overflow-x-auto scrollbar-none ${
+              isDark ? "bg-zinc-900/90 border-zinc-800/80 text-zinc-300" : "bg-white/95 border-zinc-200 text-zinc-700"
             }`}>
               <MagneticButton
                 onClick={() => navigate(1)}
-                className={`p-2.5 rounded-full transition ${isDark ? "hover:bg-zinc-800/50 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
+                className={`p-2.5 rounded-full transition shrink-0 ${isDark ? "hover:bg-zinc-800/60 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
                 title="Newer Photo [←]"
               >
                 <ChevronLeft size={18} strokeWidth={2} />
               </MagneticButton>
 
-              <div className={`w-[1px] h-4 mx-1 ${isDark ? "bg-zinc-800" : "bg-zinc-200"}`} />
+              <div className={`w-[1px] h-4 mx-0.5 shrink-0 ${isDark ? "bg-zinc-800" : "bg-zinc-200"}`} />
 
               <MagneticButton
                 onClick={toggleLike}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition group`}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-full transition group shrink-0`}
                 title={isLoggedIn ? "Like Photo" : "Sign in to like"}
               >
                 <Heart size={16} strokeWidth={engagement.viewerLiked ? 0 : 2} className={`transition-all ${engagement.viewerLiked ? "text-red-500 fill-current scale-110" : isDark ? "text-zinc-400 group-hover:text-white" : "text-zinc-600 group-hover:text-black"}`} />
-                <span className={`text-xs font-medium ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>{engagement.likeCount}</span>
+                <span className={`text-xs font-medium ${isDark ? "text-zinc-200" : "text-zinc-800"}`}>{engagement.likeCount}</span>
               </MagneticButton>
 
               <MagneticButton
                 onClick={() => setShowDrawer(true)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition group`}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-full transition group shrink-0`}
               >
                 <Star size={16} strokeWidth={2} className="text-amber-500 transition-colors" />
-                <span className={`text-xs font-medium ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>{engagement.ratingAverage.toFixed(1)}</span>
+                <span className={`text-xs font-medium ${isDark ? "text-zinc-200" : "text-zinc-800"}`}>{engagement.ratingAverage.toFixed(1)}</span>
               </MagneticButton>
 
               <MagneticButton
                 onClick={() => setShowDrawer(true)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition group`}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-full transition group shrink-0`}
               >
                 <MessageCircle size={16} strokeWidth={2} className={isDark ? "text-zinc-400 group-hover:text-white" : "text-zinc-600 group-hover:text-black"} />
-                <span className={`text-xs font-medium ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>{engagement.commentCount}</span>
+                <span className={`text-xs font-medium ${isDark ? "text-zinc-200" : "text-zinc-800"}`}>{engagement.commentCount}</span>
               </MagneticButton>
 
-              <div className={`w-[1px] h-4 mx-1 ${isDark ? "bg-zinc-800" : "bg-zinc-200"}`} />
+              <div className={`w-[1px] h-4 mx-0.5 shrink-0 ${isDark ? "bg-zinc-800" : "bg-zinc-200"}`} />
 
               {activeFilmStock !== "normal" && (
                 <MagneticButton
-                  onClick={() => setIsComparing(!isComparing)}
-                  className={`p-2.5 rounded-full transition ${
-                    isComparing ? "bg-amber-500 text-black font-bold" : isDark ? "hover:bg-zinc-800/50 text-zinc-400" : "hover:bg-zinc-100 text-zinc-600"
+                  onClick={() => {
+                    if (isTransformed) {
+                      showWarning("Comparison isn't available while image is rotated or mirrored.");
+                    } else {
+                      setIsComparing(!isComparing);
+                    }
+                  }}
+                  className={`p-2.5 rounded-full transition shrink-0 ${
+                    isComparing 
+                      ? "bg-amber-500 text-black font-bold shadow-md" 
+                      : isDark ? "hover:bg-zinc-800/60 text-zinc-400 hover:text-white" : "hover:bg-zinc-100 text-zinc-600 hover:text-black"
                   }`}
                   title="Toggle Before/After Split View [C]"
                 >
@@ -895,7 +1004,7 @@ export default function PhotoViewer({
 
               <MagneticButton
                 onClick={handleShare}
-                className={`p-2.5 rounded-full transition ${isDark ? "hover:bg-zinc-800/50 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
+                className={`p-2.5 rounded-full transition shrink-0 ${isDark ? "hover:bg-zinc-800/60 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
                 title="Share Photo"
               >
                 <Share2 size={16} strokeWidth={2} />
@@ -903,7 +1012,7 @@ export default function PhotoViewer({
 
               <MagneticButton
                 onClick={handleDownload}
-                className={`p-2.5 rounded-full transition ${isDark ? "hover:bg-zinc-800/50 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
+                className={`p-2.5 rounded-full transition shrink-0 ${isDark ? "hover:bg-zinc-800/60 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
                 title="Download"
               >
                 <Download size={16} strokeWidth={2} />
@@ -911,27 +1020,35 @@ export default function PhotoViewer({
 
               <MagneticButton
                 onClick={() => setTheme(isDark ? "light" : "dark")}
-                className={`p-2.5 rounded-full xl:hidden transition ${isDark ? "hover:bg-zinc-800/50 text-amber-400" : "hover:bg-zinc-100 text-amber-600"}`}
+                className={`p-2.5 rounded-full xl:hidden transition shrink-0 ${isDark ? "hover:bg-zinc-800/60 text-amber-400" : "hover:bg-zinc-100 text-amber-600"}`}
                 title="Toggle Theme"
               >
                 {isDark ? <Sun size={16} /> : <Moon size={16} />}
               </MagneticButton>
 
+              <MagneticButton
+                onClick={() => setShowDrawer(true)}
+                className={`p-2.5 rounded-full xl:hidden transition shrink-0 ${isDark ? "hover:bg-zinc-800/60 text-zinc-200" : "hover:bg-zinc-100 text-zinc-800"}`}
+                title="Details [I]"
+              >
+                <Info size={16} strokeWidth={2} />
+              </MagneticButton>
+
               {!isMobile && (
                 <MagneticButton
                   onClick={toggleZoom}
-                  className={`p-2.5 rounded-full transition ${isDark ? "hover:bg-zinc-800/50 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
+                  className={`p-2.5 rounded-full transition shrink-0 ${isDark ? "hover:bg-zinc-800/60 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
                   title={isZoomed ? "Zoom Out" : "Zoom In [F]"}
                 >
                   {isZoomed ? <Minimize2 size={16} strokeWidth={2} /> : <Maximize2 size={16} strokeWidth={2} />}
                 </MagneticButton>
               )}
 
-              <div className={`w-[1px] h-4 mx-1 ${isDark ? "bg-zinc-800" : "bg-zinc-200"}`} />
+              <div className={`w-[1px] h-4 mx-0.5 shrink-0 ${isDark ? "bg-zinc-800" : "bg-zinc-200"}`} />
 
               <MagneticButton
                 onClick={() => navigate(-1)}
-                className={`p-2.5 rounded-full transition ${isDark ? "hover:bg-zinc-800/50 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
+                className={`p-2.5 rounded-full transition shrink-0 ${isDark ? "hover:bg-zinc-800/60 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
                 title="Older Photo [→]"
               >
                 <ChevronRight size={18} strokeWidth={2} />
@@ -941,7 +1058,7 @@ export default function PhotoViewer({
         )}
       </AnimatePresence>
 
-      {/* IN-APP SIGN-IN MODAL (Keeps user on the same photo view) */}
+      {/* IN-APP SIGN-IN MODAL */}
       <AnimatePresence>
         {showAuthModal && (
           <>
@@ -956,7 +1073,7 @@ export default function PhotoViewer({
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className={`absolute z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm p-6 rounded-3xl border shadow-2xl text-center ${
+              className={`absolute z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm p-6 rounded-3xl border shadow-2xl text-center ${
                 isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-white border-zinc-200 text-zinc-900"
               }`}
             >
@@ -1024,7 +1141,7 @@ export default function PhotoViewer({
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className={`absolute z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md p-6 rounded-2xl border shadow-2xl ${
+              className={`absolute z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md p-6 rounded-2xl border shadow-2xl ${
                 isDark ? "bg-zinc-950 border-zinc-800 text-white" : "bg-white border-zinc-200 text-zinc-900"
               }`}
             >
@@ -1043,6 +1160,10 @@ export default function PhotoViewer({
                   <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">← / →</span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-zinc-900">
+                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Rotate 90° Clockwise</span>
+                  <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">R</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-zinc-900">
                   <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Toggle Details Drawer</span>
                   <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">I</span>
                 </div>
@@ -1055,7 +1176,7 @@ export default function PhotoViewer({
                   <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">P</span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-zinc-900">
-                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Toggle Before / After Split</span>
+                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Toggle Before / After Split (When unrotated)</span>
                   <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">C</span>
                 </div>
                 <div className="flex justify-between items-center py-1">
