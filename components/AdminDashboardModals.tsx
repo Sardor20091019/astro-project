@@ -8,11 +8,11 @@ import { AdminCommentDelete } from "@/components/AdminCommentDelete";
 interface UserItem {
   id: string;
   name: string | null;
-  email: string;
+  email: string | null;
 }
 
 interface CommentItem {
-  id: string;
+  id: number; // <-- Fixed here (changed from string to number)
   body: string;
   createdAt: Date;
   user: {
@@ -145,7 +145,7 @@ export default function AdminDashboardModals({ users, comments, currentUserId }:
                       <p className="font-semibold text-(--text) text-xs truncate">
                         {u.name || "Unnamed User"} {u.id === currentUserId && "(You)"}
                       </p>
-                      <p className="text-(--text-dim) text-[11px] font-mono truncate mt-0.5">{u.email}</p>
+                      <p className="text-(--text-dim) text-[11px] font-mono truncate mt-0.5">{u.email || "No Email Provided"}</p>
                     </div>
                   </div>
                   {u.id !== currentUserId && (
