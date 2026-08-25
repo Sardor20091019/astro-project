@@ -78,10 +78,10 @@ const PhotoCard = memo(function PhotoCard({
 
   return (
     <motion.article 
-      initial={{ opacity: 0, y: 15 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, delay: index * 0.02 }}
-      className="group relative overflow-hidden rounded-2xl border border-(--border) bg-(--surface) hover:border-white/20 transition-all duration-300 flex flex-col text-left shadow-[0_8px_25px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.2)] hover:-translate-y-1"
+      transition={{ duration: 0.4, delay: index * 0.03, ease: [0.16, 1, 0.3, 1] }}
+      className="group relative overflow-hidden rounded-3xl border border-white/10 bg-(--surface) hover:border-white/25 transition-all duration-500 flex flex-col text-left shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.4)] hover:-translate-y-1.5"
     >
       <div 
         className="relative aspect-4/3 w-full overflow-hidden bg-(--surface-2) cursor-pointer"
@@ -90,34 +90,36 @@ const PhotoCard = memo(function PhotoCard({
       >
         <Link
           href={`/photos/${photo.id}`}
-          className="absolute inset-0 z-20 block focus-visible:outline-none"
+          className="absolute inset-0 z-25 block focus-visible:outline-none"
+          aria-label={`View details for ${photo.title}`}
         >
           <span className="sr-only">View {photo.title}</span>
         </Link>
 
         <Image
           src={photo.url}
-          alt={photo.title}
+          alt={photo.title || "Cinematic Photography Archive Item"}
           fill
           priority={index < 3}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          className="object-cover transition-transform duration-700 ease-[0.16,1,0.3,1] group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/25 opacity-40 group-hover:opacity-75 transition-opacity duration-300 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/30 opacity-50 group-hover:opacity-80 transition-opacity duration-500 pointer-events-none" />
 
         {/* Category Tag Sticker */}
-        <div className="absolute left-3.5 top-3.5 z-30 pointer-events-none flex items-center justify-center max-w-[55%]">
-          <span className="inline-flex items-center justify-center bg-black/60 backdrop-blur-md border border-white/15 px-2.5 sm:px-3 py-1 rounded-full text-[9px] font-mono uppercase tracking-[0.18em] text-white/90 truncate">
+        <div className="absolute left-4 top-4 z-30 pointer-events-none flex items-center justify-center max-w-[60%]">
+          <span className="inline-flex items-center justify-center bg-black/50 backdrop-blur-xl border border-white/20 px-3 py-1 rounded-full text-[9px] font-mono uppercase tracking-[0.2em] text-white/90 truncate shadow-lg">
             {photo.category ? photo.category.toLowerCase() : "other"}
           </span>
         </div>
 
         {/* Action Buttons Right Side */}
-        <div className="absolute right-3.5 top-3.5 z-30 flex items-center justify-center gap-1.5 sm:gap-2">
+        <div className="absolute right-4 top-4 z-30 flex items-center justify-center gap-2">
           <button
             onClick={(e) => onDownload(photo, e)}
             title="Download Original"
-            className="p-2 rounded-xl bg-black/70 backdrop-blur-md border border-white/15 text-white/90 hover:bg-(--accent) hover:text-(--bg) hover:border-(--accent) transition-all cursor-pointer shadow-md inline-flex items-center justify-center"
+            aria-label={`Download original file for ${photo.title}`}
+            className="p-2.5 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/20 text-white/90 hover:bg-(--accent) hover:text-(--bg) hover:border-(--accent) transition-all duration-300 cursor-pointer shadow-xl inline-flex items-center justify-center"
           >
             <Download className="h-3.5 w-3.5" />
           </button>
@@ -125,7 +127,8 @@ const PhotoCard = memo(function PhotoCard({
           <button
             onClick={(e) => onShare(photo, e)}
             title={isCopied ? "Link copied!" : "Share photo"}
-            className="p-2 rounded-xl bg-black/70 backdrop-blur-md border border-white/15 text-white/90 hover:bg-(--accent) hover:text-(--bg) hover:border-(--accent) transition-all cursor-pointer shadow-md inline-flex items-center justify-center"
+            aria-label={`Share ${photo.title}`}
+            className="p-2.5 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/20 text-white/90 hover:bg-(--accent) hover:text-(--bg) hover:border-(--accent) transition-all duration-300 cursor-pointer shadow-xl inline-flex items-center justify-center"
           >
             {isCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Share2 className="h-3.5 w-3.5" />}
           </button>
@@ -133,10 +136,11 @@ const PhotoCard = memo(function PhotoCard({
           <button
             onClick={(e) => onToggleFavorite(photo.id, e)}
             title={isFavorited ? "Remove from saved" : "Save to favorites"}
-            className={`p-2 rounded-xl backdrop-blur-md border transition-all cursor-pointer shadow-md inline-flex items-center justify-center ${
+            aria-label={isFavorited ? "Remove from saved favorites" : "Save to favorites"}
+            className={`p-2.5 rounded-2xl backdrop-blur-xl border transition-all duration-300 cursor-pointer shadow-xl inline-flex items-center justify-center ${
               isFavorited
-                ? "bg-rose-500 border-rose-500 text-white"
-                : "bg-black/70 border-white/15 text-white/90 hover:bg-rose-500 hover:border-rose-500"
+                ? "bg-rose-500 border-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.4)]"
+                : "bg-black/60 border-white/20 text-white/90 hover:bg-rose-500 hover:border-rose-500"
             }`}
           >
             <Heart className={`h-3.5 w-3.5 ${isFavorited ? "fill-white" : ""}`} />
@@ -149,20 +153,21 @@ const PhotoCard = memo(function PhotoCard({
               onOpenLightbox(photo.id);
             }}
             title="Quick Preview"
-            className="p-2 rounded-xl bg-black/70 backdrop-blur-md border border-white/15 text-white/90 hover:bg-(--accent) hover:text-(--bg) hover:border-(--accent) transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 cursor-pointer shadow-md inline-flex items-center justify-center"
+            aria-label={`Quick preview lightbox for ${photo.title}`}
+            className="p-2.5 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/20 text-white/90 hover:bg-(--accent) hover:text-(--bg) hover:border-(--accent) transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100 cursor-pointer shadow-xl inline-flex items-center justify-center"
           >
             <Eye className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
 
-      <div className="p-4 sm:p-6 flex flex-col gap-4 flex-grow justify-between bg-(--surface)">
+      <div className="p-5 sm:p-6 flex flex-col gap-4 flex-grow justify-between bg-(--surface)">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-(--accent) truncate">
+            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-(--accent) truncate font-medium">
               {photo.location || "Location N/A"}
             </span>
-            <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-(--text-dim) truncate font-medium">
+            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-(--text-dim) truncate font-medium">
               {photo.authorName || "Artist"}
             </span>
           </div>
@@ -173,12 +178,13 @@ const PhotoCard = memo(function PhotoCard({
 
           {/* Structured EXIF Badges */}
           {(cam || foc || apt || sht || isoVal) && (
-            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
               {cam && (
                 <button
                   onClick={(e) => onCopyExif(cam, e)}
                   title="Click to copy camera model"
-                  className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-(--surface-2) border border-(--border) font-mono text-[9px] text-(--text) hover:border-(--accent) transition-colors cursor-pointer"
+                  aria-label={`Copy camera model: ${cam}`}
+                  className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-(--surface-2) border border-white/10 font-mono text-[9px] text-(--text) hover:border-(--accent) hover:bg-(--surface-3) transition-all cursor-pointer"
                 >
                   <Camera className="w-3 h-3 text-(--accent) shrink-0" />
                   <span className="truncate max-w-[120px]">{cam}</span>
@@ -189,7 +195,8 @@ const PhotoCard = memo(function PhotoCard({
                 <button
                   onClick={(e) => onCopyExif(foc, e)}
                   title="Click to copy focal length"
-                  className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-(--surface-2) border border-(--border) font-mono text-[9px] text-(--text) hover:border-(--accent) transition-colors cursor-pointer"
+                  aria-label={`Copy focal length: ${foc}`}
+                  className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-(--surface-2) border border-white/10 font-mono text-[9px] text-(--text) hover:border-(--accent) hover:bg-(--surface-3) transition-all cursor-pointer"
                 >
                   <Maximize2 className="w-3 h-3 text-(--accent) shrink-0" />
                   <span>{foc}</span>
@@ -200,7 +207,8 @@ const PhotoCard = memo(function PhotoCard({
                 <button
                   onClick={(e) => onCopyExif(apt, e)}
                   title="Click to copy aperture"
-                  className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-(--surface-2) border border-(--border) font-mono text-[9px] text-(--text) hover:border-(--accent) transition-colors cursor-pointer"
+                  aria-label={`Copy aperture: ${apt}`}
+                  className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-(--surface-2) border border-white/10 font-mono text-[9px] text-(--text) hover:border-(--accent) hover:bg-(--surface-3) transition-all cursor-pointer"
                 >
                   <Aperture className="w-3 h-3 text-(--accent) shrink-0" />
                   <span>{apt}</span>
@@ -211,7 +219,8 @@ const PhotoCard = memo(function PhotoCard({
                 <button
                   onClick={(e) => onCopyExif(sht, e)}
                   title="Click to copy shutter speed"
-                  className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-(--surface-2) border border-(--border) font-mono text-[9px] text-(--text) hover:border-(--accent) transition-colors cursor-pointer"
+                  aria-label={`Copy shutter speed: ${sht}`}
+                  className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-(--surface-2) border border-white/10 font-mono text-[9px] text-(--text) hover:border-(--accent) hover:bg-(--surface-3) transition-all cursor-pointer"
                 >
                   <Clock className="w-3 h-3 text-(--accent) shrink-0" />
                   <span>{sht}</span>
@@ -222,7 +231,8 @@ const PhotoCard = memo(function PhotoCard({
                 <button
                   onClick={(e) => onCopyExif(String(isoVal), e)}
                   title="Click to copy ISO"
-                  className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-(--surface-2) border border-(--border) font-mono text-[9px] text-(--text) hover:border-(--accent) transition-colors cursor-pointer"
+                  aria-label={`Copy ISO: ${isoVal}`}
+                  className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-(--surface-2) border border-white/10 font-mono text-[9px] text-(--text) hover:border-(--accent) hover:bg-(--surface-3) transition-all cursor-pointer"
                 >
                   <span className="text-(--accent) font-bold text-[8px]">ISO</span>
                   <span>{isoVal}</span>
@@ -233,12 +243,12 @@ const PhotoCard = memo(function PhotoCard({
           )}
         </div>
 
-        <div className="grid grid-cols-3 pt-4 border-t border-(--border) text-[10px] font-mono uppercase tracking-[0.15em] text-(--text-dim)">
-          <span className="inline-flex items-center justify-center gap-1.5 border-r border-(--border) pr-2">
+        <div className="grid grid-cols-3 pt-4 border-t border-white/10 text-[10px] font-mono uppercase tracking-[0.2em] text-(--text-dim)">
+          <span className="inline-flex items-center justify-center gap-1.5 border-r border-white/10 pr-2">
             <Heart className="h-3 w-3 text-rose-500" />
             {photo.likeCount ?? 0}
           </span>
-          <span className="inline-flex items-center justify-center gap-1.5 border-r border-(--border) px-2">
+          <span className="inline-flex items-center justify-center gap-1.5 border-r border-white/10 px-2">
             <Star className="h-3 w-3 text-amber-400" />
             {photo.avgRating.toFixed(1)}
           </span>
@@ -260,7 +270,7 @@ export default function PhotosClientView({
   const router = useRouter();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const timelineRef = useRef<HTMLElement>(null);
-  const isDraggingRef = useRef(false); // Immediate ref tracker for dragging state
+  const isDraggingRef = useRef(false);
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
 
@@ -287,7 +297,7 @@ export default function PhotosClientView({
   const itemsPerPage = gridColumns === 3 ? 9 : 6;
   const currentSortLabel = sortOptions.find((opt) => opt.value === activeSort)?.label || "Sort";
 
-  // Load preferences on mount & scroll listener
+  // Load preferences on mount & scroll listener[cite: 1]
   useEffect(() => {
     try {
       const storedFavs = localStorage.getItem("astrospectrum_favorites");
@@ -314,7 +324,7 @@ export default function PhotosClientView({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Timeline Scrubbing Logic with instant ref tracking
+  // Timeline Scrubbing Logic with instant ref tracking[cite: 1]
   const updateScrollFromClientY = (clientY: number) => {
     if (!timelineRef.current) return;
     const rect = timelineRef.current.getBoundingClientRect();
@@ -435,7 +445,7 @@ export default function PhotosClientView({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Global Keyboard Shortcuts
+  // Global Keyboard Shortcuts[cite: 1]
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) {
@@ -477,7 +487,7 @@ export default function PhotosClientView({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [lightboxPhotoId]);
 
-  // Filter & Sort computation
+  // Filter & Sort computation[cite: 1]
   const filteredPhotos = useMemo(() => {
     let result = [...initialPhotos];
 
@@ -538,7 +548,7 @@ export default function PhotosClientView({
 
   const activeLightboxPhoto = lightboxIndex !== -1 ? filteredPhotos[lightboxIndex] : null;
 
-  // Slideshow interval timer
+  // Slideshow interval timer[cite: 1]
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isSlideshowPlaying && lightboxPhotoId && filteredPhotos.length > 0) {
@@ -571,7 +581,7 @@ export default function PhotosClientView({
   return (
     <div className="min-h-screen bg-(--bg) text-(--text) flex flex-col items-center selection:bg-(--accent) selection:text-(--bg)">
       
-      {/* Hide default browser scrollbars */}
+      {/* Hide default browser scrollbars[cite: 1] */}
       <style jsx global>{`
         html {
           scrollbar-width: none;
@@ -581,24 +591,24 @@ export default function PhotosClientView({
         }
       `}</style>
 
-      {/* Header Bar */}
-      <header className="sticky top-0 z-40 w-full border-b border-(--border) bg-(--bg)/85 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between w-full">
+      {/* Header Bar[cite: 1] */}
+      <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-(--bg)/80 backdrop-blur-2xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 h-20 flex items-center justify-between w-full">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.2em] text-(--text-dim) hover:text-(--text) transition-colors"
+            className="inline-flex items-center gap-2.5 text-[11px] font-mono uppercase tracking-[0.25em] text-(--text-dim) hover:text-(--text) transition-colors"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <ArrowLeft className="h-4 w-4" />
             Home
           </Link>
 
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-(--text-dim) hidden sm:inline">
-            AstroSpectrum Gallery
+          <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-(--text-dim) hidden sm:inline">
+            AstroSpectrum // Archive
           </span>
         </div>
       </header>
 
-      {/* High-Density Cinematic Timeline Scrubber (150 Ticks, 50vh, Hold & Drag to Scroll) */}
+      {/* High-Density Cinematic Timeline Scrubber (150 Ticks, 50vh, Hold & Drag to Scroll)[cite: 1] */}
       <aside
         ref={timelineRef}
         aria-label="Page scroll position scrubber"
@@ -606,8 +616,8 @@ export default function PhotosClientView({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className={`fixed right-4 sm:right-7 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-end justify-between h-[50vh] py-2 px-2 cursor-ns-resize touch-none select-none transition-opacity ${
-          isDraggingTimeline ? "opacity-100 scale-[1.02]" : "opacity-90 hover:opacity-100"
+        className={`fixed right-6 sm:right-10 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-end justify-between h-[50vh] py-2 px-3 cursor-ns-resize touch-none select-none transition-opacity ${
+          isDraggingTimeline ? "opacity-100 scale-105" : "opacity-75 hover:opacity-100"
         }`}
       >
         {Array.from({ length: 150 }).map((_, i) => {
@@ -622,58 +632,58 @@ export default function PhotosClientView({
               key={i}
               className={`rounded-full transition-all duration-150 ease-out pointer-events-none ${
                 isActive 
-                  ? "w-7 h-[2.5px] bg-(--accent) shadow-[0_0_12px_var(--accent)] scale-125" 
+                  ? "w-8 h-[2.5px] bg-(--accent) shadow-[0_0_15px_var(--accent)] scale-125" 
                   : isMajor
-                  ? "w-4.5 h-[1.5px] bg-(--text) opacity-50"
+                  ? "w-5 h-[1.5px] bg-white/60"
                   : isSemiMajor
-                  ? "w-3 h-[1.2px] bg-(--text-muted) opacity-35"
-                  : "w-1.5 h-[1px] bg-(--text-dim) opacity-20"
+                  ? "w-3.5 h-[1.2px] bg-white/35"
+                  : "w-2 h-[1px] bg-white/15"
               }`}
             />
           );
         })}
       </aside>
 
-      {/* Bottom-Left Keyboard Shortcuts Helper */}
-      <div className="fixed bottom-6 left-6 z-40 hidden sm:flex flex-col gap-2 bg-(--surface)/80 backdrop-blur-xl border border-(--border) p-3.5 rounded-2xl shadow-2xl font-mono text-[10px]">
-        <div className="flex items-center justify-between gap-4 pb-1.5 border-b border-(--border) text-(--text-muted) uppercase tracking-widest">
+      {/* Bottom-Left Keyboard Shortcuts Helper[cite: 1] */}
+      <div className="fixed bottom-6 left-6 z-40 hidden sm:flex flex-col gap-2.5 bg-(--surface)/90 backdrop-blur-2xl border border-white/10 p-4 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] font-mono text-[10px]">
+        <div className="flex items-center justify-between gap-6 pb-2 border-b border-white/10 text-(--text-muted) uppercase tracking-[0.2em]">
           <span>Shortcuts</span>
-          <Command className="h-3 w-3 text-(--accent)" />
+          <Command className="h-3.5 w-3.5 text-(--accent)" />
         </div>
-        <div className="flex flex-col gap-1.5 text-(--text-dim)">
-          <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-2 text-(--text-dim)">
+          <div className="flex items-center justify-between gap-6">
             <span>Search</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-(--surface-2) border border-(--border) text-(--text)">/</kbd>
+            <kbd className="px-2 py-0.5 rounded-lg bg-(--surface-2) border border-white/10 text-(--text)">/</kbd>
           </div>
-          <div className="flex items-center justify-between gap-4">
-            <span>Close/Reset</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-(--surface-2) border border-(--border) text-(--text)">Esc</kbd>
+          <div className="flex items-center justify-between gap-6">
+            <span>Close / Reset</span>
+            <kbd className="px-2 py-0.5 rounded-lg bg-(--surface-2) border border-white/10 text-(--text)">Esc</kbd>
           </div>
         </div>
       </div>
 
-      {/* Main Content Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-10 flex flex-col items-center text-center gap-8">
+      {/* Main Content Container[cite: 1] */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-10 sm:py-14 flex flex-col items-center text-center gap-10">
         
-        {/* Title Section */}
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tight text-(--text)">
+        {/* Title Section[cite: 1] */}
+        <div className="flex flex-col gap-3">
+          <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-(--text)">
             Gallery Archive
           </h1>
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-(--text-muted)">
-            Cinematic photography collection
+          <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-(--text-muted)">
+            Cinematic photography collection & catalog
           </p>
         </div>
 
-        {/* Unified Search, Filters & Controls Deck */}
-        <div className="w-full flex flex-col gap-4 bg-(--surface) border border-(--border) p-4 sm:p-5 rounded-2xl backdrop-blur-md shadow-lg relative z-30">
+        {/* Unified Search, Filters & Controls Deck[cite: 1] */}
+        <div className="w-full flex flex-col gap-5 bg-(--surface)/90 border border-white/10 p-5 sm:p-6 rounded-3xl backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative z-30">
           
-          {/* Top Row */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-3 w-full">
+          {/* Top Row[cite: 1] */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full">
             
-            {/* Search Input */}
+            {/* Search Input[cite: 1] */}
             <div className="relative w-full md:max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-(--text-dim)" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-(--text-dim)" />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -682,63 +692,69 @@ export default function PhotosClientView({
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                placeholder="Search images or location..."
-                className="w-full bg-(--surface-2) border border-(--border) rounded-xl pl-10 pr-10 py-2.5 font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) focus:outline-none focus:border-(--accent) transition-all"
+                placeholder="Search images, locations, or cameras..."
+                aria-label="Search photography collection"
+                className="w-full bg-(--surface-2) border border-white/10 rounded-2xl pl-11 pr-11 py-3 font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) focus:outline-none focus:border-(--accent) transition-all shadow-inner"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-(--text-dim) hover:text-(--text) transition-colors cursor-pointer"
+                  aria-label="Clear search query"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-(--text-dim) hover:text-(--text) transition-colors cursor-pointer"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-4 w-4" />
                 </button>
               )}
             </div>
 
-            {/* Right Side Controls */}
-            <div className="flex items-center gap-2.5 sm:gap-3 w-full md:w-auto justify-between md:justify-end shrink-0">
+            {/* Right Side Controls[cite: 1] */}
+            <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end shrink-0">
               
-              {/* Grid Density Toggle */}
-              <div className="hidden sm:flex items-center justify-center bg-(--surface-2) border border-(--border) p-1 rounded-xl">
+              {/* Grid Density Toggle[cite: 1] */}
+              <div className="hidden sm:flex items-center justify-center bg-(--surface-2) border border-white/10 p-1 rounded-2xl">
                 <button
                   onClick={() => handleGridChange(3)}
                   title="3-Column Grid"
-                  className={`p-1.5 rounded-lg transition-all cursor-pointer inline-flex items-center justify-center ${
-                    gridColumns === 3 ? "bg-(--accent) text-(--bg)" : "text-(--text-dim) hover:text-(--text)"
+                  aria-label="Switch to 3 column grid layout"
+                  className={`p-2 rounded-xl transition-all cursor-pointer inline-flex items-center justify-center ${
+                    gridColumns === 3 ? "bg-(--accent) text-(--bg) shadow-md" : "text-(--text-dim) hover:text-(--text)"
                   }`}
                 >
-                  <LayoutGrid className="h-3.5 w-3.5" />
+                  <LayoutGrid className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => handleGridChange(2)}
                   title="2-Column Large View"
-                  className={`p-1.5 rounded-lg transition-all cursor-pointer inline-flex items-center justify-center ${
-                    gridColumns === 2 ? "bg-(--accent) text-(--bg)" : "text-(--text-dim) hover:text-(--text)"
+                  aria-label="Switch to 2 column large view layout"
+                  className={`p-2 rounded-xl transition-all cursor-pointer inline-flex items-center justify-center ${
+                    gridColumns === 2 ? "bg-(--accent) text-(--bg) shadow-md" : "text-(--text-dim) hover:text-(--text)"
                   }`}
                 >
-                  <Columns className="h-3.5 w-3.5" />
+                  <Columns className="h-4 w-4" />
                 </button>
               </div>
 
-              {/* Sort Dropdown */}
+              {/* Sort Dropdown[cite: 1] */}
               <div className="relative flex-1 sm:flex-initial">
                 <button
                   onClick={() => setIsSortOpen(!isSortOpen)}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-(--surface-2) border border-(--border) px-3.5 sm:px-4 py-2.5 rounded-xl font-mono text-[10px] uppercase tracking-[0.15em] text-(--text) font-bold hover:bg-(--surface-3) transition-all cursor-pointer shadow-xs"
+                  aria-expanded={isSortOpen}
+                  aria-label="Sort options menu"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-(--surface-2) border border-white/10 px-4 py-3 rounded-2xl font-mono text-[10px] uppercase tracking-[0.2em] text-(--text) font-bold hover:bg-(--surface-3) transition-all cursor-pointer shadow-sm"
                 >
                   <SlidersHorizontal className="h-3.5 w-3.5 text-(--accent)" />
-                  <span className="truncate max-w-[120px]">{currentSortLabel}</span>
+                  <span className="truncate max-w-[130px]">{currentSortLabel}</span>
                   <ChevronDown className={`h-3 w-3 text-(--text-dim) transition-transform duration-300 ${isSortOpen ? "rotate-180" : ""}`} />
                 </button>
 
                 <AnimatePresence>
                   {isSortOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 w-48 rounded-xl bg-(--surface) border border-(--border) p-1.5 shadow-2xl z-50 backdrop-blur-2xl"
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                      className="absolute right-0 top-full mt-2.5 w-52 rounded-2xl bg-(--surface) border border-white/15 p-2 shadow-2xl z-50 backdrop-blur-2xl"
                     >
                       <div className="flex flex-col gap-1">
                         {sortOptions.map((opt) => {
@@ -751,9 +767,10 @@ export default function PhotosClientView({
                                 setCurrentPage(1);
                                 setIsSortOpen(false);
                               }}
-                              className={`w-full text-left px-3 py-2.5 rounded-lg font-mono text-[10px] uppercase tracking-[0.15em] transition-all cursor-pointer inline-flex items-center ${
+                              aria-selected={isSelected}
+                              className={`w-full text-left px-3.5 py-3 rounded-xl font-mono text-[10px] uppercase tracking-[0.2em] transition-all cursor-pointer inline-flex items-center ${
                                 isSelected
-                                  ? "bg-(--accent) text-(--bg) font-bold shadow-xs"
+                                  ? "bg-(--accent) text-(--bg) font-bold shadow-md"
                                   : "text-(--text-dim) hover:bg-(--surface-2) hover:text-(--text)"
                               }`}
                             >
@@ -767,34 +784,35 @@ export default function PhotosClientView({
                 </AnimatePresence>
               </div>
 
-              {/* Submit Image Button */}
+              {/* Submit Image Button[cite: 1] */}
               <button
                 onClick={() => setIsSubmitOpen(true)}
-                className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-(--text) text-(--bg) font-mono text-[10px] uppercase tracking-widest font-bold hover:bg-(--accent) hover:text-(--bg) transition-all shadow-xs cursor-pointer whitespace-nowrap"
+                className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl bg-(--text) text-(--bg) font-mono text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-(--accent) hover:text-(--bg) transition-all shadow-md cursor-pointer whitespace-nowrap"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus className="h-4 w-4" />
                 <span className="hidden xs:inline">Submit Image</span>
               </button>
             </div>
           </div>
 
-          {/* Bottom Row: Categories & Saved Filter */}
-          <div className="flex flex-col gap-3 pt-3 border-t border-(--border)">
+          {/* Bottom Row: Categories & Saved Filter[cite: 1] */}
+          <div className="flex flex-col gap-4 pt-4 border-t border-white/10">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center justify-start flex-wrap gap-2 w-full overflow-x-auto scrollbar-none pb-1">
+              <div className="flex items-center justify-start flex-wrap gap-2.5 w-full overflow-x-auto scrollbar-none pb-1">
                 
                 <button
                   onClick={() => {
                     setShowFavoritesOnly(!showFavoritesOnly);
                     setCurrentPage(1);
                   }}
-                  className={`px-3 py-2 rounded-xl font-mono text-[10px] uppercase tracking-[0.18em] transition-all whitespace-nowrap border cursor-pointer inline-flex items-center justify-center gap-1.5 ${
+                  aria-pressed={showFavoritesOnly}
+                  className={`px-4 py-2.5 rounded-2xl font-mono text-[10px] uppercase tracking-[0.2em] transition-all whitespace-nowrap border cursor-pointer inline-flex items-center justify-center gap-2 ${
                     showFavoritesOnly
-                      ? "bg-rose-500 text-white border-rose-500 font-bold shadow-xs"
-                      : "bg-(--surface-2) text-(--text-dim) border-(--border) hover:bg-(--surface-3) hover:text-(--text)"
+                      ? "bg-rose-500 text-white border-rose-500 font-bold shadow-[0_0_20px_rgba(244,63,94,0.4)]"
+                      : "bg-(--surface-2) text-(--text-dim) border-white/10 hover:bg-(--surface-3) hover:text-(--text)"
                   }`}
                 >
-                  <Heart className={`h-3 w-3 ${showFavoritesOnly ? "fill-white text-white" : ""}`} />
+                  <Heart className={`h-3.5 w-3.5 ${showFavoritesOnly ? "fill-white text-white" : ""}`} />
                   <span>Saved ({favorites.length})</span>
                 </button>
 
@@ -807,10 +825,11 @@ export default function PhotosClientView({
                         setActiveCategory(cat.value);
                         setCurrentPage(1);
                       }}
-                      className={`px-3 py-2 rounded-xl font-mono text-[10px] uppercase tracking-[0.18em] transition-all whitespace-nowrap border cursor-pointer inline-flex items-center justify-center ${
+                      aria-pressed={isActive}
+                      className={`px-4 py-2.5 rounded-2xl font-mono text-[10px] uppercase tracking-[0.2em] transition-all whitespace-nowrap border cursor-pointer inline-flex items-center justify-center ${
                         isActive
-                          ? "bg-(--accent) text-(--bg) border-(--accent) font-bold shadow-xs"
-                          : "bg-(--surface-2) text-(--text-dim) border-(--border) hover:bg-(--surface-3) hover:text-(--text)"
+                          ? "bg-(--accent) text-(--bg) border-(--accent) font-bold shadow-md"
+                          : "bg-(--surface-2) text-(--text-dim) border-white/10 hover:bg-(--surface-3) hover:text-(--text)"
                       }`}
                     >
                       {cat.label}
@@ -819,7 +838,7 @@ export default function PhotosClientView({
                 })}
               </div>
 
-              <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-(--text-muted) whitespace-nowrap shrink-0 hidden lg:block">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-(--text-muted) whitespace-nowrap shrink-0 hidden lg:block">
                 Showing {filteredPhotos.length} {filteredPhotos.length === 1 ? "image" : "images"}
               </span>
             </div>
@@ -827,22 +846,22 @@ export default function PhotosClientView({
 
         </div>
 
-        {/* Photo Display Area */}
+        {/* Photo Display Area[cite: 1] */}
         {filteredPhotos.length === 0 ? (
-          <div className="w-full max-w-lg border border-dashed border-(--border) rounded-2xl py-16 px-6 text-center flex flex-col items-center justify-center gap-4 bg-(--surface) backdrop-blur-md mt-2">
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-(--text-muted)">
+          <div className="w-full max-w-lg border border-dashed border-white/20 rounded-3xl py-20 px-8 text-center flex flex-col items-center justify-center gap-5 bg-(--surface)/80 backdrop-blur-xl mt-4">
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-(--text-muted)">
               No images found matching your criteria.
             </p>
             <button
               onClick={handleResetFilters}
-              className="px-5 py-2.5 rounded-xl bg-(--surface-2) hover:bg-(--surface-3) text-(--text) font-mono text-[10px] uppercase tracking-[0.18em] transition-all cursor-pointer border border-(--border) inline-flex items-center justify-center"
+              className="px-6 py-3 rounded-2xl bg-(--surface-2) hover:bg-(--surface-3) text-(--text) font-mono text-[10px] uppercase tracking-[0.2em] transition-all cursor-pointer border border-white/10 inline-flex items-center justify-center shadow-sm"
             >
               Reset All Filters
             </button>
           </div>
         ) : (
           <>
-            <div className={`grid gap-5 sm:gap-6 w-full max-w-7xl mt-2 ${
+            <div className={`grid gap-6 sm:gap-8 w-full max-w-7xl mt-4 ${
               gridColumns === 3 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2"
             }`}>
               {paginatedPhotos.map((photo, index) => (
@@ -862,18 +881,19 @@ export default function PhotosClientView({
               ))}
             </div>
 
-            {/* Pagination Controls */}
+            {/* Pagination Controls[cite: 1] */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-8 mb-4">
+              <div className="flex items-center justify-center gap-3 mt-12 mb-6">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="p-2.5 rounded-xl bg-(--surface) border border-(--border) text-(--text) disabled:opacity-30 disabled:cursor-not-allowed hover:bg-(--surface-2) transition-all cursor-pointer"
+                  aria-label="Previous page"
+                  className="p-3 rounded-2xl bg-(--surface) border border-white/10 text-(--text) disabled:opacity-30 disabled:cursor-not-allowed hover:bg-(--surface-2) transition-all cursor-pointer shadow-md"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 
-                <div className="flex items-center gap-1.5 px-3 py-2 bg-(--surface) border border-(--border) rounded-xl font-mono text-xs">
+                <div className="flex items-center gap-2 px-4 py-3 bg-(--surface) border border-white/10 rounded-2xl font-mono text-xs shadow-md">
                   <span className="text-(--accent) font-bold">{currentPage}</span>
                   <span className="text-(--text-dim)">/</span>
                   <span className="text-(--text-muted)">{totalPages}</span>
@@ -882,7 +902,8 @@ export default function PhotosClientView({
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="p-2.5 rounded-xl bg-(--surface) border border-(--border) text-(--text) disabled:opacity-30 disabled:cursor-not-allowed hover:bg-(--surface-2) transition-all cursor-pointer"
+                  aria-label="Next page"
+                  className="p-3 rounded-2xl bg-(--surface) border border-white/10 text-(--text) disabled:opacity-30 disabled:cursor-not-allowed hover:bg-(--surface-2) transition-all cursor-pointer shadow-md"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -893,15 +914,16 @@ export default function PhotosClientView({
 
       </main>
 
-      {/* Scroll to Top Floating Button */}
+      {/* Scroll to Top Floating Button[cite: 1] */}
       <AnimatePresence>
         {showScrollTop && (
           <motion.button
-            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            initial={{ opacity: 0, scale: 0.8, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            exit={{ opacity: 0, scale: 0.8, y: 15 }}
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="fixed bottom-6 right-6 z-40 p-3 rounded-2xl bg-(--surface) border border-(--border) text-(--text) shadow-2xl hover:bg-(--accent) hover:text-(--bg) hover:border-(--accent) transition-all cursor-pointer backdrop-blur-xl"
+            aria-label="Scroll to top of page"
+            className="fixed bottom-6 right-6 z-40 p-3.5 rounded-2xl bg-(--surface)/90 border border-white/15 text-(--text) shadow-2xl hover:bg-(--accent) hover:text-(--bg) hover:border-(--accent) transition-all cursor-pointer backdrop-blur-2xl"
             title="Scroll to top"
           >
             <ArrowUp className="h-4 w-4" />
@@ -909,43 +931,47 @@ export default function PhotosClientView({
         )}
       </AnimatePresence>
 
-      {/* Lightbox / Immersive Quick Preview Modal */}
+      {/* Lightbox / Immersive Quick Preview Modal[cite: 1] */}
       <AnimatePresence>
         {lightboxPhotoId && activeLightboxPhoto && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Immersive Photo Lightbox Preview"
+            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-3xl flex items-center justify-center p-4 sm:p-8"
             onClick={() => {
               setLightboxPhotoId(null);
               setIsSlideshowPlaying(false);
             }}
           >
             <div
-              className="relative max-w-6xl w-full max-h-[90vh] flex flex-col items-center bg-(--surface) border border-(--border) rounded-3xl overflow-hidden shadow-2xl"
+              className="relative max-w-6xl w-full max-h-[92vh] flex flex-col items-center bg-(--surface) border border-white/15 rounded-3xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.8)]"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Lightbox Header Bar */}
-              <div className="w-full flex items-center justify-between px-6 py-4 border-b border-(--border) bg-(--surface-2)">
+              {/* Lightbox Header Bar[cite: 1] */}
+              <div className="w-full flex items-center justify-between px-6 py-4.5 border-b border-white/10 bg-(--surface-2)">
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-(--accent)">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-(--accent)">
                     {activeLightboxPhoto.category || "Photo"} // {lightboxIndex + 1} of {filteredPhotos.length}
                   </span>
                   <span className="text-(--text-dim)">•</span>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-(--text-muted) truncate max-w-[200px] sm:max-w-md">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-(--text-muted) truncate max-w-[200px] sm:max-w-md">
                     {activeLightboxPhoto.title}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   <button
                     onClick={() => setIsSlideshowPlaying(!isSlideshowPlaying)}
                     title={isSlideshowPlaying ? "Pause Slideshow" : "Play Slideshow"}
-                    className={`px-3 py-1.5 rounded-xl font-mono text-[10px] uppercase tracking-wider border transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+                    aria-label={isSlideshowPlaying ? "Pause slideshow" : "Play slideshow"}
+                    className={`px-3.5 py-2 rounded-xl font-mono text-[10px] uppercase tracking-[0.2em] border transition-all cursor-pointer inline-flex items-center gap-2 ${
                       isSlideshowPlaying
-                        ? "bg-(--accent) text-(--bg) border-(--accent) font-bold"
-                        : "bg-(--surface) text-(--text) border-(--border) hover:bg-(--surface-3)"
+                        ? "bg-(--accent) text-(--bg) border-(--accent) font-bold shadow-md"
+                        : "bg-(--surface) text-(--text) border-white/10 hover:bg-(--surface-3)"
                     }`}
                   >
                     {isSlideshowPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
@@ -957,32 +983,34 @@ export default function PhotosClientView({
                       setLightboxPhotoId(null);
                       setIsSlideshowPlaying(false);
                     }}
-                    className="p-2 rounded-xl bg-(--surface) border border-(--border) text-(--text) hover:bg-rose-500 hover:border-rose-500 hover:text-white transition-all cursor-pointer"
+                    aria-label="Close lightbox modal"
+                    className="p-2.5 rounded-xl bg-(--surface) border border-white/10 text-(--text) hover:bg-rose-500 hover:border-rose-500 hover:text-white transition-all cursor-pointer"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Lightbox Image Viewport */}
-              <div className="relative w-full h-[55vh] sm:h-[65vh] bg-black flex items-center justify-center overflow-hidden">
+              {/* Lightbox Image Viewport[cite: 1] */}
+              <div className="relative w-full h-[55vh] sm:h-[68vh] bg-black flex items-center justify-center overflow-hidden">
                 <Image
                   src={activeLightboxPhoto.url}
-                  alt={activeLightboxPhoto.title}
+                  alt={activeLightboxPhoto.title || "Lightbox preview item"}
                   fill
                   sizes="100vw"
                   className="object-contain"
                   priority
                 />
 
-                {/* Left/Right Navigation Arrows */}
+                {/* Left/Right Navigation Arrows[cite: 1] */}
                 {lightboxIndex > 0 && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setLightboxPhotoId(filteredPhotos[lightboxIndex - 1].id);
                     }}
-                    className="absolute left-4 p-3 rounded-2xl bg-black/60 backdrop-blur-md border border-white/15 text-white hover:bg-(--accent) hover:text-(--bg) transition-all cursor-pointer shadow-lg"
+                    aria-label="Previous photo"
+                    className="absolute left-5 p-3.5 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/20 text-white hover:bg-(--accent) hover:text-(--bg) transition-all cursor-pointer shadow-2xl"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
@@ -993,28 +1021,29 @@ export default function PhotosClientView({
                       e.stopPropagation();
                       setLightboxPhotoId(filteredPhotos[lightboxIndex + 1].id);
                     }}
-                    className="absolute right-4 p-3 rounded-2xl bg-black/60 backdrop-blur-md border border-white/15 text-white hover:bg-(--accent) hover:text-(--bg) transition-all cursor-pointer shadow-lg"
+                    aria-label="Next photo"
+                    className="absolute right-5 p-3.5 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/20 text-white hover:bg-(--accent) hover:text-(--bg) transition-all cursor-pointer shadow-2xl"
                   >
                     <ChevronRight className="h-5 w-5" />
                   </button>
                 )}
               </div>
 
-              {/* Lightbox Footer Details */}
-              <div className="w-full p-5 sm:p-6 bg-(--surface) flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-(--border)">
-                <div className="flex flex-col items-start gap-1">
+              {/* Lightbox Footer Details[cite: 1] */}
+              <div className="w-full p-6 sm:p-7 bg-(--surface) flex flex-col sm:flex-row items-center justify-between gap-5 border-t border-white/10">
+                <div className="flex flex-col items-start gap-1.5">
                   <h3 className="text-base sm:text-lg font-bold text-(--text)">
                     {activeLightboxPhoto.title}
                   </h3>
-                  <p className="font-mono text-[11px] text-(--text-dim)">
+                  <p className="font-mono text-[11px] text-(--text-dim) uppercase tracking-[0.15em]">
                     {activeLightboxPhoto.location || "Location N/A"} • By {activeLightboxPhoto.authorName || "Artist"}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-3">
                   <button
                     onClick={(e) => handleDownload(activeLightboxPhoto, e)}
-                    className="px-4 py-2 rounded-xl bg-(--surface-2) border border-(--border) hover:border-(--accent) font-mono text-[10px] uppercase tracking-wider text-(--text) transition-all cursor-pointer inline-flex items-center gap-1.5"
+                    className="px-4.5 py-2.5 rounded-2xl bg-(--surface-2) border border-white/10 hover:border-(--accent) font-mono text-[10px] uppercase tracking-[0.2em] text-(--text) transition-all cursor-pointer inline-flex items-center gap-2 shadow-sm"
                   >
                     <Download className="h-3.5 w-3.5 text-(--accent)" />
                     <span>Download Original</span>
@@ -1022,10 +1051,10 @@ export default function PhotosClientView({
 
                   <button
                     onClick={(e) => toggleFavorite(activeLightboxPhoto.id, e)}
-                    className={`px-4 py-2 rounded-xl border font-mono text-[10px] uppercase tracking-wider transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+                    className={`px-4.5 py-2.5 rounded-2xl border font-mono text-[10px] uppercase tracking-[0.2em] transition-all cursor-pointer inline-flex items-center gap-2 shadow-sm ${
                       favorites.includes(activeLightboxPhoto.id)
-                        ? "bg-rose-500 border-rose-500 text-white font-bold"
-                        : "bg-(--surface-2) border-(--border) text-(--text) hover:border-rose-500"
+                        ? "bg-rose-500 border-rose-500 text-white font-bold shadow-[0_0_20px_rgba(244,63,94,0.4)]"
+                        : "bg-(--surface-2) border-white/10 text-(--text) hover:border-rose-500"
                     }`}
                   >
                     <Heart className={`h-3.5 w-3.5 ${favorites.includes(activeLightboxPhoto.id) ? "fill-white" : ""}`} />
@@ -1034,7 +1063,7 @@ export default function PhotosClientView({
 
                   <Link
                     href={`/photos/${activeLightboxPhoto.id}`}
-                    className="px-4 py-2 rounded-xl bg-(--text) text-(--bg) font-mono text-[10px] uppercase tracking-wider font-bold hover:bg-(--accent) transition-all cursor-pointer inline-flex items-center gap-1.5"
+                    className="px-5 py-2.5 rounded-2xl bg-(--text) text-(--bg) font-mono text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-(--accent) transition-all cursor-pointer inline-flex items-center gap-2 shadow-md"
                   >
                     <span>View Details</span>
                   </Link>
@@ -1045,7 +1074,7 @@ export default function PhotosClientView({
         )}
       </AnimatePresence>
 
-      {/* Submit Photo Modal */}
+      {/* Submit Photo Modal[cite: 1] */}
       <SubmitPhotoModal
         isOpen={isSubmitOpen}
         onClose={() => setIsSubmitOpen(false)}

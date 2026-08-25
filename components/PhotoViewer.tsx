@@ -22,6 +22,7 @@ import {
   Download,
   Share2,
   Check,
+  Film,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { submitComment as submitCommentAction } from "@/app/actions/comments";
@@ -62,6 +63,15 @@ type Engagement = {
   viewerLiked: boolean;
   commentCount: number;
 };
+
+// --- Film Stock Definitions ---
+export const FILM_STOCKS = [
+  { id: "normal", label: "Original", filter: "none" },
+  { id: "portra", label: "Portra 400 (Warm)", filter: "sepia(0.15) saturate(1.2) contrast(1.05)" },
+  { id: "cinestill", label: "CineStill 800T (Teal & Glow)", filter: "hue-rotate(15deg) saturate(1.3) brightness(0.95)" },
+  { id: "monochrome", label: "Ilford HP5 (Noir)", filter: "grayscale(1) contrast(1.3) brightness(1.05)" },
+  { id: "bleach", label: "Bleach Bypass", filter: "grayscale(0.4) contrast(1.4) brightness(0.9)" },
+];
 
 const springConfig = { type: "spring" as const, stiffness: 280, damping: 30 };
 
@@ -155,6 +165,9 @@ export default function PhotoViewer({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // New state for Film Stock Emulation
+  const [activeFilmStock, setActiveFilmStock] = useState("normal");
+
   const photo = photos[index];
   
   const x = useMotionValue(0);
@@ -163,11 +176,9 @@ export default function PhotoViewer({
   const [currentScale, setCurrentScale] = useState(1);
   const [isZoomed, setIsZoomed] = useState(false);
 
-  // Reference strictly to the inner <img> element
   const imgRef = useRef<HTMLImageElement>(null);
   const [constraints, setConstraints] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
 
-  // Use stats to prevent unused variable warning if needed
   void stats;
 
   const rotate = useTransform(
@@ -192,7 +203,6 @@ export default function PhotoViewer({
     y.set(0);
   }, [index, scale, x, y]);
 
-  // Compute precise boundary limits based on the actual rendered image dimensions
   useEffect(() => {
     const updateConstraints = () => {
       if (imgRef.current) {
@@ -362,7 +372,7 @@ export default function PhotoViewer({
         });
         return;
       } catch {
-        // Fallback to clipboard if share sheet is dismissed
+        // Fallback
       }
     }
     try {
@@ -370,7 +380,7 @@ export default function PhotoViewer({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Ignore copy error
+      // Ignore
     }
   };
 
@@ -413,12 +423,13 @@ export default function PhotoViewer({
     photo.iso ? `ISO ${photo.iso}` : null,
   ].filter(Boolean);
 
+  const activeFilterStyle = FILM_STOCKS.find((s) => s.id === activeFilmStock)?.filter || "none";
+
   return (
     <div 
       onWheel={handleWheel}
       className="relative flex h-[100dvh] w-full overflow-hidden bg-black text-white select-none"
     >
-      {/* Background Gradient */}
       <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-zinc-950 via-black to-zinc-950" />
 
       {/* STAGE CONTAINER */}
@@ -447,7 +458,6 @@ export default function PhotoViewer({
             transition={springConfig}
             className="relative flex items-center justify-center touch-none"
           >
-            {/* Skeleton Loading State */}
             {!imageLoaded && (
               <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/50 backdrop-blur-md z-20 rounded-xl overflow-hidden min-w-[300px] min-h-[300px]">
                 <div className="flex flex-col items-center gap-3">
@@ -463,7 +473,8 @@ export default function PhotoViewer({
               alt={photo.title}
               draggable={false}
               onLoad={() => setImageLoaded(true)}
-              className={`max-h-[85vh] max-w-[90vw] object-contain rounded-lg transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+              style={{ filter: activeFilterStyle }}
+              className={`max-h-[85vh] max-w-[90vw] object-contain rounded-lg transition-all duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
             />
           </motion.div>
         </AnimatePresence>
@@ -500,7 +511,7 @@ export default function PhotoViewer({
         </AnimatePresence>
       </div>
 
-      {/* TOP HEADER CONTROLS */}
+      {/* TOP HEADER CONTROLS (Includes Film Stock Emulation Bar) */}
       <AnimatePresence>
         {hudVisible && (
           <motion.div
@@ -508,23 +519,50 @@ export default function PhotoViewer({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="absolute top-0 inset-x-0 z-40 flex items-center justify-between p-6 bg-gradient-to-b from-black/80 to-transparent pointer-events-auto"
+            className="absolute top-0 inset-x-0 z-40 flex flex-col sm:flex-row items-center justify-between p-4 sm:p-6 bg-gradient-to-b from-black/90 via-black/50 to-transparent pointer-events-auto gap-4"
           >
-            <div className="flex items-center gap-4">
-              <MagneticButton
-                onClick={() => router.back()}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900/80 text-zinc-300 backdrop-blur-md border border-zinc-800 transition hover:bg-zinc-800 hover:text-white"
-                title="Back to Gallery"
-              >
-                <X size={18} strokeWidth={2} />
-              </MagneticButton>
-              <div className="hidden sm:flex flex-col">
-                <h2 className="text-sm font-medium text-zinc-200 truncate max-w-xs">{photo.title}</h2>
-                <span className="text-xs text-zinc-500">Gallery View</span>
+            <div className="flex items-center justify-between w-full sm:w-auto gap-4">
+              <div className="flex items-center gap-4">
+                <MagneticButton
+                  onClick={() => router.back()}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900/80 text-zinc-300 backdrop-blur-md border border-zinc-800 transition hover:bg-zinc-800 hover:text-white shrink-0"
+                  title="Back to Gallery"
+                >
+                  <X size={18} strokeWidth={2} />
+                </MagneticButton>
+                <div className="hidden sm:flex flex-col">
+                  <h2 className="text-sm font-medium text-zinc-200 truncate max-w-xs">{photo.title}</h2>
+                  <span className="text-xs text-zinc-500">Gallery View</span>
+                </div>
+              </div>
+
+              {/* Mobile details toggle button */}
+              <div className="flex sm:hidden items-center gap-2">
+                <span className="px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-zinc-800 text-xs font-medium text-zinc-400">
+                  {index + 1} / {photos.length}
+                </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            {/* FILM STOCK SELECTOR TOOLBAR */}
+            <div className="flex items-center gap-1 overflow-x-auto max-w-full py-1 px-2 bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 rounded-2xl scrollbar-none">
+              <Film size={14} className="text-amber-400 ml-1.5 mr-1 shrink-0 hidden md:block" />
+              {FILM_STOCKS.map((stock) => (
+                <button
+                  key={stock.id}
+                  onClick={() => setActiveFilmStock(stock.id)}
+                  className={`px-3 py-1.5 rounded-xl font-mono text-[10px] uppercase tracking-wider transition-all shrink-0 cursor-pointer ${
+                    activeFilmStock === stock.id
+                      ? "bg-amber-500 text-black font-bold shadow-md"
+                      : "bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800/50"
+                  }`}
+                >
+                  {stock.label.split(" ")[0]}
+                </button>
+              ))}
+            </div>
+
+            <div className="hidden sm:flex items-center gap-3">
               <span className="px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-zinc-800 text-xs font-medium text-zinc-400">
                 {index + 1} / {photos.length}
               </span>
