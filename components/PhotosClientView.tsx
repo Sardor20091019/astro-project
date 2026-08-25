@@ -51,6 +51,7 @@ interface PhotoCardProps {
   copiedExifText: string | null;
   onToggleFavorite: (photoId: string, e?: React.MouseEvent) => void;
   onShare: (photo: any, e?: React.MouseEvent) => void;
+  onDownload: (photo: any, e: React.MouseEvent) => void;
   onCopyExif: (text: string, e: React.MouseEvent) => void;
   onOpenLightbox: (photoId: string) => void;
 }
@@ -63,6 +64,7 @@ const PhotoCard = memo(function PhotoCard({
   copiedExifText,
   onToggleFavorite,
   onShare,
+  onDownload,
   onCopyExif,
   onOpenLightbox,
 }: PhotoCardProps) {
@@ -109,19 +111,15 @@ const PhotoCard = memo(function PhotoCard({
           </span>
         </div>
 
-        {/* Action Buttons Right Side - Always visible on mobile, hover-enhanced on desktop */}
+        {/* Action Buttons Right Side */}
         <div className="absolute right-3.5 top-3.5 z-30 flex items-center justify-center gap-1.5 sm:gap-2">
-          <a
-            href={photo.url}
-            download={`${photo.title || 'photo'}.jpg`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
+          <button
+            onClick={(e) => onDownload(photo, e)}
             title="Download Original"
             className="p-2 rounded-xl bg-black/70 backdrop-blur-md border border-white/15 text-white/90 hover:bg-(--accent) hover:text-(--bg) hover:border-(--accent) transition-all cursor-pointer shadow-md inline-flex items-center justify-center"
           >
             <Download className="h-3.5 w-3.5" />
-          </a>
+          </button>
 
           <button
             onClick={(e) => onShare(photo, e)}
@@ -143,7 +141,6 @@ const PhotoCard = memo(function PhotoCard({
             <Heart className={`h-3.5 w-3.5 ${isFavorited ? "fill-white" : ""}`} />
           </button>
 
-          {/* Quick Preview Button - Visible on touch/mobile, hover-revealed on desktop */}
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -340,6 +337,27 @@ export default function PhotosClientView({
     navigator.clipboard.writeText(text);
     setCopiedExifText(text);
     setTimeout(() => setCopiedExifText(null), 2000);
+  };
+
+  // Robust blob-based download handler to bypass cross-origin restrictions
+  const handleDownload = async (photo: any, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const response = await fetch(photo.url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `${photo.title ? photo.title.toLowerCase().replace(/\s+/g, '-') : 'photo'}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      // Fallback if CORS blocks fetch
+      window.open(photo.url, "_blank");
+    }
   };
 
   const handleShare = async (photo: any, e?: React.MouseEvent) => {
@@ -557,7 +575,7 @@ export default function PhotosClientView({
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                placeholder="Search images, location or gear..."
+                placeholder="Search images or location..."
                 className="w-full bg-(--surface-2) border border-(--border) rounded-xl pl-10 pr-10 py-2.5 font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) focus:outline-none focus:border-(--accent) transition-all"
               />
               {searchQuery && (
@@ -573,7 +591,7 @@ export default function PhotosClientView({
             {/* Right Side Controls */}
             <div className="flex items-center gap-2.5 sm:gap-3 w-full md:w-auto justify-between md:justify-end shrink-0">
               
-              {/* Grid Density Toggle (Hidden on very small mobile) */}
+              {/* Grid Density Toggle */}
               <div className="hidden sm:flex items-center justify-center bg-(--surface-2) border border-(--border) p-1 rounded-xl">
                 <button
                   onClick={() => handleGridChange(3)}
@@ -658,7 +676,6 @@ export default function PhotosClientView({
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center justify-start flex-wrap gap-2 w-full overflow-x-auto scrollbar-none pb-1">
                 
-                {/* Saved Filter Button */}
                 <button
                   onClick={() => {
                     setShowFavoritesOnly(!showFavoritesOnly);
@@ -674,7 +691,6 @@ export default function PhotosClientView({
                   <span>Saved ({favorites.length})</span>
                 </button>
 
-                {/* Categories */}
                 {categories.map((cat) => {
                   const isActive = activeCategory === cat.value;
                   return (
@@ -700,43 +716,6 @@ export default function PhotosClientView({
                 Showing {filteredPhotos.length} {filteredPhotos.length === 1 ? "image" : "images"}
               </span>
             </div>
-
-            {/* Active Filters Bar */}
-            {(activeCategory !== "ALL" || searchQuery || showFavoritesOnly) && (
-              <div className="flex items-center gap-2 flex-wrap pt-1 text-[10px] font-mono">
-                <span className="text-(--text-muted) uppercase tracking-wider">Active:</span>
-                {showFavoritesOnly && (
-                  <span className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-500">
-                    Favorites
-                    <button onClick={() => setShowFavoritesOnly(false)} className="hover:opacity-75 cursor-pointer inline-flex items-center justify-center">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                )}
-                {activeCategory !== "ALL" && (
-                  <span className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-lg bg-(--accent)/10 border border-(--accent)/30 text-(--accent)">
-                    {activeCategory.toLowerCase()}
-                    <button onClick={() => setActiveCategory("ALL")} className="hover:opacity-75 cursor-pointer inline-flex items-center justify-center">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                )}
-                {searchQuery && (
-                  <span className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-lg bg-(--accent)/10 border border-(--accent)/30 text-(--accent) truncate max-w-[200px]">
-                    &quot;{searchQuery}&quot;
-                    <button onClick={() => setSearchQuery("")} className="hover:opacity-75 cursor-pointer inline-flex items-center justify-center shrink-0">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                )}
-                <button
-                  onClick={handleResetFilters}
-                  className="text-(--text-dim) hover:text-(--text) underline uppercase tracking-wider ml-1 cursor-pointer inline-flex items-center justify-center"
-                >
-                  Clear
-                </button>
-              </div>
-            )}
           </div>
 
         </div>
@@ -769,6 +748,7 @@ export default function PhotosClientView({
                   copiedExifText={copiedExifText}
                   onToggleFavorite={toggleFavorite}
                   onShare={handleShare}
+                  onDownload={handleDownload}
                   onCopyExif={handleCopyExif}
                   onOpenLightbox={(id) => setLightboxPhotoId(id)}
                 />
@@ -803,7 +783,7 @@ export default function PhotosClientView({
         )}
       </main>
 
-      {/* Floating Bottom-Left Shortcuts Button & Bottom-Right Scroll-To-Top Button */}
+      {/* Floating Buttons */}
       <div className="fixed bottom-5 left-5 z-40">
         <button
           onClick={() => setIsHelpOpen(true)}
@@ -834,7 +814,7 @@ export default function PhotosClientView({
         )}
       </AnimatePresence>
 
-      {/* Full-Screen Cinematic Lightbox Modal */}
+      {/* Lightbox Modal */}
       <AnimatePresence>
         {activeLightboxPhoto && (
           <motion.div
@@ -843,7 +823,6 @@ export default function PhotosClientView({
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col items-center justify-between p-3 sm:p-8 overflow-y-auto"
           >
-            {/* Lightbox Top Navigation Bar */}
             <div className="w-full max-w-7xl flex items-center justify-between text-white z-50 py-2">
               <div className="flex items-center justify-center gap-2 sm:gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-white/70">
                 <span>{lightboxIndex + 1} / {filteredPhotos.length}</span>
@@ -852,7 +831,6 @@ export default function PhotosClientView({
               </div>
 
               <div className="flex items-center justify-center gap-2">
-                {/* Slideshow Play/Pause Toggle */}
                 <button
                   onClick={() => setIsSlideshowPlaying(!isSlideshowPlaying)}
                   className={`inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl border font-mono text-[10px] uppercase tracking-wider transition-all cursor-pointer ${
@@ -866,17 +844,14 @@ export default function PhotosClientView({
                   <span className="hidden md:inline">{isSlideshowPlaying ? "Pause" : "Slideshow"}</span>
                 </button>
 
-                <a
-                  href={activeLightboxPhoto.url}
-                  download={`${activeLightboxPhoto.title || 'photo'}.jpg`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={(e) => handleDownload(activeLightboxPhoto, e)}
                   className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 font-mono text-[10px] uppercase tracking-wider text-white transition-all cursor-pointer"
                   title="Download Original"
                 >
                   <Download className="h-3.5 w-3.5" />
                   <span className="hidden md:inline">Download</span>
-                </a>
+                </button>
 
                 <button
                   onClick={(e) => handleShare(activeLightboxPhoto, e)}
@@ -914,7 +889,6 @@ export default function PhotosClientView({
               </div>
             </div>
 
-            {/* Main Lightbox Image View with Prev/Next Buttons */}
             <div className="relative flex-1 w-full max-w-6xl flex items-center justify-center my-2 overflow-hidden px-6 sm:px-10 min-h-[50vh]">
               {lightboxIndex > 0 && (
                 <button
@@ -947,7 +921,6 @@ export default function PhotosClientView({
               )}
             </div>
 
-            {/* Lightbox Footer HUD: Title, Location & EXIF */}
             <div className="w-full max-w-4xl bg-white/5 border border-white/15 backdrop-blur-xl p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-left mb-2">
               <div className="flex flex-col gap-1 w-full sm:w-auto">
                 <h2 className="text-sm sm:text-base font-bold text-white tracking-tight line-clamp-1">
@@ -960,7 +933,6 @@ export default function PhotosClientView({
                 </div>
               </div>
 
-              {/* EXIF Details in Lightbox */}
               <div className="flex flex-wrap items-center justify-start sm:justify-center gap-1.5 w-full sm:w-auto">
                 {activeLightboxPhoto.camera && (
                   <span className="inline-flex items-center justify-center px-2 py-1 rounded-lg bg-white/10 border border-white/10 font-mono text-[9px] text-white/90 truncate max-w-[140px]">
