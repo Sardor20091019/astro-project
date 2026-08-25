@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Clock, Eye, Heart, MessageSquare, Star, SlidersHorizontal, ChevronDown, Check } from "lucide-react";
 import type { PhotoCategory } from "@/data/photos";
@@ -44,14 +45,39 @@ export default function GalleryFilters({
   query,
 }: GalleryFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, right: 0 });
+  
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const activeTab = FILTER_TABS.find((t) => t.id === currentSort) || FILTER_TABS[0];
   const ActiveIcon = activeTab.icon;
 
+  const handleToggle = () => {
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      // Using viewport-relative coordinates (no scrollY needed)
+      setCoords({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setIsOpen(!isOpen);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -60,36 +86,45 @@ export default function GalleryFilters({
   }, []);
 
   return (
-    <div className="relative mb-8 flex justify-end" ref={dropdownRef}>
-      {/* Single Unified Dropdown Trigger Container */}
+    <div className="mb-6 flex justify-end">
+      {/* Dropdown Trigger Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        ref={buttonRef}
+        onClick={handleToggle}
         aria-expanded={isOpen}
-        className="group relative inline-flex items-center justify-between gap-4 px-5 py-3.5 rounded-2xl bg-(--surface-1)/50 backdrop-blur-3xl border border-white/10 text-[11px] font-black uppercase tracking-[0.2em] text-(--text) hover:border-(--accent)/50 hover:bg-(--surface-2)/70 transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.2)] active:scale-[0.98]"
+        className="group relative inline-flex items-center justify-between gap-4 px-5 py-3.5 rounded-2xl bg-[var(--surface)] backdrop-blur-3xl border border-[var(--border)] text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text)] hover:border-[var(--accent)] hover:bg-[var(--surface-2)] transition-all duration-300 shadow-md active:scale-[0.98] cursor-pointer"
       >
-        <span className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-(--accent)/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        <span className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)]/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         
         <div className="flex items-center gap-2.5">
-          <SlidersHorizontal size={14} className="text-(--accent) transition-transform duration-300 group-hover:rotate-180" />
-          <span className="text-(--text-muted) font-mono text-[9px] tracking-widest">SORT</span>
+          <SlidersHorizontal size={14} className="text-[var(--accent)] transition-transform duration-300 group-hover:rotate-180" />
+          <span className="text-[var(--text-muted)] font-mono text-[9px] tracking-widest">SORT</span>
         </div>
         
-        <div className="flex items-center gap-2 pl-3 border-l border-white/10">
-          <ActiveIcon size={13} className="text-(--accent)" />
-          <span className="text-(--text)">{activeTab.label}</span>
+        <div className="flex items-center gap-2 pl-3 border-l border-[var(--border)]">
+          <ActiveIcon size={13} className="text-[var(--accent)]" />
+          <span className="text-[var(--text)]">{activeTab.label}</span>
           <ChevronDown 
             size={14} 
-            className={`text-(--text-muted) transition-transform duration-300 ml-1 ${isOpen ? "rotate-180 text-(--accent)" : ""}`} 
+            className={`text-[var(--text-muted)] transition-transform duration-300 ml-1 ${isOpen ? "rotate-180 text-[var(--accent)]" : ""}`} 
           />
         </div>
       </button>
 
-      {/* Magical Dropdown Menu */}
-      {isOpen && (
-        <div className="absolute right-0 top-full mt-3 w-72 rounded-3xl bg-(--surface-1)/95 backdrop-blur-3xl border border-white/15 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 animate-in fade-in zoom-in-95 duration-200">
-          <div className="rounded-2xl bg-(--surface-2)/60 border border-white/5 overflow-hidden">
-            <div className="px-5 py-3 text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-(--text) border-b border-white/10 bg-white/[0.02]">
-              &nbsp;Sort Gallery By
+      {/* Rendered via Portal with fixed positioning to ignore page scroll offsets */}
+      {isOpen && mounted && createPortal(
+        <div
+          ref={dropdownRef}
+          style={{
+            position: "fixed",
+            top: `${coords.top}px`,
+            right: `${coords.right}px`,
+          }}
+          className="w-72 rounded-3xl bg-[var(--surface)] backdrop-blur-3xl border border-[var(--border)] p-2 shadow-2xl z-[99999] animate-in fade-in zoom-in-95 duration-200"
+        >
+          <div className="rounded-2xl bg-[var(--surface-2)] border border-[var(--border)] overflow-hidden">
+            <div className="px-5 py-3 text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-[var(--text)] border-b border-[var(--border)] bg-[var(--surface)]">
+              Sort Gallery By
             </div>
 
             <div className="p-1.5 space-y-1">
@@ -104,21 +139,22 @@ export default function GalleryFilters({
                     onClick={() => setIsOpen(false)}
                     className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-[10px] font-bold uppercase tracking-[0.16em] transition-all duration-200 ${
                       isActive
-                        ? "bg-(--accent) text-(--bg) shadow-md shadow-(--accent)/25"
-                        : "text-(--text-muted) hover:text-(--text) hover:bg-white/5"
+                        ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/25"
+                        : "text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface)]"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <Icon size={14} className={isActive ? "text-(--bg)" : "text-(--accent)"} />
+                      <Icon size={14} className={isActive ? "text-white" : "text-[var(--accent)]"} />
                       <span>{tab.label}</span>
                     </div>
-                    {isActive && <Check size={14} className="text-(--bg)" />}
+                    {isActive && <Check size={14} className="text-white" />}
                   </Link>
                 );
               })}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
