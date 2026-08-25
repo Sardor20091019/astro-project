@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import Link from "next/link";
 import { Instagram, Linkedin, Send, Mail, Phone } from "lucide-react";
 
 const socials = [
@@ -28,7 +26,7 @@ export default function Footer() {
 
           {/* Column 3: Official Contacts */}
           <div className="flex flex-col items-center md:items-start gap-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-(--text-muted)">
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-300">
               Corporate Contacts
             </p>
             <ul className="flex flex-col items-center md:items-start gap-3 text-xs">
@@ -49,7 +47,7 @@ export default function Footer() {
 
           {/* Column 4: Social Networks */}
           <div className="flex flex-col items-center md:items-start gap-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-(--text-muted)">
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-300">
               Social Channels
             </p>
             <div className="flex flex-col items-center md:items-start gap-2.5">
@@ -72,7 +70,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom Legal & Copyright Bar */}
-        <div className="w-full pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] uppercase tracking-[0.2em] text-(--text-muted) text-center">
+        <div className="w-full pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] uppercase tracking-[0.2em] text-zinc-300 text-center">
           <p>&copy; {new Date().getFullYear()} Astrospectrum &bull; Sardor Sunatullayev. All rights reserved.</p>
           
           <div className="flex flex-wrap items-center justify-center gap-4">
