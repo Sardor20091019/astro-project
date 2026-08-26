@@ -22,14 +22,24 @@ export const ourFileRouter = {
     })
     .onUploadComplete(async ({ metadata, file }) => {
       const fileUrl = file.ufsUrl ?? file.url;
+      
+      // Run SightEngine nudity check
       const moderation = await moderateImageUrl(fileUrl);
+      
       if (!moderation.isSafe) {
+        // Automatically delete the unsafe file from Uploadthing storage
         await utapi.deleteFiles(file.key).catch(() => {});
-        return { isSafe: false, error: "SAFETY_VIOLATION" };
+        
+        return { 
+          isSafe: false, 
+          error: moderation.reason === "NUDITY_DETECTED" 
+            ? "Image rejected: Nudity detected by content moderation." 
+            : "Image failed safety checks." 
+        };
       }
+      
       return { isSafe: true, url: fileUrl, userId: metadata.userId };
     }),
-
 
   profileUploader: f({ image: { maxFileSize: "2MB", maxFileCount: 1 } })
     .middleware(async () => {

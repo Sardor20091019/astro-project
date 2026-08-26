@@ -14,19 +14,27 @@ export async function moderateImageUrl(url: string) {
     });
 
     if (!response.data || response.data.status === "failure") {
-      return { isSafe: false };
+      console.error("SightEngine API returned a failure status:", response.data);
+      return { isSafe: false, reason: "API_FAILURE" };
     }
 
     const { nudity } = response.data;
-    if (!nudity) return { isSafe: false };
+    if (!nudity) {
+      return { isSafe: false, reason: "INVALID_RESPONSE" };
+    }
 
+    // Check if the image is safe (none score > 0.5)
     const isSafe = (nudity.none ?? 0) > 0.5;
     
-    return { isSafe };
+    if (!isSafe) {
+      console.warn(`[SightEngine Moderation] Photo rejected. Nudity detected. None confidence score: ${nudity.none}`);
+      return { isSafe: false, reason: "NUDITY_DETECTED" };
+    }
+    
+    return { isSafe: true };
     
   } catch (error) {
     console.error("Moderation engine network/runtime exception handler:", error);
-
-    return { isSafe: false };
+    return { isSafe: false, reason: "NETWORK_ERROR" };
   }
 }

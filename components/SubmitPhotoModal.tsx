@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession, signIn } from "next-auth/react";
-import { CheckCircle2, MapPin, User, Camera, Tag, X, ImagePlus, ShieldCheck, Eye, EyeOff, Loader2, AlertCircle, LogIn } from "lucide-react";
+import { CheckCircle2, MapPin, User, Camera, Tag, X, ImagePlus, ShieldCheck, Eye, EyeOff, Loader2, AlertCircle, LogIn, ShieldAlert } from "lucide-react";
 import { CATEGORIES } from "@/data/photos";
 import { useUploadThing } from "@/utils/uploadthing";
 import { AnimatePresence, motion } from "framer-motion";
@@ -24,6 +24,9 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
   const [submitted, setSubmitted] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
 
+  // Upload/Moderation Status Text for Live Feedback
+  const [uploadStatusText, setUploadStatusText] = useState("Drop photo or click to browse");
+
   // Form States
   const [camera, setCamera] = useState("");
   const [iso, setIso] = useState("");
@@ -36,14 +39,19 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
   const [exifStatus, setExifStatus] = useState<"idle" | "has-gps" | "no-gps">("idle");
 
   const { startUpload, isUploading } = useUploadThing("imageUploader", {
+    onUploadBegin: () => {
+      setUploadStatusText("Uploading photo to cloud...");
+    },
     onClientUploadComplete: (res) => {
       if (res && res[0]) {
         const serverData = res[0].serverData as { isSafe: boolean; error: string | null } | undefined;
         if (serverData && serverData.isSafe === false) {
-          alert("Upload rejected: Content does not meet safety guidelines.");
+          alert("Upload rejected: Content does not meet safety guidelines (Nudity detected).");
           setUploadedUrl(null);
+          setUploadStatusText("Drop photo or click to browse");
         } else {
           setUploadedUrl(res[0].ufsUrl || res[0].url);
+          setUploadStatusText("Drop photo or click to browse");
         }
       }
       setLoading(false);
@@ -51,6 +59,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
     onUploadError: (error: Error) => {
       alert(`Upload Failed: ${error.message}`);
       setLoading(false);
+      setUploadStatusText("Drop photo or click to browse");
     },
   });
 
@@ -66,6 +75,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
     setLocation("");
     setShareLocation(true);
     setExifStatus("idle");
+    setUploadStatusText("Drop photo or click to browse");
     onClose();
   };
 
@@ -94,6 +104,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
     setCoordinates("");
     setRawExifCoords("");
     setLocation("");
+    setUploadStatusText("Extracting EXIF metadata...");
 
     try {
       // 1. Extract standard technical EXIF metadata locally
@@ -154,7 +165,10 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
       setExifStatus("no-gps");
     }
 
-    // 4. Automatically trigger UploadThing upload
+    // 4. Update status right before triggering cloud upload and SightEngine moderation check
+    setUploadStatusText("Checking photo for nudity & safety via SightEngine...");
+
+    // 5. Automatically trigger UploadThing upload
     await startUpload([file]);
   }
 
@@ -267,6 +281,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                       setCamera(""); setIso(""); setAperture(""); setShutter("");
                       setCoordinates(""); setRawExifCoords(""); setLocation("");  
                       setShareLocation(true); setExifStatus("idle"); 
+                      setUploadStatusText("Drop photo or click to browse");
                     }}
                     className="flex-1 px-4 py-3 rounded-xl border border-(--border) font-mono text-[11px] font-bold uppercase tracking-[0.15em] text-(--text-dim) hover:text-(--text) hover:border-(--border-hover) transition-all cursor-pointer bg-(--surface-2)"
                   >
@@ -304,6 +319,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                             setCamera(""); setIso(""); setAperture(""); setShutter("");
                             setCoordinates(""); setRawExifCoords(""); setLocation("");  
                             setShareLocation(true); setExifStatus("idle"); 
+                            setUploadStatusText("Drop photo or click to browse");
                           }}
                           className="bg-(--surface) backdrop-blur-md border border-(--border) text-(--text) font-mono text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider font-bold hover:bg-rose-500 hover:text-white transition-all cursor-pointer shadow-lg"
                         >
@@ -312,17 +328,17 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                       </div>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center gap-3 text-center w-full py-2 cursor-pointer">
+                    <label className={`flex flex-col items-center gap-3 text-center w-full py-2 ${isUploading || loading ? "cursor-wait" : "cursor-pointer"}`}>
                       <div className="w-12 h-12 rounded-xl bg-(--surface-3) border border-(--border) flex items-center justify-center text-(--accent) group-hover:scale-105 transition-transform shadow-xs">
                         {isUploading || loading ? <Loader2 size={22} className="animate-spin text-(--accent)" /> : <ImagePlus size={22} />}
                       </div>
 
                       <div className="flex flex-col gap-1">
-                        <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-(--text) font-bold">
-                          {isUploading || loading ? "Extracting EXIF & Uploading..." : "Drop photo or click to browse"}
+                        <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-(--text) font-bold animate-pulse">
+                          {uploadStatusText}
                         </span>
                         <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-(--text-muted)">
-                          Original file auto-extracts camera metadata & GPS
+                          Secured with automated SightEngine nudity & safety filters
                         </span>
                       </div>
                       
@@ -456,7 +472,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
                   disabled={loading || !uploadedUrl || isUploading} 
                   className="w-full bg-(--text) text-(--bg) py-3 rounded-xl font-mono text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-(--accent) hover:text-(--bg) transition-all shadow-md disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2 mt-1"
                 >
-                  {loading || isUploading ? "PROCESSING EXIF & UPLOADING..." : "POST THE PHOTO"}
+                  {loading || isUploading ? "VERIFYING & POSTING..." : "POST THE PHOTO"}
                 </button>
               </form>
             )}
