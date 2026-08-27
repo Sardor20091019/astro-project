@@ -4,7 +4,7 @@ if (!API_URL && process.env.NODE_ENV === 'production') {
   console.error("⚠️ NEXT_PUBLIC_API_URL is not defined in production environment variables!");
 }
 
-const BASE_URL = API_URL || 'http://localhost:4000';
+const BASE_URL = API_URL;
 
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${endpoint}`, {
