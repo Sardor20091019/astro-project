@@ -5,14 +5,25 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS so Next.js (localhost:3000) can talk to NestJS (localhost:4000)
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'https://astrospectrum.uz',
+    'https://www.astrospectrum.uz',
+  ];
+
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like Postman or server-to-server)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Blocked by CORS'));
+      }
+    },
     credentials: true,
   });
 
-  // Force port 4000
   await app.listen(process.env.PORT ?? 4000);
-  console.log(`🚀 Backend is running on: http://localhost:4000`);
+  console.log(`🚀 Backend is running on port ${process.env.PORT ?? 4000}`);
 }
 bootstrap();
