@@ -36,7 +36,7 @@ const SORT_OPTIONS: SortOption[] = [
 ];
 
 export default async function PhotosPage() {
-  let photos: any[] = [];
+  let photos: Awaited<ReturnType<typeof getApprovedPhotos>> = [];
 
   try {
     // Fetch photos directly from your NestJS backend API

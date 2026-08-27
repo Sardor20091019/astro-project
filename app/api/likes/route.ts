@@ -46,7 +46,6 @@ export async function POST(req: Request) {
       await db
         .insertInto("Like")
         .values({
-          id: randomUUID(),
           photoId: parsedPhotoId,
           userId: userId || null,
           anonymousToken: userId ? null : anonymousToken,

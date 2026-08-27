@@ -11,7 +11,7 @@ export class PhotosService {
   async getApprovedPhotos() {
     return await this.db
       .selectFrom('Photo')
-      .select((eb) => [
+      .select([
         'Photo.id',
         'Photo.url',
         'Photo.title',
@@ -47,7 +47,7 @@ export class PhotosService {
   async getPhotoById(id: number, userId?: string, anonymousToken?: string) {
     const photo = await this.db
       .selectFrom('Photo')
-      .select((eb) => [
+      .select([
         'Photo.id',
         'Photo.url',
         'Photo.title',

@@ -51,7 +51,6 @@ export async function POST(req: Request) {
       await db
         .insertInto("Rating")
         .values({
-          id: randomUUID(),
           photoId: parsedPhotoId,
           value: parsedValue,
           userId: userId || null,
