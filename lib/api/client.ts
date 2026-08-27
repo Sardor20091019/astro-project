@@ -8,6 +8,7 @@ const BASE_URL = API_URL;
 
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${endpoint}`, {
+    cache: 'no-store', // Forces a fresh fetch, avoiding 304 cache conflicts and empty bodies
     ...options,
     headers: {
       'Content-Type': 'application/json',
