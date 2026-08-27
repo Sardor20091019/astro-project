@@ -2,8 +2,8 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AdminPhotoList from "@/components/AdminPhotoList";
-import { prisma } from "@/lib/prisma";
-import { Users, Image as ImageIcon, MessageSquare, Shield, ArrowRight } from "lucide-react";
+import { db } from "@/lib/db";
+import { Users, Image as ImageIcon, MessageSquare } from "lucide-react";
 import AdminDashboardModals from "@/components/AdminDashboardModals";
 
 export const dynamic = "force-dynamic";
@@ -15,23 +15,33 @@ export default async function AdminPage() {
     redirect("/");
   }
 
-  const dbUser = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { role: true, id: true, name: true }
-  });
+  const dbUser = await db
+    .selectFrom("User")
+    .select(["role", "id", "name"])
+    .where("email", "=", session.user.email)
+    .executeTakeFirst();
 
   if (!dbUser || dbUser.role !== "ADMIN") {
     redirect("/");
   }
 
-  const [photos, users, comments] = await Promise.all([
-    prisma.photo.findMany({ orderBy: { createdAt: "desc" } }),
-    prisma.user.findMany({ orderBy: { name: "asc" } }),
-    prisma.comment.findMany({ 
-      include: { user: true }, 
-      orderBy: { createdAt: "desc" } 
-    })
+  const [photos, users, commentsRaw] = await Promise.all([
+    db.selectFrom("Photo").selectAll().orderBy("createdAt", "desc").execute(),
+    db.selectFrom("User").selectAll().orderBy("name", "asc").execute(),
+    db.selectFrom("Comment").selectAll().orderBy("createdAt", "desc").execute(),
   ]);
+
+  // Batch fetch users for comments to match Prisma's include: { user: true }
+  const userIds = [...new Set(commentsRaw.map((c) => c.userId))];
+  const commentUsers = userIds.length > 0
+    ? await db.selectFrom("User").selectAll().where("id", "in", userIds).execute()
+    : [];
+  const userMap = new Map(commentUsers.map((u) => [u.id, u]));
+
+  const comments = commentsRaw.map((c) => ({
+    ...c,
+    user: userMap.get(c.userId) || null,
+  }));
 
   return (
     <main className="min-h-screen bg-(--bg) text-(--text) selection:bg-(--accent)/30 pt-28 pb-32 relative overflow-hidden flex flex-col items-center">

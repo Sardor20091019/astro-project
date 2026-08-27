@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { isAdmin } from "@/lib/admin";
 import ProfileClientView from "@/components/ProfileClientView";
@@ -12,21 +12,46 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   const { id: userId } = await params;
   const session = await getServerSession(authOptions);
 
-  const [user, rawPhotos, followersData, followingData] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId } }),
-    prisma.photo.findMany({
-      where: { userId, status: "APPROVED" },
-      orderBy: { createdAt: "desc" },
-      select: { id: true, url: true, title: true, location: true },
-    }),
-    prisma.follows.findMany({
-      where: { followingId: userId },
-      include: { follower: { select: { id: true, name: true, image: true } } },
-    }),
-    prisma.follows.findMany({
-      where: { followerId: userId },
-      include: { following: { select: { id: true, name: true, image: true } } },
-    }),
+  const [user, rawPhotos, followersData, followingData, viewerFollows, directRel] = await Promise.all([
+    db
+      .selectFrom("User")
+      .selectAll()
+      .where("id", "=", userId)
+      .executeTakeFirst(),
+    db
+      .selectFrom("Photo")
+      .select(["id", "url", "title", "location"])
+      .where("userId", "=", userId)
+      .where("status", "=", "APPROVED")
+      .orderBy("createdAt", "desc")
+      .execute(),
+    db
+      .selectFrom("Follows")
+      .innerJoin("User", "User.id", "Follows.followerId")
+      .select(["User.id", "User.name", "User.image"])
+      .where("Follows.followingId", "=", userId)
+      .execute(),
+    db
+      .selectFrom("Follows")
+      .innerJoin("User", "User.id", "Follows.followingId")
+      .select(["User.id", "User.name", "User.image"])
+      .where("Follows.followerId", "=", userId)
+      .execute(),
+    session?.user?.id
+      ? db
+          .selectFrom("Follows")
+          .select("followingId")
+          .where("followerId", "=", session.user.id)
+          .execute()
+      : Promise.resolve([]),
+    session?.user?.id && session.user.id !== userId
+      ? db
+          .selectFrom("Follows")
+          .select("followerId")
+          .where("followerId", "=", session.user.id)
+          .where("followingId", "=", userId)
+          .executeTakeFirst()
+      : Promise.resolve(undefined),
   ]);
 
   if (!user) notFound();
@@ -37,37 +62,23 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
     id: String(p.id),
   }));
 
-  let viewerFollowingIds = new Set<string>();
-  if (session?.user?.id) {
-    const viewerFollows = await prisma.follows.findMany({
-      where: { followerId: session.user.id },
-      select: { followingId: true },
-    });
-    viewerFollowingIds = new Set(viewerFollows.map((f) => f.followingId));
-  }
+  const viewerFollowingIds = new Set(viewerFollows.map((f) => f.followingId));
 
   const followers = followersData.map((f) => ({
-    ...f.follower,
-    isFollowing: viewerFollowingIds.has(f.follower.id),
+    id: f.id,
+    name: f.name,
+    image: f.image,
+    isFollowing: viewerFollowingIds.has(f.id),
   }));
 
   const following = followingData.map((f) => ({
-    ...f.following,
-    isFollowing: viewerFollowingIds.has(f.following.id),
+    id: f.id,
+    name: f.name,
+    image: f.image,
+    isFollowing: viewerFollowingIds.has(f.id),
   }));
 
-  let isFollowing = false;
-  if (session?.user?.id && session.user.id !== userId) {
-    const rel = await prisma.follows.findUnique({
-      where: {
-        followerId_followingId: {
-          followerId: session.user.id,
-          followingId: userId,
-        },
-      },
-    });
-    isFollowing = Boolean(rel);
-  }
+  const isFollowing = Boolean(directRel);
 
   const isSelf = session?.user?.id === userId;
   const viewerIsAdmin = isAdmin(session?.user?.email);

@@ -3,7 +3,7 @@ import { join } from "path";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { isAdmin } from "@/lib/admin";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -20,7 +20,12 @@ export async function DELETE(_req: Request, { params }: RouteContext) {
     return NextResponse.json({ error: "Invalid photo id" }, { status: 400 });
   }
 
-  const photo = await prisma.photo.findUnique({ where: { id: photoId } });
+  const photo = await db
+    .selectFrom("Photo")
+    .selectAll()
+    .where("id", "=", photoId)
+    .executeTakeFirst();
+
   if (!photo) {
     return NextResponse.json({ error: "Photo not found" }, { status: 404 });
   }
@@ -38,7 +43,11 @@ export async function DELETE(_req: Request, { params }: RouteContext) {
     } catch {}
   }
 
-  await prisma.photo.delete({ where: { id: photoId } });
+  await db
+    .deleteFrom("Photo")
+    .where("id", "=", photoId)
+    .execute();
+
   return NextResponse.json({ success: true });
 }
 
@@ -54,7 +63,12 @@ export async function PATCH(req: Request, { params }: RouteContext) {
     return NextResponse.json({ error: "Invalid photo id" }, { status: 400 });
   }
 
-  const photo = await prisma.photo.findUnique({ where: { id: photoId } });
+  const photo = await db
+    .selectFrom("Photo")
+    .selectAll()
+    .where("id", "=", photoId)
+    .executeTakeFirst();
+
   if (!photo) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -72,6 +86,16 @@ export async function PATCH(req: Request, { params }: RouteContext) {
   if (typeof body.category === "string") updateData.category = body.category;
   if (typeof body.location === "string") updateData.location = body.location.trim() || null;
 
-  const updated = await prisma.photo.update({ where: { id: photoId }, data: updateData });
+  if (Object.keys(updateData).length === 0) {
+    return NextResponse.json(photo);
+  }
+
+  const updated = await db
+    .updateTable("Photo")
+    .set(updateData)
+    .where("id", "=", photoId)
+    .returningAll()
+    .executeTakeFirst();
+
   return NextResponse.json(updated);
 }

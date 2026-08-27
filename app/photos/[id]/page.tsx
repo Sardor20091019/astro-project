@@ -1,5 +1,5 @@
 import PhotoViewer from "@/components/PhotoViewer";
-import { prisma } from "@/lib/prisma";
+import { getApprovedPhotos, getPhotoById } from "@/lib/api/photos";
 import { authOptions } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
@@ -15,45 +15,16 @@ export default async function PhotoPage({ params }: { params: Promise<{ id: stri
 
   if (!Number.isInteger(photoId)) notFound();
 
+  const userId = session?.user?.id;
+  const anonymousToken = cookieStore.get("astro_guest")?.value;
+
+  // Fetch current photo (with engagement stats & viewer state) and all photos in parallel from NestJS
   const [currentPhoto, allPhotos] = await Promise.all([
-    prisma.photo.findUnique({ where: { id: photoId } }),
-    prisma.photo.findMany({
-      where: { status: "APPROVED" },
-      orderBy: { id: "asc" },
-    }),
+    getPhotoById(photoId, userId, anonymousToken).catch(() => null),
+    getApprovedPhotos().catch(() => []),
   ]);
 
   if (!currentPhoto) notFound();
-
-  const userId = session?.user?.id;
-  const anonymousToken = cookieStore.get("astro_guest")?.value;
-  const viewerWhere = userId
-    ? { photoId_userId_unique: { photoId, userId } }
-    : anonymousToken
-      ? { photoId_anonymousToken_unique: { photoId, anonymousToken } }
-      : null;
-
-  const [ratingStats, likes, comments, viewerRating, viewerLike] = await Promise.all([
-    prisma.rating.aggregate({
-      where: { photoId },
-      _avg: { value: true },
-      _count: { id: true },
-    }),
-    prisma.like.count({ where: { photoId } }),
-    prisma.comment.count({ where: { photoId } }),
-    viewerWhere
-      ? prisma.rating.findUnique({
-          where: viewerWhere,
-          select: { value: true },
-        })
-      : Promise.resolve(null),
-    viewerWhere
-      ? prisma.like.findUnique({
-          where: viewerWhere,
-          select: { id: true },
-        })
-      : Promise.resolve(null),
-  ]);
 
   return (
     <div className="fixed inset-0 z-[9999] overflow-hidden bg-black">
@@ -61,18 +32,18 @@ export default async function PhotoPage({ params }: { params: Promise<{ id: stri
         photos={allPhotos}
         initialId={photoId}
         stats={{
-          avg: ratingStats._avg.value ? Number(ratingStats._avg.value.toFixed(1)) : 0,
-          total: ratingStats._count.id,
-          likes,
-          comments,
+          avg: currentPhoto.avgRating ?? 0,
+          total: currentPhoto.ratingCount ?? 0,
+          likes: currentPhoto.likeCount ?? 0,
+          comments: currentPhoto.commentCount ?? 0,
         }}
         initialEngagement={{
-          ratingAverage: ratingStats._avg.value ? Number(ratingStats._avg.value.toFixed(1)) : 0,
-          ratingCount: ratingStats._count.id,
-          viewerRating: viewerRating?.value ?? null,
-          likeCount: likes,
-          viewerLiked: Boolean(viewerLike),
-          commentCount: comments,
+          ratingAverage: currentPhoto.avgRating ?? 0,
+          ratingCount: currentPhoto.ratingCount ?? 0,
+          viewerRating: currentPhoto.viewerRating ?? null,
+          likeCount: currentPhoto.likeCount ?? 0,
+          viewerLiked: Boolean(currentPhoto.viewerLiked),
+          commentCount: currentPhoto.commentCount ?? 0,
         }}
         session={session}
       />

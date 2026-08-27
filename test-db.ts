@@ -1,17 +1,33 @@
+// test-db.ts
+import { Kysely, PostgresDialect } from 'kysely';
+import { Pool } from 'pg';
+import * as dotenv from 'dotenv';
+import { DB } from './backend/src/database/types';
 
-import { PrismaClient } from '@prisma/client';
+dotenv.config();
 
-const prisma = new PrismaClient();
+const db = new Kysely<DB>({
+  dialect: new PostgresDialect({
+    pool: new Pool({
+      connectionString: process.env.DATABASE_URL,
+    }),
+  }),
+});
 
 async function main() {
-  console.log("Connecting to database...");
+  console.log("Connecting to database via Kysely...");
   try {
-    const count = await prisma.otpToken.count();
-    console.log("SUCCESS! Count of tokens:", count);
+    // Let's test with 'Photo' table which we know exists
+    const result = await db
+      .selectFrom('Photo')
+      .select((eb) => eb.fn.count('id').as('count'))
+      .executeTakeFirst();
+      
+    console.log("SUCCESS! Count of photos in Neon:", result?.count ?? 0);
   } catch (e) {
-    console.error("FAILED to connect:", e);
+    console.error("FAILED to query:", e);
   } finally {
-    await prisma.$disconnect();
+    await db.destroy();
   }
 }
 

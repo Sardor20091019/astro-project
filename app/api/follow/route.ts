@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma";
+import { authOptions } from "@/lib/auth";
+import { db } from "@/lib/db";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -14,33 +14,37 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid target" }, { status: 400 });
   }
 
-  const existing = await prisma.follows.findUnique({
-    where: { 
-      followerId_followingId: { 
-        followerId: session.user.id, 
-        followingId: targetUserId 
-      } 
-    },
-  });
+  const existing = await db
+    .selectFrom("Follows")
+    .selectAll()
+    .where("followerId", "=", session.user.id)
+    .where("followingId", "=", targetUserId)
+    .executeTakeFirst();
 
   if (existing) {
-
-    await prisma.follows.delete({ 
-      where: { 
-        followerId_followingId: { 
-          followerId: session.user.id, 
-          followingId: targetUserId 
-        } 
-      } 
-    });
+    await db
+      .deleteFrom("Follows")
+      .where("followerId", "=", session.user.id)
+      .where("followingId", "=", targetUserId)
+      .execute();
   } else {
-
-    await prisma.follows.create({
-      data: { followerId: session.user.id, followingId: targetUserId },
-    });
+    await db
+      .insertInto("Follows")
+      .values({
+        followerId: session.user.id,
+        followingId: targetUserId,
+      })
+      .execute();
   }
 
-  const followerCount = await prisma.follows.count({ where: { followingId: targetUserId } });
+  const countResult = await db
+    .selectFrom("Follows")
+    .where("followingId", "=", targetUserId)
+    .select((eb) => eb.fn.count("followerId").as("count"))
+    .executeTakeFirst();
+
+  const followerCount = Number(countResult?.count ?? 0);
+
   return NextResponse.json({ following: !existing, followerCount });
 }
 
@@ -53,22 +57,31 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Missing targetUserId" }, { status: 400 });
   }
 
-
-  const [followerCount, followingCount] = await Promise.all([
-    prisma.follows.count({ where: { followingId: targetUserId } }),
-    prisma.follows.count({ where: { followerId: targetUserId } }),
+  const [followerCountRes, followingCountRes] = await Promise.all([
+    db
+      .selectFrom("Follows")
+      .where("followingId", "=", targetUserId)
+      .select((eb) => eb.fn.count("followerId").as("count"))
+      .executeTakeFirst(),
+    db
+      .selectFrom("Follows")
+      .where("followerId", "=", targetUserId)
+      .select((eb) => eb.fn.count("followingId").as("count"))
+      .executeTakeFirst(),
   ]);
+
+  const followerCount = Number(followerCountRes?.count ?? 0);
+  const followingCount = Number(followingCountRes?.count ?? 0);
 
   let isFollowing = false;
   if (session?.user?.id) {
-    const rel = await prisma.follows.findUnique({
-      where: { 
-        followerId_followingId: { 
-          followerId: session.user.id, 
-          followingId: targetUserId 
-        } 
-      },
-    });
+    const rel = await db
+      .selectFrom("Follows")
+      .select("followerId")
+      .where("followerId", "=", session.user.id)
+      .where("followingId", "=", targetUserId)
+      .executeTakeFirst();
+    
     isFollowing = Boolean(rel);
   }
 

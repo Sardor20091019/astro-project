@@ -1,4 +1,5 @@
-import { prisma } from "@/lib/prisma";
+// app/photos/page.tsx
+import { getApprovedPhotos } from "@/lib/api/photos";
 import PhotosClientView from "@/components/PhotosClientView";
 
 export const dynamic = "force-dynamic";
@@ -38,40 +39,10 @@ export default async function PhotosPage() {
   let photos: any[] = [];
 
   try {
-    // Fetch all approved photos with related metrics
-    const rawPhotos = await prisma.photo.findMany({
-      where: {
-        status: "APPROVED",
-      },
-      include: {
-        _count: {
-          select: { likes: true, comments: true },
-        },
-        ratings: {
-          select: { value: true },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    // Map raw data into enriched photo objects with computed stats
-    photos = rawPhotos.map((p) => {
-      const ratingSum = p.ratings.reduce((acc, r) => acc + r.value, 0);
-      const avgRating = p.ratings.length > 0 ? ratingSum / p.ratings.length : 0;
-      
-      return {
-        ...p,
-        likeCount: p._count.likes,
-        commentCount: p._count.comments,
-        viewCount: (p as any).views || 0,
-        avgRating,
-      };
-    });
-
+    // Fetch photos directly from your NestJS backend API
+    photos = await getApprovedPhotos();
   } catch (error) {
-    console.error("Failed to load photos from database:", error);
+    console.error("Failed to load photos from NestJS backend:", error);
   }
 
   return (

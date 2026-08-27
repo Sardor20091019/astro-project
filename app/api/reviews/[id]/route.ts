@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -20,7 +20,11 @@ export async function DELETE(_req: Request, { params }: RouteContext) {
   }
 
   try {
-    await prisma.comment.delete({ where: { id: commentId } });
+    await db
+      .deleteFrom("Comment")
+      .where("id", "=", commentId)
+      .execute();
+
     return NextResponse.json({ message: "Deleted successfully" });
   } catch (error) {
     console.error("Delete review failed:", error);

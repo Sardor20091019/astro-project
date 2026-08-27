@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
 
 interface AdminSessionUser {
@@ -37,9 +37,10 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Invalid identity format" }, { status: 400 });
     }
 
-    await prisma.comment.delete({
-      where: { id: commentId }
-    });
+    await db
+      .deleteFrom("Comment")
+      .where("id", "=", commentId)
+      .execute();
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

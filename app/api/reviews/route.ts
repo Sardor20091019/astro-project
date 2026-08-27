@@ -1,7 +1,8 @@
+import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -19,24 +20,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid review" }, { status: 400 });
     }
 
-    await prisma.rating.upsert({
-    where: { photoId_userId_unique: { photoId: parsedPhotoId, userId: session.user.id } },
-      update: { value: parsedRating },
-      create: {
+    // Kysely upsert for Rating using PostgreSQL onConflict on composite unique columns
+    await db
+      .insertInto("Rating")
+      .values({
+        id: randomUUID(),
         photoId: parsedPhotoId,
         value: parsedRating,
         userId: session.user.id,
-      },
-    });
+        updatedAt: new Date(),
+      })
+      .onConflict((oc) =>
+        oc.columns(["photoId", "userId"]).doUpdateSet({
+          value: parsedRating,
+          updatedAt: new Date(),
+        })
+      )
+      .execute();
 
     const newComment = cleanComment
-      ? await prisma.comment.create({
-          data: {
+      ? await db
+          .insertInto("Comment")
+          .values({
             photoId: parsedPhotoId,
             body: cleanComment.slice(0, 1200),
             userId: session.user.id,
-          },
-        })
+          })
+          .returningAll()
+          .executeTakeFirstOrThrow()
       : null;
 
     return NextResponse.json(newComment, { status: 201 });
@@ -55,23 +66,35 @@ export async function GET(req: Request) {
   }
 
   try {
-    const comments = await prisma.comment.findMany({
-      where: { photoId },
-      include: {
-        user: {
-          select: { name: true, image: true, customImage: true },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const rawComments = await db
+      .selectFrom("Comment")
+      .innerJoin("User", "User.id", "Comment.userId")
+      .select([
+        "Comment.id",
+        "Comment.body",
+        "Comment.createdAt",
+        "Comment.photoId",
+        "Comment.userId",
+        "User.name",
+        "User.image",
+        "User.customImage",
+      ])
+      .where("Comment.photoId", "=", photoId)
+      .orderBy("Comment.createdAt", "desc")
+      .execute();
 
-    return NextResponse.json(
-      comments.map((comment) => ({
-        ...comment,
-        comment: comment.body,
-        rating: 0,
-      })),
-    );
+    const comments = rawComments.map((comment) => ({
+      ...comment,
+      comment: comment.body,
+      rating: 0,
+      user: {
+        name: comment.name,
+        image: comment.image,
+        customImage: comment.customImage,
+      },
+    }));
+
+    return NextResponse.json(comments);
   } catch (error) {
     console.error("Fetch Reviews Error:", error);
     return NextResponse.json({ error: "Error fetching reviews" }, { status: 500 });

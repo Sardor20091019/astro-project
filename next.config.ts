@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  serverExternalPackages: ["@prisma/client", "pg"],
+  serverExternalPackages: ["pg"],
   allowedDevOrigins: ['huff-ice-stride.ngrok-free.dev'], 
   images: {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],

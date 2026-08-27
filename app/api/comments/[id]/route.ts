@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { prisma } from "@/lib/prisma";
-import { authOptions } from "@/lib/auth"
+import { db } from "@/lib/db";
+import { authOptions } from "@/lib/auth";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -18,6 +18,10 @@ export async function DELETE(_req: Request, { params }: RouteContext) {
     return NextResponse.json({ error: "Invalid comment id" }, { status: 400 });
   }
 
-  await prisma.comment.delete({ where: { id: commentId } });
+  await db
+    .deleteFrom("Comment")
+    .where("id", "=", commentId)
+    .execute();
+
   return NextResponse.json({ message: "Comment deleted" });
 }

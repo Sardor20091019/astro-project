@@ -1,14 +1,16 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export async function isRateLimited(ip: string, limit: number = 5, windowMs: number = 60000): Promise<boolean> {
   const cutoff = new Date(Date.now() - windowMs);
 
-  const requestCount = await prisma.otpToken.count({
-    where: {
-      ipAddress: ip,
-      createdAt: { gte: cutoff }
-    }
-  });
+  const result = await db
+    .selectFrom("OtpToken")
+    .select((eb) => eb.fn.count("id").as("count"))
+    .where("ipAddress", "=", ip)
+    .where("createdAt", ">=", cutoff)
+    .executeTakeFirst();
+
+  const requestCount = Number(result?.count ?? 0);
 
   return requestCount >= limit;
 }

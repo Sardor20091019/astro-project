@@ -1,7 +1,6 @@
- 
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
@@ -13,9 +12,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
     }
 
-  
     const secret = crypto.createHash("sha256").update(botToken).digest();
-
 
     const sortedKeys = Object.keys(userData).sort();
     const dataCheckString = sortedKeys
@@ -23,7 +20,6 @@ export async function POST(req: Request) {
       .join("\n");
 
     const hmac = crypto.createHmac("sha256", secret).update(dataCheckString).digest("hex");
-
 
     console.log("--- DEBUG START ---");
     console.log("Bot Token Present:", !!process.env.TELEGRAM_BOT_TOKEN);
@@ -33,42 +29,45 @@ export async function POST(req: Request) {
     console.log("Sent Hash:", hash);
     console.log("--- DEBUG END ---");
 
-
-    console.log("--- AUTH DEBUG ---");
-    console.log("String being hashed:", dataCheckString);
-    console.log("Calculated HMAC:", hmac);
-    console.log("Received Hash:", hash);
-
-
     if (hmac !== hash) {
       console.error("HMAC Mismatch!");
       return NextResponse.json({ error: "Invalid authentication hash" }, { status: 401 });
     }
 
     const authDate = parseInt(userData.auth_date);
-    if (isNaN(authDate) || Math.abs(Date.now() / 1000 - authDate) > 86400) {
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (isNaN(authDate) || Math.abs(nowSec - authDate) > 86400) {
       return NextResponse.json({ error: "Authentication data expired" }, { status: 401 });
     }
 
+    const telegramIdStr = userData.id.toString();
+    const telegramUsername = userData.username || null;
+    const userImage = userData.photo_url || null;
+    const userName = [userData.first_name, userData.last_name].filter(Boolean).join(" ");
 
-    const user = await prisma.user.upsert({
-      where: { telegramId: userData.id.toString() },
-      update: {
-        telegramUsername: userData.username,
-        image: userData.photo_url || null,
-        name: [userData.first_name, userData.last_name].filter(Boolean).join(" "),
-      },
-      create: {
-        telegramId: userData.id.toString(),
-        telegramUsername: userData.username,
-        image: userData.photo_url || null,
-        name: [userData.first_name, userData.last_name].filter(Boolean).join(" "),
-      },
-    });
+    // Kysely Upsert with generated UUID id for insertion
+    const user = await db
+      .insertInto("User")
+      .values({
+        id: crypto.randomUUID(),
+        telegramId: telegramIdStr,
+        telegramUsername,
+        image: userImage,
+        name: userName,
+      })
+      .onConflict((oc) =>
+        oc.column("telegramId").doUpdateSet({
+          telegramUsername,
+          image: userImage,
+          name: userName,
+        })
+      )
+      .returningAll()
+      .executeTakeFirstOrThrow();
 
     const response = NextResponse.json({ success: true, user });
 
-    response.cookies.set("user_session", user.id, {
+    response.cookies.set("user_session", user.id.toString(), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -82,4 +81,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
@@ -24,45 +24,61 @@ export async function POST(req: Request) {
     const anonymousToken = cookieStore.get("astro_guest")?.value ?? randomUUID();
     const shouldSetGuestCookie = !cookieStore.get("astro_guest");
 
-
-const existing = userId
-  ? await prisma.rating.findUnique({ 
-      where: { 
-        photoId_userId_unique: { photoId: parsedPhotoId, userId } 
-      } 
-    })
-  : await prisma.rating.findUnique({ 
-      where: { 
-        photoId_anonymousToken_unique: { photoId: parsedPhotoId, anonymousToken } 
-      } 
-    });
-
+    const existing = userId
+      ? await db
+          .selectFrom("Rating")
+          .selectAll()
+          .where("photoId", "=", parsedPhotoId)
+          .where("userId", "=", userId)
+          .executeTakeFirst()
+      : await db
+          .selectFrom("Rating")
+          .selectAll()
+          .where("photoId", "=", parsedPhotoId)
+          .where("anonymousToken", "=", anonymousToken)
+          .executeTakeFirst();
 
     if (existing) {
-      await prisma.rating.update({
-        where: { id: existing.id },
-        data: { value: parsedValue },
-      });
+      await db
+        .updateTable("Rating")
+        .set({
+          value: parsedValue,
+          updatedAt: new Date(),
+        })
+        .where("id", "=", existing.id)
+        .execute();
     } else {
-      await prisma.rating.create({
-        data: {
+      await db
+        .insertInto("Rating")
+        .values({
+          id: randomUUID(),
           photoId: parsedPhotoId,
           value: parsedValue,
           userId: userId || null,
           anonymousToken: userId ? null : anonymousToken,
-        },
-      });
+          updatedAt: new Date(),
+        })
+        .execute();
     }
 
-    const stats = await prisma.rating.aggregate({
-      where: { photoId: parsedPhotoId },
-      _avg: { value: true },
-      _count: { id: true },
-    });
+    const stats = await db
+      .selectFrom("Rating")
+      .where("photoId", "=", parsedPhotoId)
+      .select([
+        (eb) => eb.fn.avg("value").as("avg"),
+        (eb) => eb.fn.count("id").as("count"),
+      ])
+      .executeTakeFirst();
+
+    const rawAvg = stats?.avg;
+    const ratingAverage = rawAvg !== null && rawAvg !== undefined 
+      ? Number(Number(rawAvg).toFixed(1)) 
+      : 0;
+    const ratingCount = Number(stats?.count ?? 0);
 
     const response = NextResponse.json({
-      ratingAverage: stats._avg.value ? Number(stats._avg.value.toFixed(1)) : 0,
-      ratingCount: stats._count.id,
+      ratingAverage,
+      ratingCount,
       viewerRating: parsedValue,
     });
 
@@ -76,6 +92,7 @@ const existing = userId
     }
     return response;
   } catch (error) {
+    console.error("Rating API Error:", error);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

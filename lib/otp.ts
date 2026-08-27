@@ -1,4 +1,5 @@
-import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
+import { db } from "@/lib/db";
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
@@ -17,29 +18,38 @@ export async function generateAndSendOtp(email: string, ip: string) {
   const cleanEmail = email.toLowerCase().trim();
   console.log("DEBUG: Starting generateAndSendOtp for", cleanEmail);
 
-
   const oneMinuteAgo = new Date(Date.now() - 60000);
-  const recentRequestsCount = await prisma.otpToken.count({
-    where: { ipAddress: ip, createdAt: { gte: oneMinuteAgo } },
-  });
+  const recentRequestsRes = await db
+    .selectFrom("OtpToken")
+    .select((eb) => eb.fn.count("id").as("count"))
+    .where("ipAddress", "=", ip)
+    .where("createdAt", ">=", oneMinuteAgo)
+    .executeTakeFirst();
+
+  const recentRequestsCount = Number(recentRequestsRes?.count ?? 0);
 
   if (recentRequestsCount >= 3) {
     throw new Error("Too many requests from this device. Please wait a minute.");
   }
 
-
-  await prisma.otpToken.deleteMany({
-    where: { expires: { lt: new Date() } },
-  });
-
+  await db
+    .deleteFrom("OtpToken")
+    .where("expires", "<", new Date())
+    .execute();
 
   const token = Math.floor(100000 + Math.random() * 900000).toString();
   const expires = new Date(Date.now() + 2 * 60 * 1000); 
   
-  await prisma.otpToken.create({
-    data: { email: cleanEmail, token, expires, ipAddress: ip },
-  });
-
+  await db
+    .insertInto("OtpToken")
+    .values({
+      id: crypto.randomUUID(),
+      email: cleanEmail,
+      token,
+      expires,
+      ipAddress: ip,
+    })
+    .execute();
 
   try {
     await transporter.sendMail({
@@ -87,36 +97,46 @@ export async function generateAndSendOtp(email: string, ip: string) {
 export async function verifyOtp(email: string, inputToken: string) {
   const cleanEmail = email.toLowerCase().trim();
   
-  const tokenRecord = await prisma.otpToken.findFirst({
-    where: { email: cleanEmail },
-    orderBy: { createdAt: "desc" }, 
-  });
+  const tokenRecord = await db
+    .selectFrom("OtpToken")
+    .selectAll()
+    .where("email", "=", cleanEmail)
+    .orderBy("createdAt", "desc")
+    .executeTakeFirst();
 
   if (!tokenRecord) throw new Error("No active code found.");
 
-
   if (new Date() > tokenRecord.expires) {
-    await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
+    await db
+      .deleteFrom("OtpToken")
+      .where("id", "=", tokenRecord.id)
+      .execute();
     throw new Error("Code expired.");
   }
 
-
   if (tokenRecord.token === inputToken) {
-    await prisma.otpToken.deleteMany({ where: { email: cleanEmail } });
+    await db
+      .deleteFrom("OtpToken")
+      .where("email", "=", cleanEmail)
+      .execute();
     return { success: true };
   } else {
+    const newAttempts = (tokenRecord.failedAttempts ?? 0) + 1;
 
-    const updated = await prisma.otpToken.update({
-      where: { id: tokenRecord.id },
-      data: { failedAttempts: { increment: 1 } },
-    });
+    await db
+      .updateTable("OtpToken")
+      .set({ failedAttempts: newAttempts })
+      .where("id", "=", tokenRecord.id)
+      .execute();
 
-
-    if (updated.failedAttempts >= 5) {
-      await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
+    if (newAttempts >= 5) {
+      await db
+        .deleteFrom("OtpToken")
+        .where("id", "=", tokenRecord.id)
+        .execute();
       throw new Error("Too many failed attempts. Code invalidated.");
     }
 
-    throw new Error(`Invalid code. (${5 - updated.failedAttempts} attempts remaining)`);
+    throw new Error(`Invalid code. (${5 - newAttempts} attempts remaining)`);
   }
 }

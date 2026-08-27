@@ -2,7 +2,7 @@ import { NextAuthOptions, User, getServerSession } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import crypto from "crypto";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -25,15 +25,19 @@ export const authOptions: NextAuthOptions = {
         const formattedEmail = credentials.email.toLowerCase().trim();
         const inputToken = credentials.code.trim();
 
-        const tokenRecord = await prisma.otpToken.findFirst({
-          where: { email: formattedEmail },
-          orderBy: { createdAt: "desc" },
-          select: { id: true, email: true, token: true, expires: true, createdAt: true, failedAttempts: true },
-        });
+        const tokenRecord = await db
+          .selectFrom("OtpToken")
+          .selectAll()
+          .where("email", "=", formattedEmail)
+          .orderBy("createdAt", "desc")
+          .executeTakeFirst();
 
         if (!tokenRecord) throw new Error("No active code found.");
         if (new Date() > tokenRecord.expires) {
-          await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
+          await db
+            .deleteFrom("OtpToken")
+            .where("id", "=", tokenRecord.id)
+            .execute();
           throw new Error("Code expired.");
         }
 
@@ -41,26 +45,46 @@ export const authOptions: NextAuthOptions = {
           const newCount = (tokenRecord.failedAttempts ?? 0) + 1;
           
           if (newCount >= 5) {
-            await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
+            await db
+              .deleteFrom("OtpToken")
+              .where("id", "=", tokenRecord.id)
+              .execute();
             throw new Error("Too many attempts. Code invalidated.");
           }
 
-          await prisma.otpToken.update({
-            where: { id: tokenRecord.id },
-            data: { failedAttempts: newCount },
-          });
+          await db
+            .updateTable("OtpToken")
+            .set({ failedAttempts: newCount })
+            .where("id", "=", tokenRecord.id)
+            .execute();
 
           throw new Error(`Invalid code. (${5 - newCount} attempts remaining)`);
         }
 
-        await prisma.otpToken.delete({ where: { id: tokenRecord.id } });
+        await db
+          .deleteFrom("OtpToken")
+          .where("id", "=", tokenRecord.id)
+          .execute();
 
-        let user = await prisma.user.findUnique({ where: { email: formattedEmail } });
+        let user = await db
+          .selectFrom("User")
+          .selectAll()
+          .where("email", "=", formattedEmail)
+          .executeTakeFirst();
+
         if (!user) {
-          user = await prisma.user.create({ data: { email: formattedEmail, role: "USER" } });
+          user = await db
+            .insertInto("User")
+            .values({
+              id: crypto.randomUUID(),
+              email: formattedEmail,
+              role: "USER",
+            })
+            .returningAll()
+            .executeTakeFirstOrThrow();
         }
 
-        return { id: user.id, email: user.email, name: user.name } as User;
+        return { id: user.id, email: user.email!, name: user.name } as User;
       },
     }),
 
@@ -87,11 +111,25 @@ export const authOptions: NextAuthOptions = {
 
         if (generatedHash !== credentials.hash) throw new Error("Invalid Telegram signature.");
 
-        let user = await prisma.user.findUnique({ where: { telegramId: credentials.id } });
+        let user = await db
+          .selectFrom("User")
+          .selectAll()
+          .where("telegramId", "=", credentials.id)
+          .executeTakeFirst();
+
         if (!user) {
-          user = await prisma.user.create({
-            data: { telegramId: credentials.id, telegramUsername: credentials.username, name: credentials.first_name, image: credentials.photo_url, role: "USER" },
-          });
+          user = await db
+            .insertInto("User")
+            .values({
+              id: crypto.randomUUID(),
+              telegramId: credentials.id,
+              telegramUsername: credentials.username || null,
+              name: credentials.first_name || null,
+              image: credentials.photo_url || null,
+              role: "USER",
+            })
+            .returningAll()
+            .executeTakeFirstOrThrow();
         }
         return { id: user.id, name: user.name, image: user.image } as User;
       },
@@ -117,20 +155,23 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, account }) {
       if (account?.provider === "google" && token.email) {
-        const dbUser = await prisma.user.upsert({
-          where: { email: token.email },
-          update: {
-            name: token.name ?? undefined,
-            image: token.picture ?? undefined,
-          },
-          create: {
+        const dbUser = await db
+          .insertInto("User")
+          .values({
+            id: crypto.randomUUID(),
             email: token.email,
-            name: token.name ?? undefined,
-            image: token.picture ?? undefined,
+            name: token.name ?? null,
+            image: token.picture ?? null,
             role: "USER",
-          },
-          select: { id: true, role: true },
-        });
+          })
+          .onConflict((oc) =>
+            oc.column("email").doUpdateSet({
+              name: token.name ?? undefined,
+              image: token.picture ?? undefined,
+            })
+          )
+          .returning(["id", "role"])
+          .executeTakeFirstOrThrow();
 
         token.id = dbUser.id;
         token.role = dbUser.role;
@@ -138,25 +179,27 @@ export const authOptions: NextAuthOptions = {
       }
 
       if (user) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { role: true },
-        });
+        const dbUser = await db
+          .selectFrom("User")
+          .select("role")
+          .where("id", "=", user.id)
+          .executeTakeFirst();
         token.id = user.id;
         token.role = dbUser?.role || "USER";
         return token;
       }
 
       if (token.email || token.sub) {
-        const dbUser = await prisma.user.findFirst({
-          where: {
-            OR: [
-              { email: token.email ?? undefined },
-              { telegramId: token.sub ?? undefined }
-            ]
-          },
-          select: { id: true, role: true },
-        });
+        const dbUser = await db
+          .selectFrom("User")
+          .select(["id", "role"])
+          .where((eb) => {
+            const ors = [];
+            if (token.email) ors.push(eb("email", "=", token.email));
+            if (token.sub) ors.push(eb("telegramId", "=", token.sub));
+            return ors.length > 0 ? eb.or(ors) : eb.lit(false);
+          })
+          .executeTakeFirst();
 
         if (dbUser) {
           token.id = dbUser.id;

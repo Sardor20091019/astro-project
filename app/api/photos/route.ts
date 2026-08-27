@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
 
 export async function POST(req: Request) {
@@ -16,15 +16,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No image URL provided" }, { status: 400 });
     }
 
+    const isoVal = formData.get("iso");
+    const parsedIso = isoVal ? Number(isoVal) : null;
 
-    const newPhoto = await prisma.photo.create({
-      data: {
+    const newPhoto = await db
+      .insertInto("Photo")
+      .values({
         url: photoUrl, 
         title: String(formData.get("title") || "Untitled frame").trim(),
         location: String(formData.get("location") || "").trim() || null,
         coordinates: String(formData.get("coordinates") || "").trim() || null,
         camera: String(formData.get("camera") || "").trim() || null,
-        iso: Number(formData.get("iso")) || null,
+        iso: Number.isNaN(parsedIso) ? null : parsedIso,
         aperture: String(formData.get("aperture") || "").trim() || null,
         shutter: String(formData.get("shutter") || "").trim() || null,
         focalLength: String(formData.get("focalLength") || "").trim() || null,
@@ -32,8 +35,9 @@ export async function POST(req: Request) {
         category: (String(formData.get("category") || "OTHER")) as any,
         status: "APPROVED", 
         userId: session?.user?.id ?? null,
-      },
-    });
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
 
     return NextResponse.json(newPhoto, { status: 201 });
   } catch (error) {

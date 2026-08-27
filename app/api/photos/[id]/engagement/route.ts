@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -20,30 +20,64 @@ export async function GET(_req: Request, { params }: RouteContext) {
   ]);
   
   const anonymousToken = cookieStore.get("astro_guest")?.value;
+  const userId = session?.user?.id;
 
-
-  const viewerWhere = session?.user?.id
-    ? { photoId_userId_unique: { photoId, userId: session.user.id } }
-    : anonymousToken
-      ? { photoId_anonymousToken_unique: { photoId, anonymousToken } }
-      : null;
-
-  const [ratingStats, likeCount, currentRating, currentLike, commentCount] = await Promise.all([
-    prisma.rating.aggregate({
-      where: { photoId },
-      _avg: { value: true },
-      _count: { id: true },
-    }),
-    prisma.like.count({ where: { photoId } }),
-  
-    viewerWhere ? prisma.rating.findUnique({ where: viewerWhere }) : null,
-    viewerWhere ? prisma.like.findUnique({ where: viewerWhere }) : null,
-    prisma.comment.count({ where: { photoId } }),
+  const [ratingStats, likeCountRes, currentRating, currentLike, commentCountRes] = await Promise.all([
+    db
+      .selectFrom("Rating")
+      .where("photoId", "=", photoId)
+      .select([
+        (eb) => eb.fn.avg("value").as("avg"),
+        (eb) => eb.fn.count("id").as("count"),
+      ])
+      .executeTakeFirst(),
+    db
+      .selectFrom("Like")
+      .where("photoId", "=", photoId)
+      .select((eb) => eb.fn.count("id").as("count"))
+      .executeTakeFirst(),
+    userId
+      ? db
+          .selectFrom("Rating")
+          .select("value")
+          .where("photoId", "=", photoId)
+          .where("userId", "=", userId)
+          .executeTakeFirst()
+      : Promise.resolve(null),
+    userId
+      ? db
+          .selectFrom("Like")
+          .selectAll()
+          .where("photoId", "=", photoId)
+          .where("userId", "=", userId)
+          .executeTakeFirst()
+      : anonymousToken
+      ? db
+          .selectFrom("Like")
+          .selectAll()
+          .where("photoId", "=", photoId)
+          .where("anonymousToken", "=", anonymousToken)
+          .executeTakeFirst()
+      : Promise.resolve(null),
+    db
+      .selectFrom("Comment")
+      .where("photoId", "=", photoId)
+      .select((eb) => eb.fn.count("id").as("count"))
+      .executeTakeFirst(),
   ]);
 
+  const rawAvg = ratingStats?.avg;
+  const ratingAverage = rawAvg !== null && rawAvg !== undefined 
+    ? Number(Number(rawAvg).toFixed(1)) 
+    : 0;
+  
+  const ratingCount = Number(ratingStats?.count ?? 0);
+  const likeCount = Number(likeCountRes?.count ?? 0);
+  const commentCount = Number(commentCountRes?.count ?? 0);
+
   return NextResponse.json({
-    ratingAverage: ratingStats._avg.value ? Number(ratingStats._avg.value.toFixed(1)) : 0,
-    ratingCount: ratingStats._count.id,
+    ratingAverage,
+    ratingCount,
     viewerRating: currentRating?.value ?? null,
     likeCount,
     viewerLiked: Boolean(currentLike),

@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
 
 enum PhotoCategory {
@@ -15,13 +16,12 @@ enum PhotoCategory {
 }
 
 export async function POST(req: Request) {
-// Temporarily relax the check to debug:
-const origin = req.headers.get("origin");
-const allowedOrigin = process.env.NEXTAUTH_URL || "https://www.astrospectrum.uz";
+  const origin = req.headers.get("origin");
+  const allowedOrigin = process.env.NEXTAUTH_URL || "https://www.astrospectrum.uz";
 
-if (origin && origin !== allowedOrigin && !origin.includes("astrospectrum.uz")) {
-  return NextResponse.json({ error: "CSRF verification failed" }, { status: 403 });
-}
+  if (origin && origin !== allowedOrigin && !origin.includes("astrospectrum.uz")) {
+    return NextResponse.json({ error: "CSRF verification failed" }, { status: 403 });
+  }
 
   const session = await getServerSession(authOptions);
   if (!session || !session.user || !session.user.id) {
@@ -55,8 +55,9 @@ if (origin && origin !== allowedOrigin && !origin.includes("astrospectrum.uz")) 
     const isoStr = formData.get("iso");
     const iso = isoStr ? parseInt(isoStr as string, 10) || null : null;
 
-    const newPhoto = await prisma.photo.create({
-      data: {
+    const newPhoto = await db
+      .insertInto("Photo")
+      .values({
         url: photoUrl,
         title: title,
         location: val("location"),
@@ -67,11 +68,12 @@ if (origin && origin !== allowedOrigin && !origin.includes("astrospectrum.uz")) 
         shutter: val("shutter"),
         focalLength: val("focalLength"),
         authorName: String(session.user.name || "Anonymous").trim(),
-        category: category,
+        category: category as any,
         status: "APPROVED",
         userId: session.user.id,
-      },
-    });
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
 
     return NextResponse.json({
       id: newPhoto.id,

@@ -1,11 +1,15 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 export async function deleteUser(userId: string) {
   try {
-    await prisma.user.delete({ where: { id: userId } });
+    await db
+      .deleteFrom("User")
+      .where("id", "=", userId)
+      .execute();
+
     revalidatePath("/admin");
     return { success: true };
   } catch (error) {

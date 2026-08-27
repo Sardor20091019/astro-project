@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { PhotoStatus } from "@prisma/client";
+import { db } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
@@ -12,18 +12,18 @@ export async function POST(req: Request) {
       const chatId = callbackQuery.message.chat.id;
       const messageId = callbackQuery.message.message_id;
 
-      const [action, photoId] = callbackData.split("_");
+      const [action, photoIdStr] = callbackData.split("_");
+      const photoId = Number(photoIdStr);
 
-      if ((action === "approve" || action === "reject") && photoId) {
-        const structuralStatus: PhotoStatus = action === "approve" ? PhotoStatus.APPROVED : ("REJECTED" as PhotoStatus);
+      if ((action === "approve" || action === "reject") && Number.isInteger(photoId)) {
+        const structuralStatus = action === "approve" ? "APPROVED" : "REJECTED";
 
+        await db
+          .updateTable("Photo")
+          .set({ status: structuralStatus as any })
+          .where("id", "=", photoId)
+          .execute();
 
-        await prisma.photo.update({
-          where: { id: photoId },
-          data: { status: structuralStatus },
-        });
-
-    
         const botToken = process.env.TELEGRAM_BOT_TOKEN;
         const confirmationMessageText = `✅ Update Complete: Image database entry status updated to ${structuralStatus}.`;
 
@@ -37,7 +37,6 @@ export async function POST(req: Request) {
           }),
         });
 
-  
         await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export async function submitComment(photoId: number, body: string) {
   const session = await getServerSession(authOptions);
@@ -19,22 +19,42 @@ export async function submitComment(photoId: number, body: string) {
     return { ok: false as const, error: "INVALID_COMMENT" };
   }
 
-  const comment = await prisma.comment.create({
-    data: {
+  // 1. Insert the comment and return its ID
+  const inserted = await db
+    .insertInto("Comment")
+    .values({
       photoId: parsedPhotoId,
       body: cleanBody.slice(0, 1200),
       userId: session.user.id,
-    },
-    include: {
-      user: {
-        select: { name: true, image: true, customImage: true },
-      },
-    },
-  });
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
 
-  const commentCount = await prisma.comment.count({
-    where: { photoId: parsedPhotoId },
-  });
+  // 2. Fetch the newly created comment along with user details (equivalent to Prisma's include)
+  const comment = await db
+    .selectFrom("Comment")
+    .innerJoin("User", "User.id", "Comment.userId")
+    .select([
+      "Comment.id",
+      "Comment.body",
+      "Comment.createdAt",
+      "Comment.photoId",
+      "Comment.userId",
+      "User.name",
+      "User.image",
+      "User.customImage",
+    ])
+    .where("Comment.id", "=", inserted.id)
+    .executeTakeFirstOrThrow();
+
+  // 3. Get the updated comment count
+  const countResult = await db
+    .selectFrom("Comment")
+    .where("photoId", "=", parsedPhotoId)
+    .select((eb) => eb.fn.count("id").as("count"))
+    .executeTakeFirst();
+
+  const commentCount = Number(countResult?.count ?? 0);
 
   revalidatePath(`/photos/${parsedPhotoId}`);
 
@@ -42,7 +62,9 @@ export async function submitComment(photoId: number, body: string) {
     ok: true as const,
     comment: {
       ...comment,
-      createdAt: comment.createdAt.toISOString(),
+      createdAt: comment.createdAt instanceof Date 
+        ? comment.createdAt.toISOString() 
+        : new Date(comment.createdAt).toISOString(),
     },
     commentCount,
   };

@@ -2,7 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export async function GET() {
   try {
@@ -13,11 +13,13 @@ export async function GET() {
       return NextResponse.json({ user: null });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await db
+      .selectFrom("User")
+      .selectAll()
+      .where("id", "=", userId)
+      .executeTakeFirst();
 
-    return NextResponse.json({ user });
+    return NextResponse.json({ user: user ?? null });
   } catch (error) {
     return NextResponse.json({ user: null });
   }

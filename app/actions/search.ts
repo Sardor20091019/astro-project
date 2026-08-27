@@ -1,18 +1,20 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export async function searchUsers(query: string) {
-  if (!query) return [];
+  const cleanQuery = String(query ?? "").trim();
+  if (!cleanQuery) return [];
 
-  return await prisma.user.findMany({
-    where: {
-      OR: [
-        { name: { contains: query, mode: "insensitive" } },
-        { telegramUsername: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    select: { id: true, name: true, image: true, telegramUsername: true },
-    take: 5, 
-  });
+  return await db
+    .selectFrom("User")
+    .select(["id", "name", "image", "telegramUsername"])
+    .where((eb) =>
+      eb.or([
+        eb("name", "ilike", `%${cleanQuery}%`),
+        eb("telegramUsername", "ilike", `%${cleanQuery}%`),
+      ])
+    )
+    .limit(5)
+    .execute();
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { prisma } from "@/lib/prisma";
-import { authOptions } from "@/lib/auth"
+import { db } from "@/lib/db";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -17,35 +17,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "You cannot follow yourself" }, { status: 400 });
     }
 
-
-    const existingFollow = await prisma.follows.findUnique({
-      where: {
-        followerId_followingId: {
-          followerId: currentUserId,
-          followingId: targetUserId,
-        },
-      },
-    });
+    const existingFollow = await db
+      .selectFrom("Follows")
+      .selectAll()
+      .where("followerId", "=", currentUserId)
+      .where("followingId", "=", targetUserId)
+      .executeTakeFirst();
 
     if (existingFollow) {
+      await db
+        .deleteFrom("Follows")
+        .where("followerId", "=", currentUserId)
+        .where("followingId", "=", targetUserId)
+        .execute();
 
-      await prisma.follows.delete({
-        where: {
-          followerId_followingId: {
-            followerId: currentUserId,
-            followingId: targetUserId,
-          },
-        },
-      });
       return NextResponse.json({ message: "Unfollowed successfully", following: false });
     } else {
-
-      await prisma.follows.create({
-        data: {
+      await db
+        .insertInto("Follows")
+        .values({
           followerId: currentUserId,
           followingId: targetUserId,
-        },
-      });
+        })
+        .execute();
+
       return NextResponse.json({ message: "Followed successfully", following: true });
     }
   } catch (error) {

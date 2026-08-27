@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma";
+import { authOptions } from "@/lib/auth";
+import { db } from "@/lib/db";
 
 export async function GET(req: Request) {
   try {
@@ -17,27 +17,18 @@ export async function GET(req: Request) {
       return NextResponse.json([]);
     }
 
-
-    const users = await prisma.user.findMany({
-      where: {
-        AND: [
-          { id: { not: session.user.id } },
-          {
-            OR: [
-              { name: { contains: query, mode: "insensitive" } },
-              { email: { contains: query, mode: "insensitive" } },
-            ],
-          },
-        ],
-      },
-      select: {
-        id: true,
-        name: true,
-        image: true,
-        email: true,
-      },
-      take: 10,
-    });
+    const users = await db
+      .selectFrom("User")
+      .select(["id", "name", "image", "email"])
+      .where("id", "!=", session.user.id)
+      .where((eb) =>
+        eb.or([
+          eb("name", "ilike", `%${query}%`),
+          eb("email", "ilike", `%${query}%`),
+        ])
+      )
+      .limit(10)
+      .execute();
 
     return NextResponse.json(users);
   } catch (error) {

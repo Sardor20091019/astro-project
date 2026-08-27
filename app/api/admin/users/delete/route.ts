@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
 
 interface AdminSessionUser {
@@ -36,9 +36,10 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Self-destruction blocked" }, { status: 400 });
     }
 
-    await prisma.user.delete({
-      where: { id: targetUserId }
-    });
+    await db
+      .deleteFrom("User")
+      .where("id", "=", targetUserId)
+      .execute();
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import LeaderboardClientView from "@/components/LeaderboardClientView";
 
 interface LeaderboardUser {
@@ -15,17 +15,30 @@ export default async function LeaderboardPage() {
   let topUsers: LeaderboardUser[];
 
   try {
-    topUsers = await prisma.user.findMany({
-      take: 10, 
-      orderBy: { followers: { _count: "desc" } },
-      select: {
-        id: true,
-        name: true,
-        image: true,
-        _count: { select: { followers: true } },
+    const rawUsers = await db
+      .selectFrom("User")
+      .leftJoin("Follows", "Follows.followingId", "User.id")
+      .select([
+        "User.id",
+        "User.name",
+        "User.image",
+        (eb) => eb.fn.count("Follows.followerId").as("followerCount"),
+      ])
+      .groupBy(["User.id", "User.name", "User.image"])
+      .orderBy("followerCount", "desc")
+      .limit(10)
+      .execute();
+
+    topUsers = rawUsers.map((u) => ({
+      id: u.id,
+      name: u.name,
+      image: u.image,
+      _count: {
+        followers: Number(u.followerCount ?? 0),
       },
-    });
-  } catch {
+    }));
+  } catch (error) {
+    console.error("Leaderboard fetch error:", error);
     topUsers = [];
   }
 

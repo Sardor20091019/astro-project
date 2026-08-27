@@ -1,6 +1,6 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { getServerSession } from "next-auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { UTApi, UploadThingError } from "uploadthing/server";
 import { moderateImageUrl } from "@/lib/moderation";
 import { authOptions } from "@/lib/auth";
@@ -15,7 +15,13 @@ export const ourFileRouter = {
       const session = await getServerSession(authOptions);
       if (!session?.user?.id) throw new UploadThingError("Unauthorized");
       
-      const photoCount = await prisma.photo.count({ where: { userId: session.user.id } });
+      const photoCountRes = await db
+        .selectFrom("Photo")
+        .where("userId", "=", session.user.id)
+        .select((eb) => eb.fn.count("id").as("count"))
+        .executeTakeFirst();
+
+      const photoCount = Number(photoCountRes?.count ?? 0);
       if (photoCount >= 30) throw new UploadThingError("Upload limit reached.");
       
       return { userId: session.user.id };

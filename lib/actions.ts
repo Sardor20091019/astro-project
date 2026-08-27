@@ -1,16 +1,18 @@
 "use server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 export async function updateUserProfile(userId: string, data: { name: string; image: string }) {
   try {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { 
+    await db
+      .updateTable("User")
+      .set({ 
         name: data.name, 
         image: data.image 
-      },
-    });
+      })
+      .where("id", "=", userId)
+      .execute();
+
     revalidatePath("/", "layout");
     return { success: true };
   } catch (error) {
