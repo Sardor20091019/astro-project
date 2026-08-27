@@ -37,6 +37,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-[var(--bg)] text-[var(--text)] transition-colors duration-300">
         {/* Load Google Identity Services script asynchronously */}
         <Script src="https://accounts.google.com/gsi/client" async defer />
+        <Script
+          src="https://datafa.st/js/script.js"
+          data-website-id="dfid_zTzCj4xRhDdAFC9uX2856"
+          data-domain="astrospectrum.uz"
+          strategy="afterInteractive"
+        />
 
         <ThemeProvider>
           <AuthProvider>
