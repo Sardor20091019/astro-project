@@ -9,8 +9,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "studio": "prisma studio --port 51212",
-    "postinstall": "prisma generate",
     "db:generate": "kysely-codegen --env-file .env --dialect postgres --out-file backend/src/database/types.ts"
   },
   "dependencies": {
