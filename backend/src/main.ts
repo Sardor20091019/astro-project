@@ -23,7 +23,12 @@ async function bootstrap() {
     credentials: true,
   });
 
-  await app.listen(process.env.PORT);
-  console.log(`🚀 Backend is running on port ${process.env.PORT}`);
+  const port = process.env.PORT;
+  if (!port) {
+    throw new Error('❌ PORT environment variable is not defined. The application cannot start.');
+  }
+
+  await app.listen(port);
+  console.log(`🚀 Backend is running on port ${port}`);
 }
 bootstrap();
