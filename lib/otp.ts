@@ -20,7 +20,7 @@ export async function generateAndSendOtp(email: string, ip: string) {
 
   const oneMinuteAgo = new Date(Date.now() - 60000);
   const recentRequestsRes = await db
-    .selectFrom("OtpToken")
+    .selectFrom("otptoken")
     .select((eb) => eb.fn.count("id").as("count"))
     .where("ipAddress", "=", ip)
     .where("createdAt", ">=", oneMinuteAgo)
@@ -33,7 +33,7 @@ export async function generateAndSendOtp(email: string, ip: string) {
   }
 
   await db
-    .deleteFrom("OtpToken")
+    .deleteFrom("otptoken")
     .where("expires", "<", new Date())
     .execute();
 
@@ -41,7 +41,7 @@ export async function generateAndSendOtp(email: string, ip: string) {
   const expires = new Date(Date.now() + 2 * 60 * 1000); 
   
   await db
-    .insertInto("OtpToken")
+    .insertInto("otptoken")
     .values({
       id: crypto.randomUUID(),
       email: cleanEmail,
@@ -98,7 +98,7 @@ export async function verifyOtp(email: string, inputToken: string) {
   const cleanEmail = email.toLowerCase().trim();
   
   const tokenRecord = await db
-    .selectFrom("OtpToken")
+    .selectFrom("otptoken")
     .selectAll()
     .where("email", "=", cleanEmail)
     .orderBy("createdAt", "desc")
@@ -108,7 +108,7 @@ export async function verifyOtp(email: string, inputToken: string) {
 
   if (new Date() > tokenRecord.expires) {
     await db
-      .deleteFrom("OtpToken")
+      .deleteFrom("otptoken")
       .where("id", "=", tokenRecord.id)
       .execute();
     throw new Error("Code expired.");
@@ -116,7 +116,7 @@ export async function verifyOtp(email: string, inputToken: string) {
 
   if (tokenRecord.token === inputToken) {
     await db
-      .deleteFrom("OtpToken")
+      .deleteFrom("otptoken")
       .where("email", "=", cleanEmail)
       .execute();
     return { success: true };
@@ -124,14 +124,14 @@ export async function verifyOtp(email: string, inputToken: string) {
     const newAttempts = (tokenRecord.failedAttempts ?? 0) + 1;
 
     await db
-      .updateTable("OtpToken")
+      .updateTable("otptoken")
       .set({ failedAttempts: newAttempts })
       .where("id", "=", tokenRecord.id)
       .execute();
 
     if (newAttempts >= 5) {
       await db
-        .deleteFrom("OtpToken")
+        .deleteFrom("otptoken")
         .where("id", "=", tokenRecord.id)
         .execute();
       throw new Error("Too many failed attempts. Code invalidated.");

@@ -4,7 +4,7 @@ export async function isRateLimited(ip: string, limit: number = 5, windowMs: num
   const cutoff = new Date(Date.now() - windowMs);
 
   const result = await db
-    .selectFrom("OtpToken")
+    .selectFrom("otptoken")
     .select((eb) => eb.fn.count("id").as("count"))
     .where("ipAddress", "=", ip)
     .where("createdAt", ">=", cutoff)

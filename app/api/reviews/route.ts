@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -24,7 +23,6 @@ export async function POST(req: Request) {
     await db
       .insertInto("Rating")
       .values({
-        id: randomUUID(),
         photoId: parsedPhotoId,
         value: parsedRating,
         userId: session.user.id,
@@ -38,19 +36,60 @@ export async function POST(req: Request) {
       )
       .execute();
 
-    const newComment = cleanComment
-      ? await db
-          .insertInto("Comment")
-          .values({
-            photoId: parsedPhotoId,
-            body: cleanComment.slice(0, 1200),
-            userId: session.user.id,
-          })
-          .returningAll()
-          .executeTakeFirstOrThrow()
-      : null;
+    let formattedComment = null;
 
-    return NextResponse.json(newComment, { status: 201 });
+    if (cleanComment) {
+      const inserted = await db
+        .insertInto("Comment")
+        .values({
+          photoId: parsedPhotoId,
+          body: cleanComment.slice(0, 1200),
+          userId: session.user.id,
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      const commentRow = await db
+        .selectFrom("Comment")
+        .innerJoin("User", "User.id", "Comment.userId")
+        .select([
+          "Comment.id",
+          "Comment.body",
+          "Comment.createdAt",
+          "Comment.photoId",
+          "Comment.userId",
+          "User.name",
+          "User.image",
+          "User.customImage",
+        ])
+        .where("Comment.id", "=", inserted.id)
+        .executeTakeFirstOrThrow();
+
+      formattedComment = {
+        id: commentRow.id,
+        body: commentRow.body,
+        comment: commentRow.body,
+        createdAt: commentRow.createdAt,
+        photoId: commentRow.photoId,
+        userId: commentRow.userId,
+        rating: parsedRating,
+        user: {
+          name: commentRow.name,
+          image: commentRow.image,
+          customImage: commentRow.customImage,
+        },
+      };
+    }
+
+    const countResult = await db
+      .selectFrom("Comment")
+      .where("photoId", "=", parsedPhotoId)
+      .select((eb) => eb.fn.count("id").as("count"))
+      .executeTakeFirst();
+
+    const commentCount = Number(countResult?.count ?? 0);
+
+    return NextResponse.json({ comment: formattedComment, commentCount }, { status: 201 });
   } catch (error) {
     console.error("Review Error:", error);
     return NextResponse.json({ error: "Failed to post review" }, { status: 500 });

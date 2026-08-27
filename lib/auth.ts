@@ -26,7 +26,7 @@ export const authOptions: NextAuthOptions = {
         const inputToken = credentials.code.trim();
 
         const tokenRecord = await db
-          .selectFrom("OtpToken")
+          .selectFrom("otptoken")
           .selectAll()
           .where("email", "=", formattedEmail)
           .orderBy("createdAt", "desc")
@@ -35,7 +35,7 @@ export const authOptions: NextAuthOptions = {
         if (!tokenRecord) throw new Error("No active code found.");
         if (new Date() > tokenRecord.expires) {
           await db
-            .deleteFrom("OtpToken")
+            .deleteFrom("otptoken")
             .where("id", "=", tokenRecord.id)
             .execute();
           throw new Error("Code expired.");
@@ -46,14 +46,14 @@ export const authOptions: NextAuthOptions = {
           
           if (newCount >= 5) {
             await db
-              .deleteFrom("OtpToken")
+              .deleteFrom("otptoken")
               .where("id", "=", tokenRecord.id)
               .execute();
             throw new Error("Too many attempts. Code invalidated.");
           }
 
           await db
-            .updateTable("OtpToken")
+            .updateTable("otptoken")
             .set({ failedAttempts: newCount })
             .where("id", "=", tokenRecord.id)
             .execute();
@@ -62,7 +62,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         await db
-          .deleteFrom("OtpToken")
+          .deleteFrom("otptoken")
           .where("id", "=", tokenRecord.id)
           .execute();
 

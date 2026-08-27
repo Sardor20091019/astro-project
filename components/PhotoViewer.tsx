@@ -1338,7 +1338,19 @@ function CommentsList({
       const result = await submitCommentAction(photoId, comment);
       if (result.ok) {
         setComment("");
-        setComments(c => [result.comment, ...c]);
+        setComments(c => [
+          {
+            id: result.comment.id,
+            body: result.comment.body,
+            createdAt: result.comment.createdAt,
+            user: {
+              name: result.comment.name,
+              image: result.comment.image,
+              customImage: result.comment.customImage,
+            },
+          },
+          ...c,
+        ]);
         setEngagement(c => ({ ...c, commentCount: result.commentCount }));
       }
     } finally {
