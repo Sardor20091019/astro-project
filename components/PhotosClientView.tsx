@@ -32,8 +32,6 @@ import {
   Pause,
   Download,
   ArrowUp,
-  Compass,
-  Sparkles
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import SubmitPhotoModal from "@/components/SubmitPhotoModal";
@@ -488,8 +486,11 @@ export default function PhotosClientView({
   }, [lightboxPhotoId]);
 
   // Filter & Sort computation[cite: 1]
-  const filteredPhotos = useMemo(() => {
-    let result = [...initialPhotos];
+  const filteredPhotos = (() => {
+    let result = initialPhotos.map(p => ({
+      ...p,
+      url: p.url ? p.url.replace(/([a-z0-9]+)\.ufs\.sh/g, 'utfs.io') : p.url
+    }));
 
     if (showFavoritesOnly) {
       result = result.filter((p) => favorites.includes(p.id));
@@ -533,7 +534,7 @@ export default function PhotosClientView({
     });
 
     return result;
-  }, [initialPhotos, activeCategory, activeSort, searchQuery, showFavoritesOnly, favorites]);
+  })();
 
   const totalPages = Math.ceil(filteredPhotos.length / itemsPerPage) || 1;
   const paginatedPhotos = useMemo(() => {
