@@ -114,14 +114,14 @@ export default async function AdminPage() {
           </div>
 
           <div className="w-full bg-(--surface) border border-(--border) rounded-[2.5rem] p-6 sm:p-10 backdrop-blur-3xl shadow-xl relative group">
-            <AdminPhotoList initialPhotos={photos} />
+           <AdminPhotoList initialPhotos={photos as any} />
           </div>
         </section>
 
         {/* Client Component for Interactive Paginated Modals (Users & Comments) */}
         <AdminDashboardModals 
-          users={users} 
-          comments={comments} 
+          users={users as any}  
+          comments={comments as any} 
           currentUserId={dbUser.id} 
         />
 
