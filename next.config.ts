@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const backendUrl =  "https://astro-project-1213.onrender.com";
+const backendUrl = process.env.NEXT_PUBLIC_API_URL || "https://astro-project-1213.onrender.com";
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -45,8 +45,8 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api/:path*",
-        destination: `${backendUrl}/api/:path*`,
+        source: "/api/:path((?!auth).*)",
+        destination: `${backendUrl}/api/:path((?!auth).*)`,
       },
     ];
   },
