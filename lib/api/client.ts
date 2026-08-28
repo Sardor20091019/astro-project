@@ -1,12 +1,9 @@
 const API_URL = "https://astro-project-1213.onrender.com";
 
-export async function fetchApi(endpoint: string, options?: RequestInit) {
-  // Ensure endpoint starts with /api if it doesn't already
+export async function fetchApi<T = any>(endpoint: string, options?: RequestInit): Promise<T> {
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const fullPath = cleanEndpoint.startsWith('/api') ? cleanEndpoint : `/api${cleanEndpoint}`;
 
-  // On the client, you can use relative paths to leverage Vercel rewrites.
-  // On the server, use the absolute Render URL with /api.
   const url = typeof window === 'undefined' 
     ? `${API_URL}${fullPath}` 
     : fullPath;
