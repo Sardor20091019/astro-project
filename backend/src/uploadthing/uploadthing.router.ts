@@ -1,7 +1,7 @@
 import { createUploadthing, type FileRouter } from 'uploadthing/express';
 import { UTApi, UploadThingError } from 'uploadthing/server';
-import { db } from '@shared/db';
-import { moderateImageUrl } from '@shared/moderation';
+import { db } from '../shared/db';
+import { moderateImageUrl } from '../shared/moderation';
 const f = createUploadthing();
 const utapi = new UTApi();
 
