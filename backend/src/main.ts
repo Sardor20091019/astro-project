@@ -23,7 +23,7 @@ async function bootstrap() {
 
   const expressInstance = app.getHttpAdapter().getInstance();
   expressInstance.use(
-    '/uploadthing',
+    '/api/uploadthing',
     createRouteHandler({
       router: ourFileRouter,
     }),
