@@ -11,7 +11,7 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "start:dev": "rm -rf src/shared && mkdir -p src/shared && cp ../lib/db.ts ../lib/otp.ts ../lib/moderation.ts src/shared/ && node --watch -r ts-node/register -r tsconfig-paths/register src/main.ts",
+   "start:dev": "node --watch -r ts-node/register -r tsconfig-paths/register src/main.ts",
     "start:debug": "rm -rf src/shared && mkdir -p src/shared && cp ../lib/db.ts ../lib/otp.ts ../lib/moderation.ts src/shared/ && node --inspect-brk --watch -r ts-node/register -r tsconfig-paths/register src/main.ts",
     "dev": "npm run start:dev",
     "start:prod": "node dist/main.js",
