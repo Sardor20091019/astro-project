@@ -15,6 +15,7 @@ async function bootstrap() {
     origin: [
       'https://astro-project-1213.onrender.com',
       'http://localhost:3000',
+      'http://localhost:4000',
       'https://astrospectrum.uz',
       'https://www.astrospectrum.uz',
     ],
