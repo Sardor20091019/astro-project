@@ -6,7 +6,7 @@ dotenv.config({ path: resolve(process.cwd(), '../.env') });
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { createRouteHandler } from 'uploadthing/express';
-import { ourFileRouter } from './uploadthing/uploadthing.router'; 
+import { ourFileRouter } from './uploadthing/uploadthing.router';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -32,7 +32,9 @@ async function bootstrap() {
 
   const port = process.env.PORT;
   if (!port) {
-    throw new Error('❌ PORT environment variable is not defined. The application cannot start.');
+    throw new Error(
+      '❌ PORT environment variable is not defined. The application cannot start.',
+    );
   }
 
   await app.listen(port);
