@@ -10,7 +10,7 @@ import { ourFileRouter } from './uploadthing/uploadthing.router';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+  app.setGlobalPrefix('api');
   app.enableCors({
     origin: [
       'https://astro-project-1213.onrender.com',
