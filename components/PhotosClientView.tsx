@@ -115,7 +115,7 @@ const PhotoCard = memo(function PhotoCard({
           </div>
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4 sm:p-6 text-white pointer-events-none group-hover:pointer-events-auto">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4 sm:p-6 text-white pointer-events-auto sm:pointer-events-none sm:group-hover:pointer-events-auto">
           
           <div className="flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2.5">
@@ -201,7 +201,7 @@ const PhotoCard = memo(function PhotoCard({
                   </span>
                 )}
                 {isoVal && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-black/50 backdrop-blur-md border border-white/15 font-mono text-[9px] text-white/80">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-md border border-white/15 font-mono text-[9px] text-white/80">
                     <span className="text-(--accent) font-bold">ISO</span>
                     <span>{isoVal}</span>
                   </span>
@@ -836,7 +836,7 @@ export default function PhotosClientView({
             )}
           </div>
 
-          <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap sm:flex-nowrap">
             <button
               onClick={() => {
                 setShowFavoritesOnly(!showFavoritesOnly);

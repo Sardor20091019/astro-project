@@ -9,11 +9,6 @@ export type CategoryOption = {
   value: string;
 };
 
-export type SortOption = {
-  label: string;
-  value: string;
-};
-
 const CATEGORIES: CategoryOption[] = [
   { label: "All", value: "ALL" },
   { label: "Astrophotography", value: "ASTROPHOTOGRAPHY" },
@@ -25,16 +20,6 @@ const CATEGORIES: CategoryOption[] = [
   { label: "Abstract", value: "ABSTRACT" },
   { label: "Other", value: "OTHER" },
 ];
-
-const SORT_OPTIONS: SortOption[] = [
-  { label: "Latest", value: "latest" },
-  { label: "Earliest", value: "earliest" },
-  { label: "Most Viewed", value: "views" },
-  { label: "Most Liked", value: "likes" },
-  { label: "Most Commented", value: "comments" },
-  { label: "Highest Rated", value: "rating" },
-];
-
 export default async function PhotosPage() {
   let photos: Awaited<ReturnType<typeof getApprovedPhotos>> = [];
 
@@ -49,7 +34,6 @@ export default async function PhotosPage() {
     <PhotosClientView 
       initialPhotos={photos} 
       categories={CATEGORIES}
-      sortOptions={SORT_OPTIONS}
     />
   );
 }
