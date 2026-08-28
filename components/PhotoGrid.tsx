@@ -1,9 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
 "use client"
 import { useState, useMemo } from "react"
-import Link from "next/link"
 import { CATEGORIES, type PhotoCategory } from "../data/photos"
-import { ChevronDown, X, MapPin } from "lucide-react"
+import { ChevronDown, X } from "lucide-react"
+import PhotoCard from "./PhotoCard" // Import your new component
 
 type PhotoType = {
   id: number;
@@ -12,7 +12,7 @@ type PhotoType = {
   imageUrl?: string; 
   image_url?: string; 
   title: string;
-  location?: string | null; // Updated to accept undefined
+  location?: string | null;
   coordinates?: string | null;
   category?: string | null;
 };
@@ -98,60 +98,13 @@ export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType
         <>
           {/* Photo Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {visible.map((photo, index) => {
-              const imageSource = photo.url || photo.src || photo.imageUrl || photo.image_url || "";
-
-              return (
-                <Link
-                  key={photo.id}
-                  href={`/creator/photos/${photo.id}`}
-                  className="block group"
-                >
-                  <article className="cursor-pointer overflow-hidden rounded-2xl border border-(--border) bg-(--surface-1) shadow-lg transition-all duration-300 hover:border-(--border-hover) hover:shadow-2xl flex flex-col h-full">
-                    <div className="relative aspect-4/3 w-full overflow-hidden bg-(--surface-2)">
-                      {imageSource ? (
-                        <img
-                          src={imageSource}
-                          alt={photo.title}
-                          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center text-[10px] uppercase text-(--text-muted) tracking-widest">
-                          Missing Image Source
-                        </div>
-                      )}
-                      
-                      {photo.category && photo.category !== "OTHER" && (
-                        <div className="absolute top-3 left-3 z-10 pointer-events-none">
-                          <span className="text-[9px] font-black uppercase tracking-[0.16em] bg-black/60 backdrop-blur-md border border-white/10 text-white/90 px-2.5 py-1 rounded-md">
-                            {CATEGORIES.find(c => c.value === photo.category)?.icon} {photo.category}
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="absolute top-3 right-3 z-10 pointer-events-none">
-                        <span className="font-mono text-[9px] tracking-widest text-white/70 bg-black/60 px-2 py-1 rounded-md backdrop-blur-md border border-white/10">
-                          {String(index + 1).padStart(2, "0")}
-                        </span>
-                      </div>
-
-                      <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-5 flex flex-col justify-end pt-12">
-                        {photo.location && (
-                          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-(--accent) mb-1">
-                            <MapPin size={12} className="shrink-0" />
-                            <span className="truncate">{photo.location}</span>
-                          </div>
-                        )}
-                        <h3 className="text-white font-bold uppercase text-base tracking-tight leading-snug line-clamp-1 group-hover:text-(--accent) transition-colors">
-                          {photo.title}
-                        </h3>
-                      </div>
-                    </div>
-                  </article>
-                </Link>
-              );
-            })}
+            {visible.map((photo, index) => (
+              <PhotoCard 
+                key={photo.id} 
+                photo={photo} 
+                index={index} 
+              />
+            ))}
           </div>
 
           {hasMore && (
