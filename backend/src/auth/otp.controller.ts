@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 // Ensure your otp utility is moved or imported from your shared backend library
-import { verifyOtp, generateAndSendOtp } from '@shared/otp.js';
+import { verifyOtp, generateAndSendOtp } from '@shared/otp';
 
 interface TurnstileResponse {
   success: boolean;
