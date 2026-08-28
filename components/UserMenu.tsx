@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @next/next/no-img-element */
 "use client";
-import type { OurFileRouter } from "@/app/api/uploadthing/core";
+import type { OurFileRouter } from "../backend/src/uploadthing/uploadthing.router";
 import { updateUserProfile } from "@/lib/actions";
-import { UploadButton } from "@uploadthing/react";
+import { UploadButton as OriginalUploadButton } from "@uploadthing/react";
+const UploadButton = OriginalUploadButton as any;
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
@@ -124,21 +125,21 @@ export default function UserMenu({ user }: UserMenuProps) {
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] font-mono uppercase tracking-[0.15em] text-(--text-muted)">Avatar Image</label>
                 <div className="py-1">
-                  <UploadButton<OurFileRouter, "profileUploader">
-                    endpoint="profileUploader"
-                    appearance={{
-                      button: "bg-[var(--text)] text-[var(--bg)] text-xs font-mono uppercase tracking-[0.12em] px-3 py-2 rounded-[var(--btn-radius)] hover:bg-[var(--accent)] transition-all cursor-pointer",
-                      allowedContent: "text-[var(--text-muted)] text-[10px] font-mono mt-1",
-                      container: "w-full border border-dashed border-[var(--border)] rounded-[var(--radius-md)] p-3 bg-[var(--surface-2)] flex flex-col items-center justify-center gap-1"
-                    }}
-                    onClientUploadComplete={(res) => {
-                      if (res && res[0]) {
-                        const finalUrl = res[0].serverData?.url || res[0].ufsUrl || res[0].url;
-                        setImageUrl(finalUrl);
-                      }
-                    }}
-                    onUploadError={(err) => alert("Upload failed: " + err.message)}
-                  />
+               <UploadButton
+  endpoint="profileUploader"
+  appearance={{
+    button: "bg-[var(--text)] text-[var(--bg)] text-xs font-mono uppercase tracking-[0.12em] px-3 py-2 rounded-[var(--btn-radius)] hover:bg-[var(--accent)] transition-all cursor-pointer",
+    allowedContent: "text-[var(--text-muted)] text-[10px] font-mono mt-1",
+    container: "w-full border border-dashed border-[var(--border)] rounded-[var(--radius-md)] p-3 bg-[var(--surface-2)] flex flex-col items-center justify-center gap-1"
+  }}
+  onClientUploadComplete={(res: any) => {
+    if (res && res[0]) {
+      const finalUrl = res[0].serverData?.url || res[0].ufsUrl || res[0].url;
+      setImageUrl(finalUrl);
+    }
+  }}
+  onUploadError={(err: any) => alert("Upload failed: " + err.message)}
+/>
                 </div>
               </div>
               

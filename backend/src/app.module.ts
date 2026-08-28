@@ -1,29 +1,15 @@
-// backend/src/app.module.ts
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { KyselyModule } from 'nestjs-kysely';
-import { PostgresDialect } from 'kysely';
-import { Pool } from 'pg';
+import { ConfigModule } from '@nestjs/config';
 import { PhotosModule } from './photos/photos.module';
-import * as path from 'path';
+import { KyselyModule } from './database/kysely.module';
 
 @Module({
   imports: [
-    // Point to the root directory's .env file
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: path.resolve(__dirname, '../../.env'),
+      envFilePath: '../.env',
     }),
-    KyselyModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        dialect: new PostgresDialect({
-          pool: new Pool({
-            connectionString: configService.get<string>('DATABASE_URL'),
-          }),
-        }),
-      }),
-    }),
+    KyselyModule,
     PhotosModule,
   ],
 })

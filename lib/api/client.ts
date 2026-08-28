@@ -1,10 +1,8 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-// Hardcode your backend URL as a failsafe so it never drops to undefined
-const BASE_URL = 'https://astro-project-1213.onrender.com';
+// lib/api/client.ts
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
+  const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -13,7 +11,7 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
   });
 
   if (!res.ok) {
-    throw new Error(`API Error: ${res.statusText}`);
+    throw new Error(`API error: ${res.status} ${res.statusText}`);
   }
 
   return res.json();

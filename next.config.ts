@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "ufs.sh", // Added base domain for UploadThing
+      },
+      {
+        protocol: "https",
         hostname: "*.ufs.sh", 
       },
       {
@@ -36,6 +40,14 @@ const nextConfig: NextConfig = {
         hostname: "placehold.co",
       },
     ],
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/uploadthing/:path*",
+        destination: "http://localhost:4000/uploadthing/:path*",
+      },
+    ];
   },
 };
 

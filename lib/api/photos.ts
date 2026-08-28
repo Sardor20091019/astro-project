@@ -1,8 +1,8 @@
 // lib/api/photos.ts
 import { fetchApi } from './client';
 
-export async function getApprovedPhotos() {
-  return fetchApi<any[]>('/photos');
+export async function getApprovedPhotos(page = 1, limit = 24) {
+  return fetchApi<any[]>(`/photos?page=${page}&limit=${limit}`);
 }
 
 export async function getPhotoById(id: number, userId?: string, anonymousToken?: string) {

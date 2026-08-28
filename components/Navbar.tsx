@@ -10,9 +10,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import UserSearchTrigger from "@/components/UserSearchTrigger";
 import ThemeToggle from "@/components/ThemeToggle";
 import UserMenu from "@/components/UserMenu";
-import { UploadButton } from "@uploadthing/react";
-import type { OurFileRouter } from "@/app/api/uploadthing/core";
+import type { OurFileRouter } from "../backend/src/uploadthing/uploadthing.router";
 import { updateUserProfile } from "@/lib/actions";
+import { UploadButton as OriginalUploadButton } from "@uploadthing/react";
+const UploadButton = OriginalUploadButton as any;
 
 interface NavLinkProps {
   href: string;
@@ -191,27 +192,28 @@ export default function Navbar() {
                           src={newImage || "/default-avatar.png"} 
                           alt="Avatar preview" 
                           fill
+                          unoptimized
                           sizes="80px"
                           className="object-cover" 
                         />
                       </div>
                       <div className="w-full flex justify-center">
-                        <UploadButton<OurFileRouter, "profileUploader">
-                          endpoint="profileUploader"
-                          appearance={{
-                            button: "bg-[var(--accent)] text-white font-mono text-xs font-bold uppercase tracking-wider px-6 py-2.5 rounded-xl cursor-pointer hover:opacity-90 transition-all shadow-md w-full",
-                            allowedContent: "hidden",
-                            container: "w-full flex justify-center"
-                          }}
-                          content={{ button: "Change Photo" }}
-                          onClientUploadComplete={(res) => {
-                            if (res && res[0]) {
-                              const finalUrl = res[0].serverData?.url || res[0].ufsUrl || res[0].url;
-                              setNewImage(finalUrl);
-                            }
-                          }}
-                          onUploadError={(err) => alert("Upload failed: " + err.message)}
-                        />
+        <UploadButton
+  endpoint="profileUploader"
+  appearance={{
+    button: "bg-[var(--accent)] text-white font-mono text-xs font-bold uppercase tracking-wider px-6 py-2.5 rounded-xl cursor-pointer hover:opacity-90 transition-all shadow-md w-full",
+    allowedContent: "hidden",
+    container: "w-full flex justify-center"
+  }}
+  content={{ button: "Change Photo" }}
+  onClientUploadComplete={(res: any) => {
+    if (res && res[0]) {
+      const finalUrl = res[0].serverData?.url || res[0].ufsUrl || res[0].url;
+      setNewImage(finalUrl);
+    }
+  }}
+  onUploadError={(err: any) => alert("Upload failed: " + err.message)}
+/>
                       </div>
                     </div>
 
@@ -240,7 +242,7 @@ export default function Navbar() {
                     <div className="flex items-center gap-3.5">
                       <div className="relative h-13 w-13 shrink-0 rounded-full bg-[var(--surface-2)] border-2 border-[var(--border)] flex items-center justify-center overflow-hidden text-[var(--text-dim)]">
                         {user.image ? (
-                          <Image src={user.image} alt="" fill sizes="52px" className="object-cover" />
+                          <Image src={user.image} alt="" fill sizes="52px" unoptimized className="object-cover" />
                         ) : (
                           <UserIcon className="h-6 w-6" />
                         )}

@@ -1,27 +1,28 @@
-// backend/src/main.ts
+import * as dotenv from 'dotenv';
+import { resolve } from 'path';
+
+dotenv.config({ path: resolve(process.cwd(), '../.env') });
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { createRouteHandler } from 'uploadthing/express';
+import { ourFileRouter } from './uploadthing/uploadthing.router'; 
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'https://astrospectrum.uz',
-    'https://www.astrospectrum.uz',
-  ];
-
+  
   app.enableCors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like Postman or server-to-server)
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Blocked by CORS'));
-      }
-    },
+    origin: 'http://localhost:3000',
     credentials: true,
   });
+
+  const expressInstance = app.getHttpAdapter().getInstance();
+  expressInstance.use(
+    '/uploadthing',
+    createRouteHandler({
+      router: ourFileRouter,
+    }),
+  );
 
   const port = process.env.PORT;
   if (!port) {
@@ -29,6 +30,6 @@ async function bootstrap() {
   }
 
   await app.listen(port);
-  console.log(`🚀 Backend is running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 }
 bootstrap();

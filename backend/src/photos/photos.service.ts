@@ -1,4 +1,3 @@
-// backend/src/photos/photos.service.ts
 import { Injectable } from '@nestjs/common';
 import { InjectKysely } from 'nestjs-kysely';
 import { Kysely, sql } from 'kysely';
@@ -6,15 +5,23 @@ import { DB } from '../database/types';
 
 @Injectable()
 export class PhotosService {
-  constructor(@InjectKysely() private readonly db: Kysely<DB>) {}
+  constructor(
+    @InjectKysely() private readonly db: Kysely<DB>,
+  ) {}
 
-  async getApprovedPhotos() {
+  async getApprovedPhotos(page = 1, limit = 24) {
+    const pageNum = Math.max(1, Number(page) || 1);
+    const limitNum = Math.min(50, Math.max(1, Number(limit) || 24));
+    const offset = (pageNum - 1) * limitNum;
+
     return await this.db
       .selectFrom('Photo')
+      .leftJoin('User', 'User.id', 'Photo.userId')
       .select([
         'Photo.id',
         'Photo.url',
         'Photo.title',
+        'Photo.category',
         'Photo.location',
         'Photo.coordinates',
         'Photo.camera',
@@ -23,34 +30,28 @@ export class PhotosService {
         'Photo.shutter',
         'Photo.focalLength',
         'Photo.authorName',
-        'Photo.category',
-        'Photo.status',
-        'Photo.userId',
         'Photo.createdAt',
-        'Photo.updatedAt',
-        'Photo.views',
-        sql<number>`(SELECT count(*)::int FROM "Like" WHERE "photoId" = "Photo".id)`.as(
-          'likeCount',
-        ),
-        sql<number>`(SELECT count(*)::int FROM "Comment" WHERE "photoId" = "Photo".id)`.as(
-          'commentCount',
-        ),
-        sql<number>`(SELECT COALESCE(avg(value), 0)::float FROM "Rating" WHERE "photoId" = "Photo".id)`.as(
-          'avgRating',
-        ),
+        sql<string | null>`COALESCE("User"."customImage", "User"."image")`.as('authorAvatar'),
+        sql<number>`(SELECT count(*)::int FROM "Like" WHERE "photoId" = "Photo".id)`.as('likeCount'),
+        sql<number>`(SELECT count(*)::int FROM "Comment" WHERE "photoId" = "Photo".id)`.as('commentCount'),
+        sql<number>`(SELECT COALESCE(avg(value), 0)::float FROM "Rating" WHERE "photoId" = "Photo".id)`.as('avgRating'),
       ])
       .where('Photo.status', '=', 'APPROVED')
-      .orderBy('Photo.createdAt', 'asc')
+      .orderBy('Photo.createdAt', 'desc')
+      .limit(limitNum)
+      .offset(offset)
       .execute();
   }
 
-  async getPhotoById(id: number, userId?: string, anonymousToken?: string) {
+  async getPhotoById(photoId: number, userId?: string, anonymousToken?: string) {
     const photo = await this.db
       .selectFrom('Photo')
+      .leftJoin('User', 'User.id', 'Photo.userId')
       .select([
         'Photo.id',
         'Photo.url',
         'Photo.title',
+        'Photo.category',
         'Photo.location',
         'Photo.coordinates',
         'Photo.camera',
@@ -59,69 +60,72 @@ export class PhotosService {
         'Photo.shutter',
         'Photo.focalLength',
         'Photo.authorName',
-        'Photo.category',
-        'Photo.status',
-        'Photo.userId',
         'Photo.createdAt',
-        'Photo.updatedAt',
-        'Photo.views',
-        sql<number>`(SELECT count(*)::int FROM "Like" WHERE "photoId" = "Photo".id)`.as(
-          'likeCount',
-        ),
-        sql<number>`(SELECT count(*)::int FROM "Comment" WHERE "photoId" = "Photo".id)`.as(
-          'commentCount',
-        ),
-        sql<number>`(SELECT COALESCE(avg(value), 0)::float FROM "Rating" WHERE "photoId" = "Photo".id)`.as(
-          'avgRating',
-        ),
+        'Photo.userId',
+        sql<string | null>`COALESCE("User"."customImage", "User"."image")`.as('authorAvatar'),
       ])
-      .where('Photo.id', '=', id)
-      .where('Photo.status', '=', 'APPROVED')
+      .where('Photo.id', '=', photoId)
       .executeTakeFirst();
 
     if (!photo) return null;
 
-    let viewerRating: number | null = null;
-    let viewerLiked = false;
-
-    if (userId) {
-      const rating = await this.db
+    const [ratingStats, likeCountRes, currentRating, currentLike, commentCountRes] = await Promise.all([
+      this.db
         .selectFrom('Rating')
-        .select('value')
-        .where('photoId', '=', id)
-        .where('userId', '=', userId)
-        .executeTakeFirst();
-      viewerRating = rating?.value ?? null;
-
-      const like = await this.db
+        .where('photoId', '=', photoId)
+        .select([
+          (eb) => eb.fn.avg('value').as('avg'),
+          (eb) => eb.fn.count('id').as('count'),
+        ])
+        .executeTakeFirst(),
+      this.db
         .selectFrom('Like')
-        .select('id')
-        .where('photoId', '=', id)
-        .where('userId', '=', userId)
-        .executeTakeFirst();
-      viewerLiked = !!like;
-    } else if (anonymousToken) {
-      const rating = await this.db
-        .selectFrom('Rating')
-        .select('value')
-        .where('photoId', '=', id)
-        .where('anonymousToken', '=', anonymousToken)
-        .executeTakeFirst();
-      viewerRating = rating?.value ?? null;
+        .where('photoId', '=', photoId)
+        .select((eb) => eb.fn.count('id').as('count'))
+        .executeTakeFirst(),
+      userId
+        ? this.db
+            .selectFrom('Rating')
+            .select('value')
+            .where('photoId', '=', photoId)
+            .where('userId', '=', userId)
+            .executeTakeFirst()
+        : Promise.resolve(null),
+      userId
+        ? this.db
+            .selectFrom('Like')
+            .selectAll()
+            .where('photoId', '=', photoId)
+            .where('userId', '=', userId)
+            .executeTakeFirst()
+        : anonymousToken
+        ? this.db
+            .selectFrom('Like')
+            .selectAll()
+            .where('photoId', '=', photoId)
+            .where('anonymousToken', '=', anonymousToken)
+            .executeTakeFirst()
+        : Promise.resolve(null),
+      this.db
+        .selectFrom('Comment')
+        .where('photoId', '=', photoId)
+        .select((eb) => eb.fn.count('id').as('count'))
+        .executeTakeFirst(),
+    ]);
 
-      const like = await this.db
-        .selectFrom('Like')
-        .select('id')
-        .where('photoId', '=', id)
-        .where('anonymousToken', '=', anonymousToken)
-        .executeTakeFirst();
-      viewerLiked = !!like;
-    }
+    const rawAvg = ratingStats?.avg;
+    const ratingAverage = rawAvg !== null && rawAvg !== undefined 
+      ? Number(Number(rawAvg).toFixed(1)) 
+      : 0;
 
     return {
       ...photo,
-      viewerRating,
-      viewerLiked,
+      ratingAverage,
+      ratingCount: Number(ratingStats?.count ?? 0),
+      viewerRating: currentRating?.value ?? null,
+      likeCount: Number(likeCountRes?.count ?? 0),
+      viewerLiked: Boolean(currentLike),
+      commentCount: Number(commentCountRes?.count ?? 0),
     };
   }
 }

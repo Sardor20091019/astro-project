@@ -186,6 +186,7 @@ export default function CinematicLandingPage() {
             priority
             fetchPriority="high"
             sizes="(max-width: 1920px) 100vw, 1920px"
+            unoptimized
             className="object-cover scale-105 filter brightness-90 contrast-110 transition-transform duration-1000 ease-out hover:scale-100"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/60" />

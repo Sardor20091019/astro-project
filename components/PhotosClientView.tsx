@@ -42,7 +42,6 @@ interface PhotosClientViewProps {
   sortOptions: { label: string; value: string }[];
 }
 
-// Optimized Memoized Photo Card Component
 interface PhotoCardProps {
   photo: any;
   index: number;
@@ -73,6 +72,7 @@ const PhotoCard = memo(function PhotoCard({
   const apt = photo.aperture?.trim();
   const sht = photo.shutter?.trim();
   const isoVal = photo.iso;
+  const avgRating = Number(photo.avgRating ?? photo.ratingAverage ?? 0);
 
   return (
     <motion.article 
@@ -98,20 +98,19 @@ const PhotoCard = memo(function PhotoCard({
           src={photo.url}
           alt={photo.title || "Cinematic Photography Archive Item"}
           fill
+          unoptimized
           priority={index < 3}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className="object-cover transition-transform duration-700 ease-[0.16,1,0.3,1] group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/30 opacity-50 group-hover:opacity-80 transition-opacity duration-500 pointer-events-none" />
 
-        {/* Category Tag Sticker */}
         <div className="absolute left-4 top-4 z-30 pointer-events-none flex items-center justify-center max-w-[60%]">
           <span className="inline-flex items-center justify-center bg-black/50 backdrop-blur-xl border border-white/20 px-3 py-1 rounded-full text-[9px] font-mono uppercase tracking-[0.2em] text-white/90 truncate shadow-lg">
             {photo.category ? photo.category.toLowerCase() : "other"}
           </span>
         </div>
 
-        {/* Action Buttons Right Side */}
         <div className="absolute right-4 top-4 z-30 flex items-center justify-center gap-2">
           <button
             onClick={(e) => onDownload(photo, e)}
@@ -174,7 +173,6 @@ const PhotoCard = memo(function PhotoCard({
             {photo.title}
           </h3>
 
-          {/* Structured EXIF Badges */}
           {(cam || foc || apt || sht || isoVal) && (
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
               {cam && (
@@ -248,7 +246,7 @@ const PhotoCard = memo(function PhotoCard({
           </span>
           <span className="inline-flex items-center justify-center gap-1.5 border-r border-white/10 px-2">
             <Star className="h-3 w-3 text-amber-400" />
-            {photo.avgRating.toFixed(1)}
+            {(photo.avgRating ?? 0).toFixed(1)}
           </span>
           <span className="inline-flex items-center justify-center gap-1.5 pl-2">
             <MessageCircle className="h-3 w-3 text-sky-400" />
@@ -272,7 +270,6 @@ export default function PhotosClientView({
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
 
-  // Local state for interactive controls & layout preferences
   const [activeCategory, setActiveCategory] = useState("ALL");
   const [activeSort, setActiveSort] = useState("latest");
   const [searchQuery, setSearchQuery] = useState("");
@@ -283,19 +280,16 @@ export default function PhotosClientView({
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isDraggingTimeline, setIsDraggingTimeline] = useState(false);
   
-  // Favorites & Toast state
   const [favorites, setFavorites] = useState<string[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copiedExifText, setCopiedExifText] = useState<string | null>(null);
   
-  // Lightbox & Slideshow state
   const [lightboxPhotoId, setLightboxPhotoId] = useState<string | null>(null);
   const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(false);
 
   const itemsPerPage = gridColumns === 3 ? 9 : 6;
   const currentSortLabel = sortOptions.find((opt) => opt.value === activeSort)?.label || "Sort";
 
-  // Load preferences on mount & scroll listener[cite: 1]
   useEffect(() => {
     try {
       const storedFavs = localStorage.getItem("astrospectrum_favorites");
@@ -322,7 +316,6 @@ export default function PhotosClientView({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Timeline Scrubbing Logic with instant ref tracking[cite: 1]
   const updateScrollFromClientY = (clientY: number) => {
     if (!timelineRef.current) return;
     const rect = timelineRef.current.getBoundingClientRect();
@@ -443,7 +436,6 @@ export default function PhotosClientView({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Global Keyboard Shortcuts[cite: 1]
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) {
@@ -485,12 +477,11 @@ export default function PhotosClientView({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [lightboxPhotoId]);
 
-  // Filter & Sort computation[cite: 1]
   const filteredPhotos = (() => {
-    let result = initialPhotos.map(p => ({
+    let result = Array.isArray(initialPhotos) ? initialPhotos.map(p => ({
       ...p,
       url: p.url ? p.url.replace(/([a-z0-9]+)\.ufs\.sh/g, 'utfs.io') : p.url
-    }));
+    })) : [];
 
     if (showFavoritesOnly) {
       result = result.filter((p) => favorites.includes(p.id));
@@ -522,7 +513,7 @@ export default function PhotosClientView({
         return (b.likeCount || 0) - (a.likeCount || 0);
       }
       if (activeSort === "rating") {
-        return (b.avgRating || 0) - (a.avgRating || 0);
+        return (b.avgRating || b.ratingAverage || 0) - (a.avgRating || a.ratingAverage || 0);
       }
       if (activeSort === "views") {
         return (b.viewCount || 0) - (a.viewCount || 0);
@@ -549,7 +540,6 @@ export default function PhotosClientView({
 
   const activeLightboxPhoto = lightboxIndex !== -1 ? filteredPhotos[lightboxIndex] : null;
 
-  // Slideshow interval timer[cite: 1]
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isSlideshowPlaying && lightboxPhotoId && filteredPhotos.length > 0) {
@@ -582,7 +572,6 @@ export default function PhotosClientView({
   return (
     <div className="min-h-screen bg-(--bg) text-(--text) flex flex-col items-center selection:bg-(--accent) selection:text-(--bg)">
       
-      {/* Hide default browser scrollbars[cite: 1] */}
       <style jsx global>{`
         html {
           scrollbar-width: none;
@@ -592,7 +581,6 @@ export default function PhotosClientView({
         }
       `}</style>
 
-      {/* Header Bar[cite: 1] */}
       <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-(--bg)/80 backdrop-blur-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 h-20 flex items-center justify-between w-full">
           <Link
@@ -609,7 +597,6 @@ export default function PhotosClientView({
         </div>
       </header>
 
-      {/* High-Density Cinematic Timeline Scrubber (150 Ticks, 50vh, Hold & Drag to Scroll)[cite: 1] */}
       <aside
         ref={timelineRef}
         aria-label="Page scroll position scrubber"
@@ -645,7 +632,6 @@ export default function PhotosClientView({
         })}
       </aside>
 
-      {/* Bottom-Left Keyboard Shortcuts Helper[cite: 1] */}
       <div className="fixed bottom-6 left-6 z-40 hidden sm:flex flex-col gap-2.5 bg-(--surface)/90 backdrop-blur-2xl border border-white/10 p-4 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] font-mono text-[10px]">
         <div className="flex items-center justify-between gap-6 pb-2 border-b border-white/10 text-(--text-muted) uppercase tracking-[0.2em]">
           <span>Shortcuts</span>
@@ -663,10 +649,8 @@ export default function PhotosClientView({
         </div>
       </div>
 
-      {/* Main Content Container[cite: 1] */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-10 sm:py-14 flex flex-col items-center text-center gap-10">
         
-        {/* Title Section[cite: 1] */}
         <div className="flex flex-col gap-3">
           <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-(--text)">
             Gallery Archive
@@ -676,13 +660,10 @@ export default function PhotosClientView({
           </p>
         </div>
 
-        {/* Unified Search, Filters & Controls Deck[cite: 1] */}
         <div className="w-full flex flex-col gap-5 bg-(--surface)/90 border border-white/10 p-5 sm:p-6 rounded-3xl backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative z-30">
           
-          {/* Top Row[cite: 1] */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full">
             
-            {/* Search Input[cite: 1] */}
             <div className="relative w-full md:max-w-md">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-(--text-dim)" />
               <input
@@ -708,10 +689,8 @@ export default function PhotosClientView({
               )}
             </div>
 
-            {/* Right Side Controls[cite: 1] */}
             <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end shrink-0">
               
-              {/* Grid Density Toggle[cite: 1] */}
               <div className="hidden sm:flex items-center justify-center bg-(--surface-2) border border-white/10 p-1 rounded-2xl">
                 <button
                   onClick={() => handleGridChange(3)}
@@ -735,7 +714,6 @@ export default function PhotosClientView({
                 </button>
               </div>
 
-              {/* Sort Dropdown[cite: 1] */}
               <div className="relative flex-1 sm:flex-initial">
                 <button
                   onClick={() => setIsSortOpen(!isSortOpen)}
@@ -785,7 +763,6 @@ export default function PhotosClientView({
                 </AnimatePresence>
               </div>
 
-              {/* Submit Image Button[cite: 1] */}
               <button
                 onClick={() => setIsSubmitOpen(true)}
                 className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl bg-(--text) text-(--bg) font-mono text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-(--accent) hover:text-(--bg) transition-all shadow-md cursor-pointer whitespace-nowrap"
@@ -796,7 +773,6 @@ export default function PhotosClientView({
             </div>
           </div>
 
-          {/* Bottom Row: Categories & Saved Filter[cite: 1] */}
           <div className="flex flex-col gap-4 pt-4 border-t border-white/10">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center justify-start flex-wrap gap-2.5 w-full overflow-x-auto scrollbar-none pb-1">
@@ -847,7 +823,6 @@ export default function PhotosClientView({
 
         </div>
 
-        {/* Photo Display Area[cite: 1] */}
         {filteredPhotos.length === 0 ? (
           <div className="w-full max-w-lg border border-dashed border-white/20 rounded-3xl py-20 px-8 text-center flex flex-col items-center justify-center gap-5 bg-(--surface)/80 backdrop-blur-xl mt-4">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-(--text-muted)">
@@ -882,7 +857,6 @@ export default function PhotosClientView({
               ))}
             </div>
 
-            {/* Pagination Controls[cite: 1] */}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-3 mt-12 mb-6">
                 <button
@@ -915,7 +889,6 @@ export default function PhotosClientView({
 
       </main>
 
-      {/* Scroll to Top Floating Button[cite: 1] */}
       <AnimatePresence>
         {showScrollTop && (
           <motion.button
@@ -932,7 +905,6 @@ export default function PhotosClientView({
         )}
       </AnimatePresence>
 
-      {/* Lightbox / Immersive Quick Preview Modal[cite: 1] */}
       <AnimatePresence>
         {lightboxPhotoId && activeLightboxPhoto && (
           <motion.div
@@ -952,7 +924,6 @@ export default function PhotosClientView({
               className="relative max-w-6xl w-full max-h-[92vh] flex flex-col items-center bg-(--surface) border border-white/15 rounded-3xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.8)]"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Lightbox Header Bar[cite: 1] */}
               <div className="w-full flex items-center justify-between px-6 py-4.5 border-b border-white/10 bg-(--surface-2)">
                 <div className="flex items-center gap-3">
                   <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-(--accent)">
@@ -992,18 +963,17 @@ export default function PhotosClientView({
                 </div>
               </div>
 
-              {/* Lightbox Image Viewport[cite: 1] */}
               <div className="relative w-full h-[55vh] sm:h-[68vh] bg-black flex items-center justify-center overflow-hidden">
                 <Image
                   src={activeLightboxPhoto.url}
                   alt={activeLightboxPhoto.title || "Lightbox preview item"}
                   fill
                   sizes="100vw"
+                  unoptimized
                   className="object-contain"
                   priority
                 />
 
-                {/* Left/Right Navigation Arrows[cite: 1] */}
                 {lightboxIndex > 0 && (
                   <button
                     onClick={(e) => {
@@ -1030,7 +1000,6 @@ export default function PhotosClientView({
                 )}
               </div>
 
-              {/* Lightbox Footer Details[cite: 1] */}
               <div className="w-full p-6 sm:p-7 bg-(--surface) flex flex-col sm:flex-row items-center justify-between gap-5 border-t border-white/10">
                 <div className="flex flex-col items-start gap-1.5">
                   <h3 className="text-base sm:text-lg font-bold text-(--text)">
@@ -1075,7 +1044,6 @@ export default function PhotosClientView({
         )}
       </AnimatePresence>
 
-      {/* Submit Photo Modal[cite: 1] */}
       <SubmitPhotoModal
         isOpen={isSubmitOpen}
         onClose={() => setIsSubmitOpen(false)}

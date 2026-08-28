@@ -71,6 +71,7 @@ export default function Hero() {
           fetchPriority="high"
           placeholder="blur"
           sizes="100vw"
+          unoptimized
           className="object-cover brightness-75 contrast-110 transition-transform duration-1000 ease-out"
         />
       </div>

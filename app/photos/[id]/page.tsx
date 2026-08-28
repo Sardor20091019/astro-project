@@ -1,3 +1,4 @@
+// app/photos/[id]/page.tsx
 import PhotoViewer from "@/components/PhotoViewer";
 import { getApprovedPhotos, getPhotoById } from "@/lib/api/photos";
 import { authOptions } from "@/lib/auth";
@@ -18,10 +19,10 @@ export default async function PhotoPage({ params }: { params: Promise<{ id: stri
   const userId = session?.user?.id;
   const anonymousToken = cookieStore.get("astro_guest")?.value;
 
-  // Fetch current photo (with engagement stats & viewer state) and all photos in parallel from NestJS
-  const [currentPhoto, allPhotos] = await Promise.all([
+  // Fetch current photo and a safe, restricted subset for navigation
+  const [currentPhoto, recentPhotos] = await Promise.all([
     getPhotoById(photoId, userId, anonymousToken).catch(() => null),
-    getApprovedPhotos().catch(() => []),
+    getApprovedPhotos(1, 20).catch(() => []), // Capped limit prevents OOM
   ]);
 
   if (!currentPhoto) notFound();
@@ -29,16 +30,16 @@ export default async function PhotoPage({ params }: { params: Promise<{ id: stri
   return (
     <div className="fixed inset-0 z-[9999] overflow-hidden bg-black">
       <PhotoViewer
-        photos={allPhotos}
+        photos={recentPhotos}
         initialId={photoId}
         stats={{
-          avg: currentPhoto.avgRating ?? 0,
+          avg: currentPhoto.ratingAverage ?? 0,
           total: currentPhoto.ratingCount ?? 0,
           likes: currentPhoto.likeCount ?? 0,
           comments: currentPhoto.commentCount ?? 0,
         }}
         initialEngagement={{
-          ratingAverage: currentPhoto.avgRating ?? 0,
+          ratingAverage: currentPhoto.ratingAverage ?? 0,
           ratingCount: currentPhoto.ratingCount ?? 0,
           viewerRating: currentPhoto.viewerRating ?? null,
           likeCount: currentPhoto.likeCount ?? 0,
