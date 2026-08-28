@@ -12,7 +12,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
   app.enableCors({
-    origin: 'https://astro-project-1213.onrender.com',
+    origin: [
+      'https://astro-project-1213.onrender.com',
+      'http://localhost:3000',
+      'https://astrospectrum.uz',
+      'https://www.astrospectrum.uz',
+    ],
     credentials: true,
   });
 
