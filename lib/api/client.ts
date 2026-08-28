@@ -1,5 +1,5 @@
 // lib/api/client.ts
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = 'https://astro-project-1213.onrender.com';
 
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${endpoint}`, {

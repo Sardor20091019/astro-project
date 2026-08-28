@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const backendUrl = process.env.NEXT_PUBLIC_API_URL || "https://astro-project-1213.onrender.com";
+const backendUrl =  "https://astro-project-1213.onrender.com";
 
 const nextConfig: NextConfig = {
   output: "standalone",
