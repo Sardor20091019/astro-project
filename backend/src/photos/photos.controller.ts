@@ -19,7 +19,7 @@ import type { Request } from 'express';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { InjectKysely } from 'nestjs-kysely';
-import { Kysely } from 'kysely';
+import { Kysely, sql } from 'kysely';
 import { DB } from '../database/types';
 import { PhotosService } from './photos.service';
 import { ADMIN_EMAILS } from '../auth/guards/admin-auth.guard';
@@ -44,7 +44,16 @@ export class PhotosController {
 
   @Get()
   async getAllPhotos() {
-    return await this.photosService.getApprovedPhotos();
+    try {
+      return await this.db
+        .selectFrom('Photo')
+        .selectAll()
+        .orderBy(sql`random()`)
+        .execute();
+    } catch (error: any) {
+      console.error('CRITICAL FETCH PHOTOS ERROR:', error);
+      throw new InternalServerErrorException('Failed to fetch photos');
+    }
   }
 
   @Get(':id')
