@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
+const backendUrl = process.env.NEXT_PUBLIC_API_URL || "https://astro-project-1213.onrender.com";
+
 const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["pg"],
-  allowedDevOrigins: ['huff-ice-stride.ngrok-free.dev'], 
   images: {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     remotePatterns: [
@@ -17,7 +18,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "ufs.sh", // Added base domain for UploadThing
+        hostname: "ufs.sh",
       },
       {
         protocol: "https",
@@ -44,8 +45,8 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api/uploadthing/:path*",
-        destination: "http://localhost:4000/uploadthing/:path*",
+        source: "/api/:path*",
+        destination: `${backendUrl}/:path*`,
       },
     ];
   },
