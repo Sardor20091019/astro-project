@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { CATEGORIES } from "../data/photos";
-import { MapPin, Heart, MessageSquare, Maximize2 } from "lucide-react";
+import { MapPin } from "lucide-react";
 
 type PhotoCardProps = {
   photo: {
@@ -19,7 +19,7 @@ type PhotoCardProps = {
   onOpenComments?: (photo: any) => void;
 };
 
-export default function PhotoCard({ photo, index, onOpenViewer, onOpenComments }: PhotoCardProps) {
+export default function PhotoCard({ photo, index }: PhotoCardProps) {
   const imageSource = photo.url || photo.src || photo.imageUrl || photo.image_url || "";
 
   return (
@@ -68,47 +68,6 @@ export default function PhotoCard({ photo, index, onOpenViewer, onOpenComments }
                     {photo.title}
                   </h3>
                 </Link>
-              </div>
-
-              {/* Scaled-down button sizing on mobile screens */}
-              <div className="flex items-center gap-0.5 sm:gap-1 bg-black/70 backdrop-blur-md border border-white/15 p-1 sm:p-1.5 rounded-md sm:rounded-xl shadow-lg shrink-0 pointer-events-auto">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-                  className="p-1.5 sm:p-2 rounded sm:rounded-lg text-white hover:text-[var(--accent)] hover:bg-white/10 transition-colors cursor-pointer"
-                  title="Favorite"
-                >
-                  <Heart className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (onOpenComments) onOpenComments(photo);
-                  }}
-                  className="p-1.5 sm:p-2 rounded sm:rounded-lg text-white hover:text-[var(--accent)] hover:bg-white/10 transition-colors cursor-pointer"
-                  title="Comments"
-                >
-                  <MessageSquare className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (onOpenViewer) onOpenViewer(photo);
-                  }}
-                  className="p-1.5 sm:p-2 rounded sm:rounded-lg text-white hover:text-[var(--accent)] hover:bg-white/10 transition-colors cursor-pointer"
-                  title="Fullscreen / Preview"
-                >
-                  <Maximize2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                </button>
               </div>
             </div>
           </div>

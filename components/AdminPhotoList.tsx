@@ -106,7 +106,9 @@ export default function AdminPhotoList({ initialPhotos }: { initialPhotos: Photo
           >
             <option value="ALL">All categories</option>
             {CATEGORIES.filter(c => c.value !== "ALL").map(cat => (
-              <option key={cat.value} value={cat.value} className="bg-zinc-900">{cat.icon} {cat.label}</option>
+              <option key={cat.value} value={cat.value} className="bg-zinc-900">
+                {cat.icon} {cat.label}
+              </option>
             ))}
           </select>
           <ChevronDown size={10} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
@@ -236,3 +238,4 @@ export default function AdminPhotoList({ initialPhotos }: { initialPhotos: Photo
     </div>
   );
 }
+```[cite: 2]

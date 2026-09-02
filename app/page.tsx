@@ -126,8 +126,7 @@ export default function CinematicLandingPage() {
 
   return (
     <div className="relative min-h-screen bg-(--bg) text-(--text) flex flex-col justify-between overflow-hidden selection:bg-(--accent) selection:text-(--bg)">
-      
-      {/* Hide default browser scrollbars for clean cinematic aesthetic */}
+
       <style jsx global>{`
         html {
           scrollbar-width: none;
@@ -137,7 +136,6 @@ export default function CinematicLandingPage() {
         }
       `}</style>
 
-      {/* High-Density Cinematic Timeline Scrubber */}
       <aside
         ref={timelineRef}
         aria-label="Page scroll position scrubber"

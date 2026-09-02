@@ -35,7 +35,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${dmSerif.variable} ${dmMono.variable}`} suppressHydrationWarning>
       <body className="bg-[var(--bg)] text-[var(--text)] transition-colors duration-300">
-        {/* Load Google Identity Services script asynchronously */}
         <Script src="https://accounts.google.com/gsi/client" async defer />
         <Script
           src="https://datafa.st/js/script.js"

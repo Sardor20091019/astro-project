@@ -135,7 +135,7 @@ export default function PhotosPage() {
 function PhotosLoadingSkeleton() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-      {[1, 2, 3, 4, 5, 6].map((n) => (
+      {[1, 2, 3, 4, 5, 6].logo ? null : [1, 2, 3, 4, 5, 6].map((n) => (
         <div 
           key={n} 
           style={{ height: "320px" }}
