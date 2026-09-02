@@ -511,7 +511,7 @@ export default function CreatorPhotoViewer({
 
               <div className="flex items-center gap-1.5 px-3 py-2 text-zinc-300">
                 <Star size={15} className="text-amber-400" />
-                <span className="text-xs font-medium">{engagement.ratingAverage.toFixed(1)}</span>
+                <span className="text-xs font-medium">{(engagement?.ratingAverage ?? 0).toFixed(1)}</span>
               </div>
 
               <div className="w-[1px] h-4 bg-zinc-800 mx-1" />
@@ -661,7 +661,7 @@ export default function CreatorPhotoViewer({
                     </div>
                     <div className="p-3 bg-zinc-900/60 border border-zinc-800/60 rounded-xl">
                       <span className="block text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Rating</span>
-                      <strong className="text-sm font-bold text-white">{engagement.ratingAverage.toFixed(1)}</strong>
+                      <strong className="text-sm font-bold text-white">{(engagement?.ratingAverage ?? 0).toFixed(1)}</strong>
                     </div>
                   </div>
                 </div>

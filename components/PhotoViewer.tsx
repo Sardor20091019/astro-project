@@ -969,7 +969,7 @@ export default function PhotoViewer({
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-full transition group shrink-0`}
               >
                 <Star size={16} strokeWidth={2} className="text-amber-500 transition-colors" />
-                <span className={`text-xs font-medium ${isDark ? "text-zinc-200" : "text-zinc-800"}`}>{engagement.ratingAverage.toFixed(1)}</span>
+                <span className={`text-xs font-medium ${isDark ? "text-zinc-200" : "text-zinc-800"}`}>{(engagement?.ratingAverage ?? 0).toFixed(1)}</span>
               </MagneticButton>
 
               <MagneticButton
@@ -1274,7 +1274,7 @@ export default function PhotoViewer({
                   }`}>
                     <StarRating value={engagement.viewerRating ?? 0} onSelect={handleRating} />
                     <div className={`text-xs ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>
-                      <span className={`font-semibold ${isDark ? "text-white" : "text-zinc-900"}`}>{engagement.ratingAverage.toFixed(1)}</span> / 5 
+                      <span className={`font-semibold ${isDark ? "text-white" : "text-zinc-900"}`}>{(engagement?.ratingAverage ?? 0).toFixed(1)}</span> / 5 
                       <span className={`ml-1 ${isDark ? "text-zinc-500" : "text-zinc-400"}`}>({engagement.ratingCount})</span>
                     </div>
                   </div>
