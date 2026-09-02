@@ -1325,9 +1325,16 @@ function CommentsList({
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/comments?photoId=${photoId}`)
+    fetch(`/api/photos/${photoId}/comments`)
       .then(res => res.json())
-      .then(data => setComments(Array.isArray(data) ? data : []))
+      .then(data => {
+        // Support both direct arrays and wrapped response objects
+        const commentsArray = Array.isArray(data) 
+          ? data 
+          : data.comments || data.data || [];
+        setComments(commentsArray);
+      })
+      .catch(() => setComments([]))
       .finally(() => setLoading(false));
   }, [photoId]);
 

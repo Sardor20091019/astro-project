@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, 
   Heart, 
-  MessageCircle, 
   Plus, 
   ChevronLeft, 
   ChevronRight, 
@@ -40,7 +39,6 @@ interface PhotoCardProps {
   isFavorited: boolean;
   onToggleFavorite: (photoId: string, e?: React.MouseEvent) => void;
   onOpenLightbox: (photoId: string) => void;
-  onOpenComments: (photo: any, e: React.MouseEvent) => void;
   ageVerified: boolean;
   onRequireAgeVerification: () => void;
   layoutMode: "large" | "compact";
@@ -52,7 +50,6 @@ const PhotoCard = memo(function PhotoCard({
   isFavorited,
   onToggleFavorite,
   onOpenLightbox,
-  onOpenComments,
   ageVerified,
   onRequireAgeVerification,
   layoutMode,
@@ -147,16 +144,6 @@ const PhotoCard = memo(function PhotoCard({
               </button>
 
               <button
-                onClick={(e) => onOpenComments(photo, e)}
-                title="Open Comments"
-                aria-label="Open Comments"
-                className="p-2 sm:p-2.5 rounded-2xl bg-black/40 backdrop-blur-md border border-white/20 text-white hover:border-sky-400 transition-all cursor-pointer inline-flex items-center gap-1 font-mono text-[9px] sm:text-[10px]"
-              >
-                <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-sky-400" />
-                <span>{photo.commentCount ?? 0}</span>
-              </button>
-
-              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onOpenLightbox(photo.id);
@@ -216,216 +203,6 @@ const PhotoCard = memo(function PhotoCard({
   );
 });
 
-function CommentsList({
-  photoId,
-  setEngagement,
-  isLoggedIn,
-  isAuthLoading,
-  isDark,
-  onOpenAuthModal,
-}: {
-  photoId: number | string;
-  setEngagement: React.Dispatch<React.SetStateAction<any>>;
-  isLoggedIn: boolean;
-  isAuthLoading: boolean;
-  isDark: boolean;
-  onOpenAuthModal: () => void;
-}) {
-  const [comments, setComments] = useState<any[]>([]);
-  const [comment, setComment] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    setLoading(true);
-    fetch(`/api/photos/${photoId}/comments`)
-      .then(res => res.json())
-      .then(data => setComments(Array.isArray(data) ? data : (data.comments || [])))
-      .catch(() => setComments([]))
-      .finally(() => setLoading(false));
-  }, [photoId]);
-
-  const submit = async () => {
-    if (!comment.trim() || submitting) return;
-    setSubmitting(true);
-    try {
-      const res = await fetch(`/api/photos/${photoId}/comments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          body: comment.trim(),
-        }),
-      });
-      if (res.ok) {
-        const newComment = await res.json();
-        setComment("");
-        setComments(c => [newComment, ...c]);
-        setEngagement((prev: any) => ({ ...prev, commentCount: (prev.commentCount || 0) + 1 }));
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="flex flex-col gap-3.5">
-      {isAuthLoading ? (
-        <div className={`h-10 w-full rounded-xl animate-pulse ${isDark ? "bg-zinc-900" : "bg-zinc-200"}`} />
-      ) : isLoggedIn ? (
-        <div className="flex gap-2">
-          <input
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submit()}
-            className={`flex-1 h-11 px-4 text-xs border transition-colors rounded-2xl focus:outline-none ${
-              isDark 
-                ? "bg-zinc-900 border-zinc-800 text-white placeholder-zinc-500 focus:border-zinc-700" 
-                : "bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:border-zinc-300"
-            }`}
-            placeholder="Write a comment..."
-          />
-          <button
-            onClick={submit}
-            disabled={submitting || !comment.trim()}
-            className={`h-11 px-5 text-xs font-medium transition disabled:opacity-40 rounded-2xl flex items-center justify-center min-w-[72px] cursor-pointer ${
-              isDark ? "bg-white text-black hover:bg-zinc-200" : "bg-zinc-900 text-white hover:bg-zinc-800"
-            }`}
-          >
-            {submitting ? "..." : "Post"}
-          </button>
-        </div>
-      ) : (
-        <button
-          onClick={onOpenAuthModal}
-          className={`w-full border px-4 py-3 text-xs font-medium transition rounded-2xl cursor-pointer ${
-            isDark ? "border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800" : "border-zinc-200 bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-          }`}
-        >
-          Sign in to comment
-        </button>
-      )}
-
-      <div className="space-y-3 pt-2">
-        {loading ? (
-          <div className="flex justify-center py-6 text-xs text-zinc-400 animate-pulse">
-            Loading comments...
-          </div>
-        ) : comments.length === 0 ? (
-          <p className={`text-xs text-center py-6 ${isDark ? "text-zinc-500" : "text-zinc-400"}`}>No comments yet.</p>
-        ) : (
-          comments.map((item, idx) => (
-            <div key={item.id || idx} className="flex gap-3 group">
-              <img
-                src={item.user?.customImage || item.user?.image || "/default-pfp.png"}
-                alt=""
-                className={`h-8 w-8 rounded-full object-cover border shrink-0 ${isDark ? "border-zinc-800" : "border-zinc-200"}`}
-              />
-              <div className={`flex-1 min-w-0 border p-3.5 rounded-2xl ${
-                isDark ? "bg-zinc-950 border-zinc-900" : "bg-zinc-50 border-zinc-200"
-              }`}>
-                <p className={`text-xs font-semibold mb-1 ${isDark ? "text-zinc-300" : "text-zinc-800"}`}>{item.user?.name || item.authorName || "User"}</p>
-                <p className={`text-xs break-words leading-relaxed ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>{item.body ?? item.text ?? item.comment}</p>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-
-interface CommentModalProps {
-  photo: any | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onCommentAdded: (photoId: string | number, newCount: number) => void;
-  isLoggedIn: boolean;
-  isAuthLoading: boolean;
-  isDark: boolean;
-  onOpenAuthModal: () => void;
-}
-
-function CommentModal({ photo, isOpen, onClose, onCommentAdded, isLoggedIn, isAuthLoading, isDark, onOpenAuthModal }: CommentModalProps) {
-  const [engagement, setEngagement] = useState({ commentCount: photo?.commentCount || 0 });
-
-  useEffect(() => {
-    if (photo) {
-      setEngagement({ commentCount: photo.commentCount || 0 });
-    }
-  }, [photo]);
-
-  if (!isOpen || !photo) return null;
-
-  return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        role="dialog"
-        aria-modal="true"
-        className="fixed inset-0 z-50 bg-black/85 backdrop-blur-lg flex items-center justify-center p-4"
-        onClick={onClose}
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 15 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          transition={{ duration: 0.2 }}
-          className="relative max-w-lg w-full max-h-[85vh] bg-(--surface) border border-white/15 rounded-3xl overflow-hidden shadow-2xl flex flex-col text-left bg-zinc-950 text-white"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex items-center justify-between px-6 py-4.5 border-b border-zinc-800 bg-zinc-900/90 backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <img
-                src={photo.url}
-                alt={photo.title || "Photo"}
-                className="w-10 h-10 rounded-xl object-cover border border-zinc-800"
-              />
-              <div className="flex flex-col">
-                <h3 className="font-bold text-sm text-white truncate max-w-[240px]">
-                  {photo.title || "Untitled Capture"}
-                </h3>
-                <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-zinc-400">
-                  Comments ({engagement.commentCount})
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                onCommentAdded(photo.id, engagement.commentCount);
-                onClose();
-              }}
-              aria-label="Close comments"
-              className="p-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white hover:bg-rose-500 transition-all cursor-pointer"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-6 max-h-[50vh]">
-            <CommentsList
-              photoId={photo.id}
-              setEngagement={(updater) => {
-                setEngagement(updater);
-                if (typeof updater === 'function') {
-                  const updatedCount = updater(engagement).commentCount;
-                  onCommentAdded(photo.id, updatedCount);
-                }
-              }}
-              isLoggedIn={isLoggedIn}
-              isAuthLoading={isAuthLoading}
-              isDark={true}
-              onOpenAuthModal={onOpenAuthModal}
-            />
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
-  );
-}
-
 export default function PhotosClientView({
   initialPhotos,
   categories = [],
@@ -454,9 +231,7 @@ export default function PhotosClientView({
   const [lightboxPhotoId, setLightboxPhotoId] = useState<string | null>(null);
   const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(false);
   
-  const [commentModalPhoto, setCommentModalPhoto] = useState<any | null>(null);
-  
-  const [photosState, setPhotosState] = useState(() => {
+  const [photosState] = useState(() => {
     const shuffled = Array.isArray(initialPhotos) ? [...initialPhotos] : [];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -464,9 +239,6 @@ export default function PhotosClientView({
     }
     return shuffled;
   });
-
-  const [isLoggedIn] = useState(true);
-  const [isAuthLoading] = useState(false);
 
   useEffect(() => {
     try {
@@ -633,21 +405,6 @@ export default function PhotosClientView({
     });
   };
 
-  const handleOpenCommentsModal = (photo: any, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setCommentModalPhoto(photo);
-  };
-
-  const handleCommentCountUpdate = (photoId: string | number, newCount: number) => {
-    setPhotosState((prev) =>
-      prev.map((p) => (p.id === photoId ? { ...p, commentCount: newCount } : p))
-    );
-    if (commentModalPhoto && commentModalPhoto.id === photoId) {
-      setCommentModalPhoto((prev: any) => (prev ? { ...prev, commentCount: newCount } : null));
-    }
-  };
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) {
@@ -663,7 +420,6 @@ export default function PhotosClientView({
       }
       if (e.key === "Escape") {
         setLightboxPhotoId(null);
-        setCommentModalPhoto(null);
         setShowFavoritesOnly(false);
         setIsSlideshowPlaying(false);
         setShowAgeModal(false);
@@ -969,7 +725,6 @@ export default function PhotosClientView({
                   isFavorited={favorites.includes(photo.id)}
                   onToggleFavorite={toggleFavorite}
                   onOpenLightbox={(id) => setLightboxPhotoId(id)}
-                  onOpenComments={handleOpenCommentsModal}
                   ageVerified={ageVerified}
                   onRequireAgeVerification={() => setShowAgeModal(true)}
                   layoutMode={layoutMode}
@@ -1053,17 +808,6 @@ export default function PhotosClientView({
           </motion.div>
         )}
       </AnimatePresence>
-
-      <CommentModal
-        photo={commentModalPhoto}
-        isOpen={!!commentModalPhoto}
-        onClose={() => setCommentModalPhoto(null)}
-        onCommentAdded={handleCommentCountUpdate}
-        isLoggedIn={isLoggedIn}
-        isAuthLoading={isAuthLoading}
-        isDark={true}
-        onOpenAuthModal={() => {}}
-      />
 
       <AnimatePresence>
         {lightboxPhotoId && activeLightboxPhoto && (

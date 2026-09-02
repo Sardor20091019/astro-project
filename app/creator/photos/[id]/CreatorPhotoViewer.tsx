@@ -700,7 +700,7 @@ function CommentsList({
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/comments?photoId=${photoId}`)
+    fetch(`/api/photos/${photoId}/comments`)
       .then(res => res.json())
       .then(data => setComments(Array.isArray(data) ? data : []))
       .finally(() => setLoading(false));
