@@ -61,7 +61,9 @@ export class CommentsController {
     } catch (error: any) {
       console.error('CRITICAL GET COMMENTS ERROR:', error);
       // Temporarily exposing error message to trace the exact Postgres crash reason
-      throw new InternalServerErrorException(error?.message || 'Failed to retrieve comments');
+      throw new InternalServerErrorException(
+        error?.message || 'Failed to retrieve comments',
+      );
     }
   }
 
@@ -125,7 +127,9 @@ export class CommentsController {
       };
     } catch (error: any) {
       console.error('CRITICAL CREATE COMMENT ERROR:', error);
-      throw new InternalServerErrorException(error?.message || 'Failed to post comment');
+      throw new InternalServerErrorException(
+        error?.message || 'Failed to post comment',
+      );
     }
   }
 
@@ -139,11 +143,16 @@ export class CommentsController {
     }
 
     try {
-      await this.db.deleteFrom('comment' as any).where('id', '=', commentId).execute();
+      await this.db
+        .deleteFrom('comment' as any)
+        .where('id', '=', commentId)
+        .execute();
       return { message: 'Comment deleted' };
     } catch (error: any) {
       console.error('CRITICAL DELETE COMMENT ERROR:', error);
-      throw new InternalServerErrorException(error?.message || 'Failed to delete comment');
+      throw new InternalServerErrorException(
+        error?.message || 'Failed to delete comment',
+      );
     }
   }
 }

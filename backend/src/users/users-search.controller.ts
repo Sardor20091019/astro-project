@@ -1,11 +1,11 @@
 // backend/src/users/users-search.controller.ts
-import { 
-  Controller, 
-  Get, 
-  Query, 
-  Req, 
-  UnauthorizedException, 
-  InternalServerErrorException 
+import {
+  Controller,
+  Get,
+  Query,
+  Req,
+  UnauthorizedException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { KyselyService } from '../database/kysely.service';
@@ -15,10 +15,7 @@ export class UsersSearchController {
   constructor(private readonly db: KyselyService) {}
 
   @Get()
-  async searchUsers(
-    @Query('q') query: string = '', 
-    @Req() req: Request
-  ) {
+  async searchUsers(@Query('q') query: string = '', @Req() req: Request) {
     const currentUserId = req.cookies?.user_session;
     if (!currentUserId) {
       throw new UnauthorizedException('Unauthorized');
@@ -38,7 +35,7 @@ export class UsersSearchController {
           eb.or([
             eb('name', 'ilike', `%${trimmedQuery}%`),
             eb('email', 'ilike', `%${trimmedQuery}%`),
-          ])
+          ]),
         )
         .limit(10)
         .execute();

@@ -4,6 +4,7 @@ import { KyselyModule } from './database/kysely.module';
 import { PhotosModule } from './photos/photos.module';
 
 import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import { AuthController } from './auth/auth.controller';
 import { OtpController } from './auth/otp.controller';
 import { CommentsController } from './comments/comments.controller';
@@ -39,5 +40,6 @@ import { UsersSearchController } from './users/users-search.controller';
     UserFollowController,
     UsersSearchController,
   ],
+  providers: [AppService],
 })
 export class AppModule {}

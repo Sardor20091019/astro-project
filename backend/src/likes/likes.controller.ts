@@ -1,12 +1,12 @@
 // backend/src/likes/likes.controller.ts
-import { 
-  Controller, 
-  Post, 
-  Body, 
-  Req, 
-  Res, 
-  BadRequestException, 
-  InternalServerErrorException 
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  Res,
+  BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import * as crypto from 'crypto';
@@ -18,9 +18,9 @@ export class LikesController {
 
   @Post()
   async toggleLike(
-    @Body() body: { photoId: number | string }, 
+    @Body() body: { photoId: number | string },
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) res: Response,
   ) {
     try {
       const { photoId } = body;

@@ -1,13 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { InjectKysely } from 'nestjs-kysely';
-import { Kysely, sql } from 'kysely';
-import { DB } from '../database/types';
+import { sql } from 'kysely';
+import { KyselyService } from '../database/kysely.service';
 
 @Injectable()
 export class PhotosService {
-  constructor(
-    @InjectKysely() private readonly db: Kysely<DB>,
-  ) {}
+  constructor(private readonly db: KyselyService) {}
 
   async getApprovedPhotos(page = 1, limit = 24) {
     const pageNum = Math.max(1, Number(page) || 1);
@@ -31,10 +28,18 @@ export class PhotosService {
         'Photo.focalLength',
         'Photo.authorName',
         'Photo.createdAt',
-        sql<string | null>`COALESCE("User"."customImage", "User"."image")`.as('authorAvatar'),
-        sql<number>`(SELECT count(*)::int FROM "Like" WHERE "photoId" = "Photo".id)`.as('likeCount'),
-        sql<number>`(SELECT count(*)::int FROM "Comment" WHERE "photoId" = "Photo".id)`.as('commentCount'),
-        sql<number>`(SELECT COALESCE(avg(value), 0)::float FROM "Rating" WHERE "photoId" = "Photo".id)`.as('avgRating'),
+        sql<string | null>`COALESCE("User"."customImage", "User"."image")`.as(
+          'authorAvatar',
+        ),
+        sql<number>`(SELECT count(*)::int FROM "Like" WHERE "photoId" = "Photo".id)`.as(
+          'likeCount',
+        ),
+        sql<number>`(SELECT count(*)::int FROM "Comment" WHERE "photoId" = "Photo".id)`.as(
+          'commentCount',
+        ),
+        sql<number>`(SELECT COALESCE(avg(value), 0)::float FROM "Rating" WHERE "photoId" = "Photo".id)`.as(
+          'avgRating',
+        ),
       ])
       .where('Photo.status', '=', 'APPROVED')
       .orderBy('Photo.createdAt', 'desc')
@@ -43,7 +48,11 @@ export class PhotosService {
       .execute();
   }
 
-  async getPhotoById(photoId: number, userId?: string, anonymousToken?: string) {
+  async getPhotoById(
+    photoId: number,
+    userId?: string,
+    anonymousToken?: string,
+  ) {
     const photo = await this.db
       .selectFrom('Photo')
       .leftJoin('User', 'User.id', 'Photo.userId')
@@ -62,14 +71,22 @@ export class PhotosService {
         'Photo.authorName',
         'Photo.createdAt',
         'Photo.userId',
-        sql<string | null>`COALESCE("User"."customImage", "User"."image")`.as('authorAvatar'),
+        sql<string | null>`COALESCE("User"."customImage", "User"."image")`.as(
+          'authorAvatar',
+        ),
       ])
       .where('Photo.id', '=', photoId)
       .executeTakeFirst();
 
     if (!photo) return null;
 
-    const [ratingStats, likeCountRes, currentRating, currentLike, commentCountRes] = await Promise.all([
+    const [
+      ratingStats,
+      likeCountRes,
+      currentRating,
+      currentLike,
+      commentCountRes,
+    ] = await Promise.all([
       this.db
         .selectFrom('Rating')
         .where('photoId', '=', photoId)
@@ -99,13 +116,13 @@ export class PhotosService {
             .where('userId', '=', userId)
             .executeTakeFirst()
         : anonymousToken
-        ? this.db
-            .selectFrom('Like')
-            .selectAll()
-            .where('photoId', '=', photoId)
-            .where('anonymousToken', '=', anonymousToken)
-            .executeTakeFirst()
-        : Promise.resolve(null),
+          ? this.db
+              .selectFrom('Like')
+              .selectAll()
+              .where('photoId', '=', photoId)
+              .where('anonymousToken', '=', anonymousToken)
+              .executeTakeFirst()
+          : Promise.resolve(null),
       this.db
         .selectFrom('Comment')
         .where('photoId', '=', photoId)
@@ -114,9 +131,10 @@ export class PhotosService {
     ]);
 
     const rawAvg = ratingStats?.avg;
-    const ratingAverage = rawAvg !== null && rawAvg !== undefined 
-      ? Number(Number(rawAvg).toFixed(1)) 
-      : 0;
+    const ratingAverage =
+      rawAvg !== null && rawAvg !== undefined
+        ? Number(Number(rawAvg).toFixed(1))
+        : 0;
 
     return {
       ...photo,

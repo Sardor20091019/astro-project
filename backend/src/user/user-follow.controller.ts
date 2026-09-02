@@ -1,12 +1,12 @@
 // backend/src/user/user-follow.controller.ts
-import { 
-  Controller, 
-  Post, 
-  Body, 
-  Req, 
-  UnauthorizedException, 
-  BadRequestException, 
-  InternalServerErrorException 
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  UnauthorizedException,
+  BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { KyselyService } from '../database/kysely.service';
@@ -17,8 +17,8 @@ export class UserFollowController {
 
   @Post()
   async toggleFollow(
-    @Body() body: { targetUserId: string }, 
-    @Req() req: Request
+    @Body() body: { targetUserId: string },
+    @Req() req: Request,
   ) {
     const currentUserId = req.cookies?.user_session;
     if (!currentUserId) {
@@ -59,7 +59,10 @@ export class UserFollowController {
         return { message: 'Followed successfully', following: true };
       }
     } catch (error) {
-      if (error instanceof UnauthorizedException || error instanceof BadRequestException) {
+      if (
+        error instanceof UnauthorizedException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       console.error('Follow Error:', error);

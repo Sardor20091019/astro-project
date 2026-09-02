@@ -1,9 +1,12 @@
 // backend/src/auth/guards/admin-auth.guard.ts
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 
-export const ADMIN_EMAILS: string[] = [
-  "sardor091019@gmail.com",
-];
+export const ADMIN_EMAILS: string[] = ['sardor091019@gmail.com'];
 
 @Injectable()
 export class AdminAuthGuard implements CanActivate {

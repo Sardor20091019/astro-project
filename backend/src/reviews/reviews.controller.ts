@@ -1,17 +1,17 @@
 // backend/src/reviews/reviews.controller.ts
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Delete, 
-  Query, 
-  Param, 
-  Body, 
-  Req, 
-  UseGuards, 
-  BadRequestException, 
-  UnauthorizedException, 
-  InternalServerErrorException 
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Query,
+  Param,
+  Body,
+  Req,
+  UseGuards,
+  BadRequestException,
+  UnauthorizedException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { KyselyService } from '../database/kysely.service';
@@ -65,8 +65,8 @@ export class ReviewsController {
 
   @Post()
   async createReview(
-    @Body() body: { photoId: any; rating: any; comment?: string }, 
-    @Req() req: Request
+    @Body() body: { photoId: any; rating: any; comment?: string },
+    @Req() req: Request,
   ) {
     const userId = req.cookies?.user_session;
     if (!userId) {
@@ -79,7 +79,12 @@ export class ReviewsController {
       const parsedRating = Number(rating);
       const cleanComment = String(comment ?? '').trim();
 
-      if (!Number.isInteger(parsedPhotoId) || !Number.isInteger(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+      if (
+        !Number.isInteger(parsedPhotoId) ||
+        !Number.isInteger(parsedRating) ||
+        parsedRating < 1 ||
+        parsedRating > 5
+      ) {
         throw new BadRequestException('Invalid review');
       }
 
@@ -95,7 +100,7 @@ export class ReviewsController {
           oc.columns(['photoId', 'userId']).doUpdateSet({
             value: parsedRating,
             updatedAt: new Date(),
-          })
+          }),
         )
         .execute();
 
@@ -154,7 +159,10 @@ export class ReviewsController {
 
       return { comment: formattedComment, commentCount };
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof UnauthorizedException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof UnauthorizedException
+      ) {
         throw error;
       }
       console.error('Review Error:', error);
@@ -172,10 +180,7 @@ export class ReviewsController {
     }
 
     try {
-      await this.db
-        .deleteFrom('Comment')
-        .where('id', '=', commentId)
-        .execute();
+      await this.db.deleteFrom('Comment').where('id', '=', commentId).execute();
 
       return { message: 'Deleted successfully' };
     } catch (error) {

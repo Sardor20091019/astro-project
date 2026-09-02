@@ -1,13 +1,13 @@
 // backend/src/follow/follow.controller.ts
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Query, 
-  Req, 
-  UnauthorizedException, 
-  BadRequestException 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  Req,
+  UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { KyselyService } from '../database/kysely.service';
@@ -18,8 +18,8 @@ export class FollowController {
 
   @Post()
   async toggleFollow(
-    @Body() body: { targetUserId: string }, 
-    @Req() req: Request
+    @Body() body: { targetUserId: string },
+    @Req() req: Request,
   ) {
     const currentUserId = req.cookies?.user_session;
     if (!currentUserId) {
@@ -67,8 +67,8 @@ export class FollowController {
 
   @Get()
   async getFollowStats(
-    @Query('targetUserId') targetUserId: string, 
-    @Req() req: Request
+    @Query('targetUserId') targetUserId: string,
+    @Req() req: Request,
   ) {
     if (!targetUserId) {
       throw new BadRequestException('Missing targetUserId');
@@ -100,7 +100,7 @@ export class FollowController {
         .where('followerId', '=', currentUserId)
         .where('followingId', '=', targetUserId)
         .executeTakeFirst();
-      
+
       isFollowing = Boolean(rel);
     }
 

@@ -1,12 +1,12 @@
 // backend/src/ratings/ratings.controller.ts
-import { 
-  Controller, 
-  Post, 
-  Body, 
-  Req, 
-  Res, 
-  BadRequestException, 
-  InternalServerErrorException 
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  Res,
+  BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import * as crypto from 'crypto';
@@ -20,14 +20,19 @@ export class RatingsController {
   async createOrUpdateRating(
     @Body() body: { photoId: any; value: any },
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) res: Response,
   ) {
     try {
       const { photoId, value } = body;
       const parsedPhotoId = Number(photoId);
       const parsedValue = Number(value);
 
-      if (!Number.isInteger(parsedPhotoId) || !Number.isInteger(parsedValue) || parsedValue < 1 || parsedValue > 5) {
+      if (
+        !Number.isInteger(parsedPhotoId) ||
+        !Number.isInteger(parsedValue) ||
+        parsedValue < 1 ||
+        parsedValue > 5
+      ) {
         throw new BadRequestException('Invalid rating');
       }
 
@@ -82,9 +87,10 @@ export class RatingsController {
         .executeTakeFirst();
 
       const rawAvg = stats?.avg;
-      const ratingAverage = rawAvg !== null && rawAvg !== undefined 
-        ? Number(Number(rawAvg).toFixed(1)) 
-        : 0;
+      const ratingAverage =
+        rawAvg !== null && rawAvg !== undefined
+          ? Number(Number(rawAvg).toFixed(1))
+          : 0;
       const ratingCount = Number(stats?.count ?? 0);
 
       if (shouldSetGuestCookie) {

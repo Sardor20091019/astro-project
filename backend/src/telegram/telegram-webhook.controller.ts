@@ -1,9 +1,9 @@
 // backend/src/telegram/telegram-webhook.controller.ts
-import { 
-  Controller, 
-  Post, 
-  Body, 
-  InternalServerErrorException 
+import {
+  Controller,
+  Post,
+  Body,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { KyselyService } from '../database/kysely.service';
 
@@ -23,8 +23,12 @@ export class TelegramWebhookController {
         const [action, photoIdStr] = callbackData.split('_');
         const photoId = Number(photoIdStr);
 
-        if ((action === 'approve' || action === 'reject') && Number.isInteger(photoId)) {
-          const structuralStatus = action === 'approve' ? 'APPROVED' : 'REJECTED';
+        if (
+          (action === 'approve' || action === 'reject') &&
+          Number.isInteger(photoId)
+        ) {
+          const structuralStatus =
+            action === 'approve' ? 'APPROVED' : 'REJECTED';
 
           await this.db
             .updateTable('Photo')
@@ -35,24 +39,30 @@ export class TelegramWebhookController {
           const botToken = process.env.TELEGRAM_BOT_TOKEN;
           const confirmationMessageText = `✅ Update Complete: Image database entry status updated to ${structuralStatus}.`;
 
-          await fetch(`https://api.telegram.org/bot${botToken}/editMessageText`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: chatId,
-              message_id: messageId,
-              text: confirmationMessageText,
-            }),
-          });
+          await fetch(
+            `https://api.telegram.org/bot${botToken}/editMessageText`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: chatId,
+                message_id: messageId,
+                text: confirmationMessageText,
+              }),
+            },
+          );
 
-          await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              callback_query_id: callbackQuery.id,
-              text: `Entry status saved as ${structuralStatus}.`,
-            }),
-          });
+          await fetch(
+            `https://api.telegram.org/bot${botToken}/answerCallbackQuery`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                callback_query_id: callbackQuery.id,
+                text: `Entry status saved as ${structuralStatus}.`,
+              }),
+            },
+          );
         }
       }
 

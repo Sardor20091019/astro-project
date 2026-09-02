@@ -126,7 +126,7 @@ export default function Hero() {
 
           <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
             <span className="hidden sm:inline-block" style={{ fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", color: "rgba(240,235,225,0.5)", fontFamily: "var(--font-mono, monospace)" }}>
-              Curated by Sardor Sunatullayev
+              Sardor Sunatullayev
             </span>
             <div style={{ padding: "6px 12px", background: "rgba(255,255,255,0.06)", backdropFilter: "blur(12px)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.1)", fontSize: "10px", fontFamily: "var(--font-mono, monospace)", color: "#F4F1EA", letterSpacing: "0.15em" }}>
               LIVE ARCHIVE

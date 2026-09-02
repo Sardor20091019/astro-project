@@ -18,9 +18,8 @@ import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { InjectKysely } from 'nestjs-kysely';
-import { Kysely, sql } from 'kysely';
-import { DB } from '../database/types';
+import { sql } from 'kysely';
+import { KyselyService } from '../database/kysely.service';
 import { PhotosService } from './photos.service';
 import { ADMIN_EMAILS } from '../auth/guards/admin-auth.guard';
 
@@ -38,7 +37,7 @@ enum PhotoCategory {
 @Controller('photos')
 export class PhotosController {
   constructor(
-    @InjectKysely() private readonly db: Kysely<DB>,
+    private readonly db: KyselyService,
     private readonly photosService: PhotosService,
   ) {}
 
@@ -305,7 +304,7 @@ export class PhotosController {
           shutter: String(body.shutter || '').trim() || null,
           focalLength: String(body.focalLength || '').trim() || null,
           authorName: String(body.authorName || userName).trim() || null,
-          category: category as any,
+          category: category,
           status: 'APPROVED',
           userId: userId ?? null,
         })

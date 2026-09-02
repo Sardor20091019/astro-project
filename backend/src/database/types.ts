@@ -3,17 +3,26 @@
  * Please do not edit it manually.
  */
 
-import type { ColumnType } from "kysely";
+import type { ColumnType } from 'kysely';
 
-export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
-  ? ColumnType<S, I | undefined, U>
-  : ColumnType<T, T | undefined, T>;
+export type Generated<T> =
+  T extends ColumnType<infer S, infer I, infer U>
+    ? ColumnType<S, I | undefined, U>
+    : ColumnType<T, T | undefined, T>;
 
-export type Photocategory = "ABSTRACT" | "ASTROPHOTOGRAPHY" | "MOON" | "NATURE" | "OTHER" | "SKY" | "STREET" | "WARM";
+export type Photocategory =
+  | 'ABSTRACT'
+  | 'ASTROPHOTOGRAPHY'
+  | 'MOON'
+  | 'NATURE'
+  | 'OTHER'
+  | 'SKY'
+  | 'STREET'
+  | 'WARM';
 
-export type Photostatus = "APPROVED" | "PENDING";
+export type Photostatus = 'APPROVED' | 'PENDING';
 
-export type Role = "ADMIN" | "USER";
+export type Role = 'ADMIN' | 'USER';
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 

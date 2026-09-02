@@ -20,7 +20,7 @@ export default function Footer() {
               Astro<span className="text-(--accent)">spectrum</span>
             </p>
             <p className="max-w-sm text-xs leading-relaxed text-(--text-dim) text-center md:text-left">
-              A premier cinematic photography gallery and digital media platform curated by Sardor Sunatullayev. Specializing in high-altitude landscape visual capture, architectural aesthetics, and advanced web architecture.
+              A premier cinematic photography gallery and digital media platform by Sardor Sunatullayev. Specializing in high-altitude landscape visual capture, architectural aesthetics, and advanced web architecture.
             </p>
           </div>
 

@@ -1,7 +1,7 @@
 import { generateUploadButton, generateUploadDropzone, generateReactHelpers } from "@uploadthing/react";
 import type { OurFileRouter } from "@/backend/src/uploadthing/uploadthing.router"; 
 
-const backendUrl = "https://astro-project-1213.onrender.com";
+const backendUrl = "http://localhost:4000/api";
 
 export const UploadButton = generateUploadButton<OurFileRouter>({
   url: `${backendUrl}/api/uploadthing`,

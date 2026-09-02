@@ -49,7 +49,7 @@ export class OtpController {
       const ip = forwarded
         ? typeof forwarded === 'string'
           ? forwarded.split(',')[0].trim()
-          : (forwarded as string[])[0]
+          : forwarded[0]
         : '127.0.0.1';
 
       if (!email) {

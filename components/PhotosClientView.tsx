@@ -806,7 +806,7 @@ export default function PhotosClientView({
             Gallery Archive
           </h1>
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-(--text-dim)">
-            Curated cinematic captures and visual stories
+            cinematic captures and visual stories
           </p>
         </div>
 
