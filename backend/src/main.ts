@@ -7,6 +7,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { createRouteHandler } from 'uploadthing/express';
 import { ourFileRouter } from './uploadthing/uploadthing.router';
+import type { Express } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -22,7 +23,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  const expressInstance = app.getHttpAdapter().getInstance();
+  const expressInstance = app.getHttpAdapter().getInstance() as Express;
   expressInstance.use(
     '/api/uploadthing',
     createRouteHandler({
@@ -35,4 +36,4 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`Server running on port ${port}`);
 }
-bootstrap();
+void bootstrap();
