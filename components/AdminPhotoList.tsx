@@ -238,4 +238,3 @@ export default function AdminPhotoList({ initialPhotos }: { initialPhotos: Photo
     </div>
   );
 }
-```[cite: 2]
