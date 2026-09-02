@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   OnModuleInit,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { KyselyService } from '../../database/kysely.service';
 
 export const ADMIN_EMAILS: string[] = ['sardor091019@gmail.com'];
@@ -13,11 +14,11 @@ export const ADMIN_EMAILS: string[] = ['sardor091019@gmail.com'];
 export class AdminAuthGuard implements CanActivate, OnModuleInit {
   constructor(private readonly db: KyselyService) {}
 
-  async onModuleInit() {
+  async onModuleInit(): Promise<void> {
     await this.refreshAdminEmails();
   }
 
-  async refreshAdminEmails() {
+  async refreshAdminEmails(): Promise<void> {
     try {
       const admins = await this.db
         .selectFrom('User')
@@ -25,20 +26,27 @@ export class AdminAuthGuard implements CanActivate, OnModuleInit {
         .where('role', '=', 'ADMIN')
         .execute();
 
-      const dbEmails = admins.map((a) => a.email).filter(Boolean) as string[];
+      const dbEmails: string[] = admins
+        .map((a) => a.email)
+        .filter((email): email is string => typeof email === 'string');
 
       ADMIN_EMAILS.length = 0;
-      ADMIN_EMAILS.push(...new Set(['sardor091019@gmail.com', ...dbEmails]));
-    } catch (error) {
+      ADMIN_EMAILS.push(
+        ...Array.from(new Set(['sardor091019@gmail.com', ...dbEmails])),
+      );
+    } catch (error: unknown) {
       console.error('Failed to load admin emails from SQL:', error);
     }
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const email = request.headers['x-user-email'] || request.user?.email;
+    const request = context.switchToHttp().getRequest<Request>();
+    const headerEmail = request.headers['x-user-email'];
+    const rawEmail = Array.isArray(headerEmail) ? headerEmail[0] : headerEmail;
+    const userEmail = (request as { user?: { email?: unknown } }).user?.email;
+    const email = rawEmail || userEmail;
 
-    if (!email) {
+    if (!email || typeof email !== 'string') {
       throw new ForbiddenException('Forbidden');
     }
 
@@ -47,7 +55,8 @@ export class AdminAuthGuard implements CanActivate, OnModuleInit {
     await this.refreshAdminEmails();
 
     const isListed = ADMIN_EMAILS.some(
-      (adminEmail) => adminEmail.toLowerCase().trim() === normalizedEmail
+      (adminEmail: string) =>
+        adminEmail.toLowerCase().trim() === normalizedEmail,
     );
 
     if (isListed) {

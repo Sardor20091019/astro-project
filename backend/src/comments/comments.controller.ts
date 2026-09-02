@@ -14,6 +14,7 @@ import {
 import type { Request } from 'express';
 import { KyselyService } from '../database/kysely.service';
 import { AdminAuthGuard } from '../auth/guards/admin-auth.guard';
+import { CreateCommentDto } from './dto/create-comment.dto';
 
 @Controller('photos/:photoId/comments')
 export class CommentsController {
@@ -28,25 +29,24 @@ export class CommentsController {
     }
 
     try {
-      // Trying lowercase table names ('comment', 'user') as PostgreSQL defaults to lowercase
       const rawComments = await this.db
-        .selectFrom('comment' as any)
-        .leftJoin('user' as any, 'user.id', 'comment.userId')
+        .selectFrom('Comment')
+        .leftJoin('User', 'User.id', 'Comment.userId')
         .select([
-          'comment.id',
-          'comment.body',
-          'comment.createdAt',
-          'comment.photoId',
-          'comment.userId',
-          'user.name',
-          'user.image',
-          'user.customImage',
+          'Comment.id',
+          'Comment.body',
+          'Comment.createdAt',
+          'Comment.photoId',
+          'Comment.userId',
+          'User.name',
+          'User.image',
+          'User.customImage',
         ])
-        .where('comment.photoId', '=', photoId)
-        .orderBy('comment.createdAt', 'desc')
+        .where('Comment.photoId', '=', photoId)
+        .orderBy('Comment.createdAt', 'desc')
         .execute();
 
-      return rawComments.map((c: any) => ({
+      return rawComments.map((c) => ({
         id: c.id,
         body: c.body,
         createdAt: c.createdAt,
@@ -54,41 +54,40 @@ export class CommentsController {
         userId: c.userId,
         user: {
           name: c.name || 'Anonymous',
-          image: c.image,
-          customImage: c.customImage,
+          image: c.image ?? null,
+          customImage: c.customImage ?? null,
         },
       }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('CRITICAL GET COMMENTS ERROR:', error);
-      // Temporarily exposing error message to trace the exact Postgres crash reason
-      throw new InternalServerErrorException(
-        error?.message || 'Failed to retrieve comments',
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to retrieve comments';
+      throw new InternalServerErrorException(errorMessage);
     }
   }
 
   @Post()
   async createComment(
     @Param('photoId') photoIdStr: string,
-    @Body() bodyData: { body: string },
+    @Body() bodyData: CreateCommentDto,
     @Req() req: Request,
   ) {
-    const userId = req.cookies?.user_session;
+    const userId = req.cookies?.user_session as string | undefined;
 
     if (!userId) {
       throw new UnauthorizedException('Login required to comment');
     }
 
     const parsedPhotoId = Number(photoIdStr);
-    const cleanBody = String(bodyData?.body ?? '').trim();
+    const cleanBody = bodyData.body.trim();
 
-    if (!Number.isInteger(parsedPhotoId) || cleanBody.length < 2) {
-      throw new BadRequestException('Invalid comment');
+    if (!Number.isInteger(parsedPhotoId)) {
+      throw new BadRequestException('Invalid photo id');
     }
 
     try {
       const inserted = await this.db
-        .insertInto('comment' as any)
+        .insertInto('Comment')
         .values({
           photoId: parsedPhotoId,
           body: cleanBody.slice(0, 1200),
@@ -98,38 +97,38 @@ export class CommentsController {
         .executeTakeFirstOrThrow();
 
       const commentRow = await this.db
-        .selectFrom('comment' as any)
-        .leftJoin('user' as any, 'user.id', 'comment.userId')
+        .selectFrom('Comment')
+        .leftJoin('User', 'User.id', 'Comment.userId')
         .select([
-          'comment.id',
-          'comment.body',
-          'comment.createdAt',
-          'comment.photoId',
-          'comment.userId',
-          'user.name',
-          'user.image',
-          'user.customImage',
+          'Comment.id',
+          'Comment.body',
+          'Comment.createdAt',
+          'Comment.photoId',
+          'Comment.userId',
+          'User.name',
+          'User.image',
+          'User.customImage',
         ])
-        .where('comment.id', '=', (inserted as any).id)
+        .where('Comment.id', '=', inserted.id)
         .executeTakeFirstOrThrow();
 
       return {
-        id: (commentRow as any).id,
-        body: (commentRow as any).body,
-        createdAt: (commentRow as any).createdAt,
-        photoId: (commentRow as any).photoId,
-        userId: (commentRow as any).userId,
+        id: commentRow.id,
+        body: commentRow.body,
+        createdAt: commentRow.createdAt,
+        photoId: commentRow.photoId,
+        userId: commentRow.userId,
         user: {
-          name: (commentRow as any).name || 'Anonymous',
-          image: (commentRow as any).image,
-          customImage: (commentRow as any).customImage,
+          name: commentRow.name || 'Anonymous',
+          image: commentRow.image ?? null,
+          customImage: commentRow.customImage ?? null,
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('CRITICAL CREATE COMMENT ERROR:', error);
-      throw new InternalServerErrorException(
-        error?.message || 'Failed to post comment',
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to post comment';
+      throw new InternalServerErrorException(errorMessage);
     }
   }
 
@@ -143,16 +142,13 @@ export class CommentsController {
     }
 
     try {
-      await this.db
-        .deleteFrom('comment' as any)
-        .where('id', '=', commentId)
-        .execute();
+      await this.db.deleteFrom('Comment').where('id', '=', commentId).execute();
       return { message: 'Comment deleted' };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('CRITICAL DELETE COMMENT ERROR:', error);
-      throw new InternalServerErrorException(
-        error?.message || 'Failed to delete comment',
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to delete comment';
+      throw new InternalServerErrorException(errorMessage);
     }
   }
 }

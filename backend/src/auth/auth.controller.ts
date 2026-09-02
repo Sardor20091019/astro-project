@@ -9,6 +9,7 @@ import {
 import type { Response } from 'express';
 import * as crypto from 'crypto';
 import { KyselyService } from '../database/kysely.service';
+import { TelegramAuthDto } from './dto/telegram-auth.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -16,7 +17,7 @@ export class AuthController {
 
   @Post('telegram')
   async telegramAuth(
-    @Body() body: any,
+    @Body() body: TelegramAuthDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
@@ -36,7 +37,7 @@ export class AuthController {
 
       const sortedKeys = Object.keys(userData).sort();
       const dataCheckString = sortedKeys
-        .map((key) => `${key}=${userData[key]}`)
+        .map((key) => `${key}=${String(userData[key])}`)
         .join('\n');
 
       const hmac = crypto
@@ -49,15 +50,15 @@ export class AuthController {
         throw new UnauthorizedException('Invalid authentication hash');
       }
 
-      const authDate = parseInt(userData.auth_date, 10);
+      const authDate = Number(userData.auth_date);
       const nowSec = Math.floor(Date.now() / 1000);
       if (isNaN(authDate) || Math.abs(nowSec - authDate) > 86400) {
         throw new UnauthorizedException('Authentication data expired');
       }
 
       const telegramIdStr = userData.id.toString();
-      const telegramUsername = userData.username || null;
-      const userImage = userData.photo_url || null;
+      const telegramUsername = userData.username ?? null;
+      const userImage = userData.photo_url ?? null;
       const userName = [userData.first_name, userData.last_name]
         .filter(Boolean)
         .join(' ');
@@ -89,7 +90,7 @@ export class AuthController {
       });
 
       return { success: true, user };
-    } catch (error) {
+    } catch (error: unknown) {
       if (
         error instanceof UnauthorizedException ||
         error instanceof InternalServerErrorException

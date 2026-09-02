@@ -22,6 +22,8 @@ import { sql } from 'kysely';
 import { KyselyService } from '../database/kysely.service';
 import { PhotosService } from './photos.service';
 import { ADMIN_EMAILS } from '../auth/guards/admin-auth.guard';
+import { CreatePhotoDto } from './dto/create-photo.dto';
+import { UpdatePhotoDto } from './dto/update-photo.dto';
 
 enum PhotoCategory {
   ASTROPHOTOGRAPHY = 'ASTROPHOTOGRAPHY',
@@ -49,7 +51,7 @@ export class PhotosController {
         .selectAll()
         .orderBy(sql`random()`)
         .execute();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('CRITICAL FETCH PHOTOS ERROR:', error);
       throw new InternalServerErrorException('Failed to fetch photos');
     }
@@ -62,8 +64,8 @@ export class PhotosController {
       throw new BadRequestException('Invalid photo id');
     }
 
-    const userId = req.cookies?.user_session;
-    const anonymousToken = req.cookies?.astro_guest;
+    const userId = req.cookies?.user_session as string | undefined;
+    const anonymousToken = req.cookies?.astro_guest as string | undefined;
 
     const photo = await this.photosService.getPhotoById(
       photoId,
@@ -84,8 +86,8 @@ export class PhotosController {
       throw new BadRequestException('Invalid photo id');
     }
 
-    const userId = req.cookies?.user_session;
-    const anonymousToken = req.cookies?.astro_guest;
+    const userId = req.cookies?.user_session as string | undefined;
+    const anonymousToken = req.cookies?.astro_guest as string | undefined;
 
     const [
       ratingStats,
@@ -155,7 +157,7 @@ export class PhotosController {
 
   @Delete(':id')
   async deletePhoto(@Param('id') id: string, @Req() req: Request) {
-    const userId = req.cookies?.user_session;
+    const userId = req.cookies?.user_session as string | undefined;
     if (!userId) throw new UnauthorizedException('Unauthorized');
 
     const photoId = Number(id);
@@ -186,7 +188,9 @@ export class PhotosController {
     if (photo.url.startsWith('/uploads/')) {
       try {
         await fs.unlink(path.join(process.cwd(), 'public', photo.url));
-      } catch {}
+      } catch {
+        /* Ignore missing uploaded files */
+      }
     }
 
     await this.db.deleteFrom('Photo').where('id', '=', photoId).execute();
@@ -196,10 +200,10 @@ export class PhotosController {
   @Patch(':id')
   async updatePhoto(
     @Param('id') id: string,
-    @Body() body: any,
+    @Body() body: UpdatePhotoDto,
     @Req() req: Request,
   ) {
-    const userId = req.cookies?.user_session;
+    const userId = req.cookies?.user_session as string | undefined;
     if (!userId) throw new UnauthorizedException('Unauthorized');
 
     const photoId = Number(id);
@@ -245,7 +249,7 @@ export class PhotosController {
 
   @Post('upload')
   @UseInterceptors(AnyFilesInterceptor())
-  async uploadPhoto(@Body() body: any, @Req() req: Request) {
+  async uploadPhoto(@Body() body: CreatePhotoDto, @Req() req: Request) {
     if (!body.photoUrl || !String(body.photoUrl).startsWith('https://')) {
       throw new BadRequestException('Invalid image URL provided');
     }
@@ -254,12 +258,12 @@ export class PhotosController {
 
   @Post()
   @UseInterceptors(AnyFilesInterceptor())
-  async createPhoto(@Body() body: any, @Req() req: Request) {
+  async createPhoto(@Body() body: CreatePhotoDto, @Req() req: Request) {
     return this.handlePhotoCreation(body, req);
   }
 
-  private async handlePhotoCreation(body: any, req: Request) {
-    const userId = req.cookies?.user_session;
+  private async handlePhotoCreation(body: CreatePhotoDto, req: Request) {
+    const userId = req.cookies?.user_session as string | undefined;
     let userName = 'Anonymous';
 
     if (userId) {
@@ -276,7 +280,8 @@ export class PhotosController {
       if (!photoUrl) throw new BadRequestException('No image URL provided');
 
       const isoVal = body.iso;
-      const parsedIso = isoVal ? Number(isoVal) : null;
+      const parsedIso =
+        isoVal !== undefined && isoVal !== null ? Number(isoVal) : null;
 
       const rawCategory = String(body.category || 'OTHER').toUpperCase();
       const category = Object.values(PhotoCategory).includes(
@@ -296,21 +301,21 @@ export class PhotosController {
         .values({
           url: photoUrl,
           title: cleanTitle || 'Untitled frame',
-          location: String(body.location || '').trim() || null,
-          coordinates: String(body.coordinates || '').trim() || null,
-          camera: String(body.camera || '').trim() || null,
+          location: body.location ? body.location.trim() : null,
+          coordinates: body.coordinates ? body.coordinates.trim() : null,
+          camera: body.camera ? body.camera.trim() : null,
           iso: Number.isNaN(parsedIso) ? null : parsedIso,
-          aperture: String(body.aperture || '').trim() || null,
-          shutter: String(body.shutter || '').trim() || null,
-          focalLength: String(body.focalLength || '').trim() || null,
-          authorName: String(body.authorName || userName).trim() || null,
+          aperture: body.aperture ? body.aperture.trim() : null,
+          shutter: body.shutter ? body.shutter.trim() : null,
+          focalLength: body.focalLength ? body.focalLength.trim() : null,
+          authorName: body.authorName ? body.authorName.trim() : userName,
           category: category,
           status: 'APPROVED',
           userId: userId ?? null,
         })
         .returningAll()
         .executeTakeFirstOrThrow();
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof BadRequestException) throw error;
       console.error('Database Save Error:', error);
       throw new InternalServerErrorException(
