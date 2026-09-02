@@ -10,7 +10,6 @@ export type CategoryOption = {
 };
 
 const CATEGORIES: CategoryOption[] = [
-  { label: "All", value: "ALL" },
   { label: "Astrophotography", value: "ASTROPHOTOGRAPHY" },
   { label: "Nature", value: "NATURE" },
   { label: "Sky", value: "SKY" },
@@ -24,7 +23,6 @@ export default async function PhotosPage() {
   let photos: Awaited<ReturnType<typeof getApprovedPhotos>> = [];
 
   try {
-    // Fetch photos directly from your NestJS backend API
     photos = await getApprovedPhotos();
   } catch (error) {
     console.error("Failed to load photos from NestJS backend:", error);

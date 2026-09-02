@@ -912,7 +912,7 @@ export default function PhotosClientView({
 
                     <div className="h-[1px] bg-zinc-800 my-1.5 mx-2" />
 
-                    <div className="max-h-[260px] overflow-y-auto space-y-1 pr-1">
+                    <div className="overflow-y-auto space-y-1 pr-1">
                       {categories.map((cat) => {
                         const isSelected = selectedCategory === cat.value;
                         return (

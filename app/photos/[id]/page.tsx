@@ -19,10 +19,9 @@ export default async function PhotoPage({ params }: { params: Promise<{ id: stri
   const userId = session?.user?.id;
   const anonymousToken = cookieStore.get("astro_guest")?.value;
 
-  // Fetch current photo and a safe, restricted subset for navigation
   const [currentPhoto, recentPhotos] = await Promise.all([
     getPhotoById(photoId, userId, anonymousToken).catch(() => null),
-    getApprovedPhotos(1, 20).catch(() => []), // Capped limit prevents OOM
+    getApprovedPhotos(1, 20).catch(() => []),
   ]);
 
   if (!currentPhoto) notFound();
