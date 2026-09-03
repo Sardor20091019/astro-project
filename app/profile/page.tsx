@@ -9,6 +9,5 @@ export default async function ProfileRedirectPage() {
     redirect("/login");
   }
 
-  // Redirect them to their actual profile ID route
   redirect(`/profile/${session.user.id}`);
 }

@@ -1,4 +1,3 @@
-// backend/src/user/user-follow.controller.ts
 import {
   Controller,
   Post,
@@ -20,7 +19,8 @@ export class UserFollowController {
     @Body() body: { targetUserId: string },
     @Req() req: Request,
   ) {
-    const currentUserId = req.cookies?.user_session;
+    const cookies = req.cookies as Record<string, string> | undefined;
+    const currentUserId = cookies?.user_session;
     if (!currentUserId) {
       throw new UnauthorizedException('Unauthorized');
     }

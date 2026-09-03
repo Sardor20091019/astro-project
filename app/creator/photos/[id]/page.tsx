@@ -27,7 +27,7 @@ export default function PhotoDetailPage({ params }: PageProps) {
 
   const photo = photos[currentIndex];
   
-  // Looping indices
+
   const prevIndex = currentIndex > 0 ? currentIndex - 1 : photos.length - 1;
   const nextIndex = currentIndex < photos.length - 1 ? currentIndex + 1 : 0;
   const prevPhoto = photos[prevIndex];
@@ -43,7 +43,7 @@ export default function PhotoDetailPage({ params }: PageProps) {
     router.push(`/creator/photos/${nextPhoto.id}`);
   };
 
-  // Keyboard Navigation Support
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isFullscreen) {

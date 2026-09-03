@@ -9,7 +9,7 @@ export default function ThemeToggle() {
 
   useEffect(() => {
     setMounted(true);
-    // Check initial theme from localStorage or system preference
+
     const savedTheme = localStorage.getItem("theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
 
@@ -34,7 +34,7 @@ export default function ThemeToggle() {
     }
   };
 
-  // Prevent layout shift during SSR hydration
+
   if (!mounted) {
     return <div className="w-9 h-9 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] animate-pulse" />;
   }

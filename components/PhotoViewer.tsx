@@ -40,7 +40,6 @@ import { useRouter } from "next/navigation";
 import { submitComment as submitCommentAction } from "@/app/actions/comments";
 import StarRating from "./StarRating";
 
-// --- Types ---
 type GalleryPhoto = {
   id: number;
   url: string;
@@ -76,7 +75,6 @@ type Engagement = {
   commentCount: number;
 };
 
-// --- Film Stock Definitions ---
 export const FILM_STOCKS = [
   { id: "normal", label: "Original", filter: "none" },
   { id: "portra", label: "Portra 400 (Warm)", filter: "sepia(0.15) saturate(1.2) contrast(1.05)" },
@@ -182,14 +180,14 @@ export default function PhotoViewer({
   const [copied, setCopied] = useState(false);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
-  // Theme, Film Stock, Slideshow & Transformation states
+
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [activeFilmStock, setActiveFilmStock] = useState("normal");
   const [rotation, setRotation] = useState<number>(0);
   const [flipH, setFlipH] = useState<boolean>(false);
   const [flipV, setFlipV] = useState<boolean>(false);
 
-  // Consider any full 360 rotation cycle (e.g. 360, 720, 0) as original position
+
   const isTransformed = (rotation % 360 !== 0) || flipH || flipV;
 
   const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(false);
@@ -207,7 +205,7 @@ export default function PhotoViewer({
     setTimeout(() => setWarningMessage(null), 3000);
   };
 
-  // Automatically turn off comparison mode if user rotates or flips the image
+
   useEffect(() => {
     if (isTransformed && isComparing) {
       setIsComparing(false);
@@ -270,7 +268,7 @@ export default function PhotoViewer({
     if (mouseIdleTimerRef.current) clearTimeout(mouseIdleTimerRef.current);
   };
 
-  // Reset image view properties upon switching photos
+
   useEffect(() => {
     setImageLoaded(false);
     scale.set(1);
@@ -476,7 +474,7 @@ export default function PhotoViewer({
         await navigator.share({ title: photo.title, url: shareUrl });
         return;
       } catch {
-        // Fallback
+
       }
     }
     try {
@@ -484,7 +482,6 @@ export default function PhotoViewer({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Ignore
     }
   };
 
@@ -544,7 +541,7 @@ export default function PhotoViewer({
   const activeFilterStyle = FILM_STOCKS.find((s) => s.id === activeFilmStock)?.filter || "none";
   const isDark = theme === "dark";
 
-  // Combined continuous rotation & mirroring style
+
   const transformStyle = {
     transform: `rotate(${rotation}deg) scaleX(${flipH ? -1 : 1}) scaleY(${flipV ? -1 : 1})`,
     transition: "transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -1302,7 +1299,7 @@ export default function PhotoViewer({
   );
 }
 
-// --- Comments List Sub-Component ---
+
 function CommentsList({
   photoId,
   setEngagement,
@@ -1328,7 +1325,6 @@ function CommentsList({
     fetch(`/api/photos/${photoId}/comments`)
       .then(res => res.json())
       .then(data => {
-        // Support both direct arrays and wrapped response objects
         const commentsArray = Array.isArray(data) 
           ? data 
           : data.comments || data.data || [];

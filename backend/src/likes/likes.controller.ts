@@ -1,4 +1,3 @@
-// backend/src/likes/likes.controller.ts
 import {
   Controller,
   Post,
@@ -30,8 +29,9 @@ export class LikesController {
         throw new BadRequestException('Invalid photo id');
       }
 
-      const userId = req.cookies?.user_session;
-      const existingGuestToken = req.cookies?.astro_guest;
+      const cookies = req.cookies as Record<string, string> | undefined;
+      const userId = cookies?.user_session;
+      const existingGuestToken = cookies?.astro_guest;
       const anonymousToken = existingGuestToken ?? crypto.randomUUID();
       const shouldSetGuestCookie = !existingGuestToken;
 
@@ -74,7 +74,6 @@ export class LikesController {
       const likeCount = Number(countResult?.count ?? 0);
 
       if (shouldSetGuestCookie) {
-        // Express maxAge expects milliseconds (1 year = 31,536,000,000 ms)
         res.cookie('astro_guest', anonymousToken, {
           httpOnly: true,
           sameSite: 'lax',

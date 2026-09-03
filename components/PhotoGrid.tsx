@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import { CATEGORIES, type PhotoCategory } from "../data/photos"
 import { ChevronDown, X } from "lucide-react"
-import PhotoCard from "./PhotoCard" // Import your new component
+import PhotoCard from "./PhotoCard"
 
 type PhotoType = {
   id: number;

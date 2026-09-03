@@ -1,4 +1,3 @@
-// backend/src/follow/follow.controller.ts
 import {
   Controller,
   Get,
@@ -21,7 +20,8 @@ export class FollowController {
     @Body() body: { targetUserId: string },
     @Req() req: Request,
   ) {
-    const currentUserId = req.cookies?.user_session;
+    const cookies = req.cookies as Record<string, string> | undefined;
+    const currentUserId = cookies?.user_session;
     if (!currentUserId) {
       throw new UnauthorizedException('Unauthorized');
     }
@@ -74,7 +74,8 @@ export class FollowController {
       throw new BadRequestException('Missing targetUserId');
     }
 
-    const currentUserId = req.cookies?.user_session;
+    const cookies = req.cookies as Record<string, string> | undefined;
+    const currentUserId = cookies?.user_session;
 
     const [followerCountRes, followingCountRes] = await Promise.all([
       this.db

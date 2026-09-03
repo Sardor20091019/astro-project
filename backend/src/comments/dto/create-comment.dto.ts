@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { IsString, MinLength, MaxLength } from 'class-validator';
 
 export class CreateCommentDto {

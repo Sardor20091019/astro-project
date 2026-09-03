@@ -26,7 +26,6 @@ export default function UserSearchModal({ isOpen, onClose }: UserSearchModalProp
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-focus input on open
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -36,7 +35,6 @@ export default function UserSearchModal({ isOpen, onClose }: UserSearchModalProp
     }
   }, [isOpen]);
 
-  // Handle ESC key
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -45,7 +43,7 @@ export default function UserSearchModal({ isOpen, onClose }: UserSearchModalProp
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Debounced search
+
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (query.trim().length > 0) {

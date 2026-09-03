@@ -1,4 +1,3 @@
-// backend/src/users/users-search.controller.ts
 import {
   Controller,
   Get,
@@ -16,7 +15,8 @@ export class UsersSearchController {
 
   @Get()
   async searchUsers(@Query('q') query: string = '', @Req() req: Request) {
-    const currentUserId = req.cookies?.user_session;
+    const cookies = req.cookies as Record<string, string> | undefined;
+    const currentUserId = cookies?.user_session;
     if (!currentUserId) {
       throw new UnauthorizedException('Unauthorized');
     }

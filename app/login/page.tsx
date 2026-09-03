@@ -22,7 +22,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Timeline Scrubber Refs & States
+
   const timelineRef = useRef<HTMLElement>(null);
   const isDraggingRef = useRef(false);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -32,7 +32,7 @@ export default function LoginPage() {
     if (status === "authenticated") router.replace("/");
   }, [router, status]);
 
-  // Scroll Progress Listener
+
   useEffect(() => {
     const handleScroll = () => {
       const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
@@ -46,7 +46,7 @@ export default function LoginPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Timeline Scrubbing Logic
+
   const updateScrollFromClientY = (clientY: number) => {
     if (!timelineRef.current) return;
     const rect = timelineRef.current.getBoundingClientRect();

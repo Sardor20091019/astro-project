@@ -1,4 +1,3 @@
-// backend/src/auth/otp.controller.ts
 import {
   Controller,
   Post,
@@ -9,7 +8,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-// Ensure your otp utility is moved or imported from your shared backend library
+
 import { verifyOtp, generateAndSendOtp } from '@shared/otp';
 
 interface TurnstileResponse {

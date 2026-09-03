@@ -55,7 +55,7 @@ export default function ProfileClientView({
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isDraggingTimeline, setIsDraggingTimeline] = useState(false);
 
-  // Scroll Progress Listener
+
   useEffect(() => {
     const handleScroll = () => {
       const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
@@ -69,7 +69,7 @@ export default function ProfileClientView({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Timeline Scrubbing Logic
+
   const updateScrollFromClientY = (clientY: number) => {
     if (!timelineRef.current) return;
     const rect = timelineRef.current.getBoundingClientRect();

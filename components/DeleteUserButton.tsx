@@ -1,18 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // 1. Import router
+import { useRouter } from "next/navigation"; 
 import { deleteUser } from "@/app/actions/admin-users";
 
 export default function DeleteUserButton({ userId, userName }: { userId: string, userName: string }) {
-  const router = useRouter(); // 2. Initialize router
+  const router = useRouter(); 
   const [loading, setLoading] = useState(false);
 
   const handleDelete = async () => {
     if (!confirm(`Delete ${userName}? This will remove all their data.`)) return;
     setLoading(true);
     await deleteUser(userId);
-    router.refresh(); // 3. Refresh the page data instantly
+    router.refresh(); 
     setLoading(false);
   };
 

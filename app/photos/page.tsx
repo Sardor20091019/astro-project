@@ -1,4 +1,3 @@
-// app/photos/page.tsx
 import { getApprovedPhotos } from "@/lib/api/photos";
 import PhotosClientView from "@/components/PhotosClientView";
 

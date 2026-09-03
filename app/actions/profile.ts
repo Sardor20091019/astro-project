@@ -15,7 +15,7 @@ export async function updateProfile(formData: FormData) {
   if (name) updateValues.name = name;
   if (image) updateValues.image = image;
 
-  // If no fields were provided, just return the existing user
+
   if (Object.keys(updateValues).length === 0) {
     const currentUser = await db
       .selectFrom("User")
@@ -25,7 +25,7 @@ export async function updateProfile(formData: FormData) {
     return currentUser;
   }
 
-  // Update the user and return the updated record
+
   const updatedUser = await db
     .updateTable("User")
     .set(updateValues)

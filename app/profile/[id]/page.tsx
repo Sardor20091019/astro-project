@@ -56,7 +56,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
 
   if (!user) notFound();
 
-  // Convert photo IDs from number to string to match ProfilePhotoStream expectations
   const photos = rawPhotos.map((p) => ({
     ...p,
     id: String(p.id),
@@ -86,10 +85,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
 
   return (
    <ProfileClientView
-  user={user as any}
-  photos={photos as any}
-  followers={followers as any}
-  following={following as any}
+  user={user}
+  photos={photos}
+  followers={followers}
+  following={following}
   currentUserId={session?.user?.id}
   isSelf={isSelf}
   viewerIsAdmin={viewerIsAdmin}

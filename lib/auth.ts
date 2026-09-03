@@ -1,8 +1,29 @@
-import { NextAuthOptions, User, getServerSession } from "next-auth";
+import { NextAuthOptions, User, getServerSession, DefaultSession, DefaultUser } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import crypto from "crypto";
 import { db } from "@/lib/db";
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      email: string;
+      role?: string;
+    } & DefaultSession["user"];
+  }
+
+  interface User extends DefaultUser {
+    role?: string;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id?: string;
+    role?: string;
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -84,14 +105,21 @@ export const authOptions: NextAuthOptions = {
             .executeTakeFirstOrThrow();
         }
 
-        return { id: user.id, email: user.email!, name: user.name } as User;
+        return { id: user.id, email: user.email!, name: user.name ?? undefined } as User;
       },
     }),
 
     CredentialsProvider({
       id: "telegram",
       name: "Telegram",
-      credentials: { id: { type: "text" }, first_name: { type: "text" }, username: { type: "text" }, photo_url: { type: "text" }, auth_date: { type: "text" }, hash: { type: "text" } },
+      credentials: { 
+        id: { type: "text" }, 
+        first_name: { type: "text" }, 
+        username: { type: "text" }, 
+        photo_url: { type: "text" }, 
+        auth_date: { type: "text" }, 
+        hash: { type: "text" } 
+      },
       async authorize(credentials): Promise<User | null> {
         if (!credentials?.hash) return null;
 
@@ -101,7 +129,7 @@ export const authOptions: NextAuthOptions = {
         const fields = ["id", "first_name", "username", "photo_url", "auth_date"];
         const dataCheckString = fields
           .map((key) => ({ key, value: credentials[key as keyof typeof credentials] }))
-          .filter((item) => item.value)
+          .filter((item): item is { key: string; value: string } => Boolean(item.value))
           .sort((a, b) => a.key.localeCompare(b.key))
           .map((item) => `${item.key}=${item.value}`)
           .join("\n");
@@ -131,7 +159,7 @@ export const authOptions: NextAuthOptions = {
             .returningAll()
             .executeTakeFirstOrThrow();
         }
-        return { id: user.id, name: user.name, image: user.image } as User;
+        return { id: user.id, name: user.name ?? undefined, image: user.image ?? undefined } as User;
       },
     }),
   ],
@@ -211,8 +239,8 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        if (token.id !== undefined && token.id !== null) {
-          session.user.id = token.id as any; // Handles both number and string IDs
+        if (token.id) {
+          session.user.id = token.id;
         }
         if (typeof token.role === "string") {
           session.user.role = token.role;

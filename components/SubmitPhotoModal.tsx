@@ -24,10 +24,8 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
   const [submitted, setSubmitted] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
 
-  // Upload/Moderation Status Text for Live Feedback
   const [uploadStatusText, setUploadStatusText] = useState("Drop photo or click to browse");
 
-  // Form States
   const [camera, setCamera] = useState("");
   const [iso, setIso] = useState("");
   const [aperture, setAperture] = useState("");
@@ -79,7 +77,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
     onClose();
   };
 
-  // Close modal on Escape key press
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
@@ -90,7 +88,7 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
-  // Handle local file selection, EXIF extraction, reverse geocoding, and instant upload
+
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -107,7 +105,6 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
     setUploadStatusText("Extracting EXIF metadata...");
 
     try {
-      // 1. Extract standard technical EXIF metadata locally
       const exif = await exifr.parse(file, true);
 
       if (exif) {
@@ -131,7 +128,6 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
         }
       }
 
-      // 2. Extract GPS coordinates using exifr.gps()
       const gps = await exifr.gps(file);
       if (gps && typeof gps.latitude === "number" && typeof gps.longitude === "number") {
         const coordsStr = `${gps.latitude}, ${gps.longitude}`;
@@ -139,7 +135,6 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
         setCoordinates(coordsStr);
         setExifStatus("has-gps");
 
-        // 3. Automatically reverse-geocode coordinates to pre-fill location name (fully editable)
         try {
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${gps.latitude}&lon=${gps.longitude}`
@@ -165,10 +160,8 @@ export default function SubmitPhotoModal({ isOpen, onClose }: SubmitPhotoModalPr
       setExifStatus("no-gps");
     }
 
-    // 4. Update status right before triggering cloud upload and SightEngine moderation check
     setUploadStatusText("Checking photo for nudity & safety via SightEngine...");
 
-    // 5. Automatically trigger UploadThing upload
     await startUpload([file]);
   }
 

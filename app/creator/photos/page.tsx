@@ -5,13 +5,13 @@ import PhotoGrid from "@/components/PhotoGrid";
 import { photos } from "@/data/photos";
 
 export default function PhotosPage() {
-  // Timeline Scrubber Refs & States
+
   const timelineRef = useRef<HTMLElement>(null);
   const isDraggingRef = useRef(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isDraggingTimeline, setIsDraggingTimeline] = useState(false);
 
-  // Scroll Progress Listener
+
   useEffect(() => {
     const handleScroll = () => {
       const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
@@ -25,7 +25,7 @@ export default function PhotosPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Timeline Scrubbing Logic
+
   const updateScrollFromClientY = (clientY: number) => {
     if (!timelineRef.current) return;
     const rect = timelineRef.current.getBoundingClientRect();

@@ -30,7 +30,7 @@ import { useRouter } from "next/navigation";
 import { submitComment as submitCommentAction } from "@/app/actions/comments";
 import StarRating from "@/components/StarRating";
 
-// --- Types ---
+
 type CreatorPhoto = {
   id: number;
   url: string;
@@ -681,7 +681,7 @@ export default function CreatorPhotoViewer({
   );
 }
 
-// --- Comments List Sub-Component ---
+
 function CommentsList({
   photoId,
   setEngagement,

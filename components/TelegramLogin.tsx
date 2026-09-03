@@ -1,22 +1,36 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useRef } from "react";
 import { signIn } from "next-auth/react";
 
+interface TelegramUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+  auth_date: number;
+  hash: string;
+}
+
+declare global {
+  interface Window {
+    onTelegramAuth: (user: TelegramUser) => void;
+  }
+}
+
 export default function TelegramLogin() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    (window as any).onTelegramAuth = async (user: any) => {
-
+    window.onTelegramAuth = async (user: TelegramUser) => {
       const result = await signIn("telegram", {
         redirect: false,
-        id: user.id?.toString(),
+        id: user.id.toString(),
         first_name: user.first_name || "",
         username: user.username || "",
         photo_url: user.photo_url || "",
-        auth_date: user.auth_date?.toString(),
+        auth_date: user.auth_date.toString(),
         hash: user.hash,
         callbackUrl: "/",
       });
@@ -25,7 +39,6 @@ export default function TelegramLogin() {
         console.error("Auth error:", result.error);
         alert(`Login failed: ${result.error}`);
       } else {
-
         window.location.href = "/";
       }
     };
@@ -37,7 +50,6 @@ export default function TelegramLogin() {
     script.setAttribute("data-onauth", "onTelegramAuth(user)");
     script.setAttribute("data-request-access", "write");
     script.async = true;
-
 
     if (containerRef.current) {
       containerRef.current.innerHTML = "";

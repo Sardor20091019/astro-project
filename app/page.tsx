@@ -8,7 +8,6 @@ import { ArrowRight } from "lucide-react";
 export default function CinematicLandingPage() {
   const [isLightMode, setIsLightMode] = useState(false);
 
-  // Robust Theme Detection (HTML classes, data attributes, localStorage, & system preference)
   useEffect(() => {
     const root = document.documentElement;
 
@@ -41,7 +40,7 @@ export default function CinematicLandingPage() {
     };
   }, []);
 
-  // Dynamic content based on theme mode
+
   const heroPhoto = isLightMode
     ? {
         title: "Blooming Sakura",
@@ -56,13 +55,13 @@ export default function CinematicLandingPage() {
         description: "A quiet, freezing forest under the northern lights. A look at starry skies, cold trees, and deep peace.",
       };
 
-  // Timeline Scrubber Refs & States
+
   const timelineRef = useRef<HTMLElement>(null);
   const isDraggingRef = useRef(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isDraggingTimeline, setIsDraggingTimeline] = useState(false);
 
-  // High-performance Scroll Progress Listener with rAF batching
+
   useEffect(() => {
     let ticking = false;
 
@@ -84,7 +83,7 @@ export default function CinematicLandingPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Timeline Scrubbing Logic
+
   const updateScrollFromClientY = (clientY: number) => {
     if (!timelineRef.current) return;
     const rect = timelineRef.current.getBoundingClientRect();

@@ -1,4 +1,3 @@
-// backend/src/ratings/ratings.controller.ts
 import {
   Controller,
   Post,
@@ -11,6 +10,7 @@ import {
 import type { Request, Response } from 'express';
 import * as crypto from 'crypto';
 import { KyselyService } from '../database/kysely.service';
+import { CreateRatingDto } from './dto/create-rating.dto';
 
 @Controller('ratings')
 export class RatingsController {
@@ -18,7 +18,7 @@ export class RatingsController {
 
   @Post()
   async createOrUpdateRating(
-    @Body() body: { photoId: any; value: any },
+    @Body() body: CreateRatingDto,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
@@ -36,8 +36,9 @@ export class RatingsController {
         throw new BadRequestException('Invalid rating');
       }
 
-      const userId = req.cookies?.user_session;
-      const existingGuestToken = req.cookies?.astro_guest;
+      const cookies = req.cookies as Record<string, string> | undefined;
+      const userId = cookies?.user_session;
+      const existingGuestToken = cookies?.astro_guest;
       const anonymousToken = existingGuestToken ?? crypto.randomUUID();
       const shouldSetGuestCookie = !existingGuestToken;
 

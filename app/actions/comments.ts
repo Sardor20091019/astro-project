@@ -19,7 +19,7 @@ export async function submitComment(photoId: number, body: string) {
     return { ok: false as const, error: "INVALID_COMMENT" };
   }
 
-  // 1. Insert the comment and return its ID
+
   const inserted = await db
     .insertInto("Comment")
     .values({
@@ -30,7 +30,6 @@ export async function submitComment(photoId: number, body: string) {
     .returning("id")
     .executeTakeFirstOrThrow();
 
-  // 2. Fetch the newly created comment along with user details (equivalent to Prisma's include)
   const comment = await db
     .selectFrom("Comment")
     .innerJoin("User", "User.id", "Comment.userId")
@@ -47,7 +46,7 @@ export async function submitComment(photoId: number, body: string) {
     .where("Comment.id", "=", inserted.id)
     .executeTakeFirstOrThrow();
 
-  // 3. Get the updated comment count
+
   const countResult = await db
     .selectFrom("Comment")
     .where("photoId", "=", parsedPhotoId)

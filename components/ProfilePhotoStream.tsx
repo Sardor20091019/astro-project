@@ -22,12 +22,12 @@ export default function ProfilePhotoStream({ photos, canDelete }: ProfilePhotoSt
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [localPhotos, setLocalPhotos] = useState(photos);
 
-  // Keep local photos in sync if props change
+
   useEffect(() => {
     setLocalPhotos(photos);
   }, [photos]);
 
-  const pageSize = 9; // Exactly 9 images per page
+  const pageSize = 9;
   const totalPages = Math.ceil(localPhotos.length / pageSize);
 
   const paginatedPhotos = localPhotos.slice(

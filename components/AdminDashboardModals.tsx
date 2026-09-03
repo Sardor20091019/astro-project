@@ -12,7 +12,7 @@ interface UserItem {
 }
 
 interface CommentItem {
-  id: number; // <-- Fixed here (changed from string to number)
+  id: number;
   body: string;
   createdAt: Date;
   user: {
@@ -29,12 +29,10 @@ interface AdminDashboardModalsProps {
 export default function AdminDashboardModals({ users, comments, currentUserId }: AdminDashboardModalsProps) {
   const [activeModal, setActiveModal] = useState<"users" | "comments" | null>(null);
   
-  // Pagination States
   const [userPage, setUserPage] = useState(1);
   const [commentPage, setCommentPage] = useState(1);
   const ITEMS_PER_PAGE = 6;
 
-  // Paginated data slices
   const totalUserPages = Math.ceil(users.length / ITEMS_PER_PAGE) || 1;
   const paginatedUsers = users.slice((userPage - 1) * ITEMS_PER_PAGE, userPage * ITEMS_PER_PAGE);
 

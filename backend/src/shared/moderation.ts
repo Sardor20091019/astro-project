@@ -23,7 +23,6 @@ export async function moderateImageUrl(url: string) {
       return { isSafe: false, reason: "INVALID_RESPONSE" };
     }
 
-    // Check if the image is safe (none score > 0.5)
     const isSafe = (nudity.none ?? 0) > 0.5;
     
     if (!isSafe) {

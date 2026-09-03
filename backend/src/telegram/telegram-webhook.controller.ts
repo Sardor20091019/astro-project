@@ -1,4 +1,3 @@
-// backend/src/telegram/telegram-webhook.controller.ts
 import {
   Controller,
   Post,
@@ -7,18 +6,35 @@ import {
 } from '@nestjs/common';
 import { KyselyService } from '../database/kysely.service';
 
+interface TelegramWebhookBody {
+  callback_query?: {
+    id: string;
+    data?: string;
+    message?: {
+      chat: {
+        id: number;
+      };
+      message_id: number;
+    };
+  };
+}
+
 @Controller('telegram-webhook')
 export class TelegramWebhookController {
   constructor(private readonly db: KyselyService) {}
 
   @Post()
-  async handleWebhook(@Body() body: any) {
+  async handleWebhook(@Body() body: TelegramWebhookBody) {
     try {
-      if (body.callback_query) {
+      if (body?.callback_query) {
         const callbackQuery = body.callback_query;
         const callbackData = callbackQuery.data;
-        const chatId = callbackQuery.message.chat.id;
-        const messageId = callbackQuery.message.message_id;
+        const chatId = callbackQuery.message?.chat.id;
+        const messageId = callbackQuery.message?.message_id;
+
+        if (!callbackData || !chatId || !messageId) {
+          return { ok: true };
+        }
 
         const [action, photoIdStr] = callbackData.split('_');
         const photoId = Number(photoIdStr);
@@ -27,12 +43,12 @@ export class TelegramWebhookController {
           (action === 'approve' || action === 'reject') &&
           Number.isInteger(photoId)
         ) {
-          const structuralStatus =
-            action === 'approve' ? 'APPROVED' : 'REJECTED';
+          const structuralStatus: 'APPROVED' | 'PENDING' =
+            action === 'approve' ? 'APPROVED' : 'PENDING';
 
           await this.db
             .updateTable('Photo')
-            .set({ status: structuralStatus as any })
+            .set({ status: structuralStatus })
             .where('id', '=', photoId)
             .execute();
 

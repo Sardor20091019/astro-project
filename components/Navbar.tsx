@@ -12,8 +12,9 @@ import ThemeToggle from "@/components/ThemeToggle";
 import UserMenu from "@/components/UserMenu";
 import type { OurFileRouter } from "../backend/src/uploadthing/uploadthing.router";
 import { updateUserProfile } from "@/lib/actions";
-import { UploadButton as OriginalUploadButton } from "@uploadthing/react";
-const UploadButton = OriginalUploadButton as any;
+import { generateUploadButton } from "@uploadthing/react";
+
+const UploadButton = generateUploadButton<OurFileRouter>();
 
 interface NavLinkProps {
   href: string;
@@ -95,16 +96,11 @@ export default function Navbar() {
           : "bg-gradient-to-b from-[var(--bg)]/90 via-[var(--bg)]/40 to-transparent backdrop-blur-md"
       }`}>
         <div className="flex items-center justify-between h-[68px] w-full px-3 sm:px-6">
-          
-          {/* LEFT SIDE: Logo Only */}
           <Link href="/" className="flex items-center h-full text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] hover:opacity-80 transition-opacity shrink-0">
             <span>Astro<span className="text-[var(--accent)]">spectrum</span></span>
           </Link>
 
-          {/* RIGHT SIDE: Navigation Links, Search, Theme Toggle, and Profile/Auth */}
           <div className="flex items-center h-full gap-1.5 sm:gap-3 shrink-0">
-            
-            {/* Desktop Links & Search Trigger */}
             <div className="hidden lg:flex items-center h-full gap-6">
               <NavLink href="/" active={pathname === "/"}>Gallery</NavLink> 
               <NavLink href="/photos" active={pathname === "/photos"}>Photos</NavLink>
@@ -117,17 +113,14 @@ export default function Navbar() {
               </div>
             </div>
 
-            {/* Mobile Search Trigger Icon */}
             <div className="lg:hidden flex items-center shrink-0">
               <UserSearchTrigger />
             </div>
 
-            {/* Theme Toggle */}
             <div className="flex items-center shrink-0">
               <ThemeToggle />
             </div>
 
-            {/* Desktop Auth / User Menu */}
             <div className="hidden md:flex items-center h-full gap-4 border-l border-[var(--border)] pl-4">
               {status === "loading" ? (
                 <div className="h-8 w-16 animate-pulse rounded-md bg-[var(--surface-3)]" />
@@ -145,7 +138,6 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Mobile Menu Toggle */}
             <button 
               onClick={() => { setMobileMenuOpen(!mobileMenuOpen); setIsEditingProfile(false); }} 
               className="lg:hidden flex items-center justify-center p-2 text-[var(--text)] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] rounded-lg transition-colors cursor-pointer border border-[var(--border)] shrink-0 shadow-sm"
@@ -154,11 +146,9 @@ export default function Navbar() {
               {mobileMenuOpen ? <X size={17} /> : <Menu size={17} />}
             </button>
           </div>
-
         </div>
       </nav>
 
-      {/* Mobile Menu Drawer Overlay */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div 
@@ -168,7 +158,6 @@ export default function Navbar() {
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="fixed inset-0 top-[68px] z-40 flex flex-col bg-[var(--bg)]/98 backdrop-blur-3xl p-6 lg:hidden overflow-y-auto border-b border-[var(--border)] shadow-2xl"
           >
-            {/* Mobile User Profile Section */}
             <div className="flex flex-col pb-6 border-b border-[var(--border)] gap-4">
               {status === "loading" ? (
                 <div className="h-12 w-32 animate-pulse rounded-xl bg-[var(--surface-3)]" />
@@ -198,22 +187,22 @@ export default function Navbar() {
                         />
                       </div>
                       <div className="w-full flex justify-center">
-        <UploadButton
-  endpoint="profileUploader"
-  appearance={{
-    button: "bg-[var(--accent)] text-white font-mono text-xs font-bold uppercase tracking-wider px-6 py-2.5 rounded-xl cursor-pointer hover:opacity-90 transition-all shadow-md w-full",
-    allowedContent: "hidden",
-    container: "w-full flex justify-center"
-  }}
-  content={{ button: "Change Photo" }}
-  onClientUploadComplete={(res: any) => {
-    if (res && res[0]) {
-      const finalUrl = res[0].serverData?.url || res[0].ufsUrl || res[0].url;
-      setNewImage(finalUrl);
-    }
-  }}
-  onUploadError={(err: any) => alert("Upload failed: " + err.message)}
-/>
+                        <UploadButton
+                          endpoint="profileUploader"
+                          appearance={{
+                            button: "bg-[var(--accent)] text-white font-mono text-xs font-bold uppercase tracking-wider px-6 py-2.5 rounded-xl cursor-pointer hover:opacity-90 transition-all shadow-md w-full",
+                            allowedContent: "hidden",
+                            container: "w-full flex justify-center"
+                          }}
+                          content={{ button: "Change Photo" }}
+                          onClientUploadComplete={(res) => {
+                            if (res && res[0]) {
+                              const finalUrl = res[0].serverData?.url || res[0].ufsUrl || res[0].url;
+                              if (finalUrl) setNewImage(finalUrl);
+                            }
+                          }}
+                          onUploadError={(err: Error) => alert("Upload failed: " + err.message)}
+                        />
                       </div>
                     </div>
 
@@ -288,7 +277,6 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Mobile Navigation Links */}
             <div className="flex flex-col gap-5 pt-6">
               <span className="text-[10px] uppercase tracking-[0.25em] text-[var(--text-muted)] font-black">Menu</span>
               <div className="flex flex-col gap-4">
@@ -316,7 +304,6 @@ export default function Navbar() {
         )}
       </AnimatePresence>
       
-      {/* Navbar Spacer */}
       <div className="h-[68px]" />
     </>
   );

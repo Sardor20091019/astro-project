@@ -54,7 +54,6 @@ export default function ProfileHeaderCard({
 
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
-  // Close connections modal on Escape key press
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isConnectionsOpen) {

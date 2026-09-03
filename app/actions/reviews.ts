@@ -20,7 +20,7 @@ export async function submitReview(formData: FormData) {
     throw new Error("Invalid review");
   }
 
-  // Kysely upsert with updatedAt provided
+
   await db
     .insertInto("Rating")
     .values({

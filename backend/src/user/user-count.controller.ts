@@ -1,4 +1,3 @@
-// backend/src/user/user-count.controller.ts
 import { Controller, Get, InternalServerErrorException } from '@nestjs/common';
 import { KyselyService } from '../database/kysely.service';
 

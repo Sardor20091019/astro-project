@@ -1,4 +1,3 @@
-// app/photos/[id]/page.tsx
 import PhotoViewer from "@/components/PhotoViewer";
 import { getApprovedPhotos, getPhotoById } from "@/lib/api/photos";
 import { authOptions } from "@/lib/auth";

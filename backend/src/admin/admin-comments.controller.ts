@@ -1,4 +1,3 @@
-// backend/src/admin/admin-comments.controller.ts
 import {
   Controller,
   Delete,
@@ -7,8 +6,8 @@ import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { KyselyService } from '../database/kysely.service'; // Adjust path to your Kysely service
-import { AdminAuthGuard } from '../auth/guards/admin-auth.guard'; // Your NestJS admin guard
+import { KyselyService } from '../database/kysely.service';
+import { AdminAuthGuard } from '../auth/guards/admin-auth.guard';
 
 @Controller('admin/comments')
 @UseGuards(AdminAuthGuard)

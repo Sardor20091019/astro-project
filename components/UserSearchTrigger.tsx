@@ -11,7 +11,7 @@ export default function UserSearchTrigger() {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setIsOpen((prev) => !prev); // Toggle open/closed state globally
+        setIsOpen((prev) => !prev);
       }
     }
     window.addEventListener("keydown", handleKeyDown);

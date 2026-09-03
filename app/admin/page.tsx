@@ -31,7 +31,7 @@ export default async function AdminPage() {
     db.selectFrom("Comment").selectAll().orderBy("createdAt", "desc").execute(),
   ]);
 
-  // Batch fetch users for comments to match Prisma's include: { user: true }
+
   const userIds = [...new Set(commentsRaw.map((c) => c.userId))];
   const commentUsers = userIds.length > 0
     ? await db.selectFrom("User").selectAll().where("id", "in", userIds).execute()
@@ -114,14 +114,14 @@ export default async function AdminPage() {
           </div>
 
           <div className="w-full bg-(--surface) border border-(--border) rounded-[2.5rem] p-6 sm:p-10 backdrop-blur-3xl shadow-xl relative group">
-           <AdminPhotoList initialPhotos={photos as any} />
+           <AdminPhotoList initialPhotos={photos} />
           </div>
         </section>
 
         {/* Client Component for Interactive Paginated Modals (Users & Comments) */}
         <AdminDashboardModals 
-          users={users as any}  
-          comments={comments as any} 
+          users={users}  
+          comments={comments} 
           currentUserId={dbUser.id} 
         />
 

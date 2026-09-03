@@ -1,4 +1,3 @@
-// backend/src/reviews/reviews.controller.ts
 import {
   Controller,
   Get,
@@ -16,6 +15,22 @@ import {
 import type { Request } from 'express';
 import { KyselyService } from '../database/kysely.service';
 import { AdminAuthGuard } from '../auth/guards/admin-auth.guard';
+import { CreateReviewDto } from './dto/create-review.dto';
+
+interface FormattedComment {
+  id: number;
+  body: string;
+  comment: string;
+  createdAt: Date;
+  photoId: number;
+  userId: string;
+  rating: number;
+  user: {
+    name: string | null;
+    image: string | null;
+    customImage: string | null;
+  };
+}
 
 @Controller('reviews')
 export class ReviewsController {
@@ -64,11 +79,8 @@ export class ReviewsController {
   }
 
   @Post()
-  async createReview(
-    @Body() body: { photoId: any; rating: any; comment?: string },
-    @Req() req: Request,
-  ) {
-    const userId = req.cookies?.user_session;
+  async createReview(@Body() body: CreateReviewDto, @Req() req: Request) {
+    const userId = req.cookies?.user_session as string | undefined;
     if (!userId) {
       throw new UnauthorizedException('Unauthorized');
     }
@@ -104,7 +116,7 @@ export class ReviewsController {
         )
         .execute();
 
-      let formattedComment: Record<string, any> | null = null;
+      let formattedComment: FormattedComment | null = null;
 
       if (cleanComment) {
         const inserted = await this.db

@@ -1,4 +1,3 @@
-// lib/api/photos.ts
 import { fetchApi } from './client';
 
 export async function getApprovedPhotos(page = 1, limit = 24) {
