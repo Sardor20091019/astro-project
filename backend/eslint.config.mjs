@@ -1,3 +1,4 @@
+// backend/eslint.config.mjs
 // @ts-check
 import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
@@ -20,7 +21,7 @@ export default tseslint.config(
       sourceType: 'commonjs',
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['test/**/*.ts'],
+          allowDefaultProject: ['test/app.e2e-spec.ts'],
         },
         tsconfigRootDir: import.meta.dirname,
       },

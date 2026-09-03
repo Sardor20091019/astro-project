@@ -1,10 +1,10 @@
-import crypto from "crypto";
-import { db } from "./db";
-import nodemailer from "nodemailer";
+import crypto from 'crypto';
+import { db } from './db';
+import nodemailer from 'nodemailer';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || "587", 10),
+  port: parseInt(process.env.SMTP_PORT || '587', 10),
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -16,32 +16,31 @@ const transporter = nodemailer.createTransport({
 
 export async function generateAndSendOtp(email: string, ip: string) {
   const cleanEmail = email.toLowerCase().trim();
-  console.log("DEBUG: Starting generateAndSendOtp for", cleanEmail);
+  console.log('DEBUG: Starting generateAndSendOtp for', cleanEmail);
 
   const oneMinuteAgo = new Date(Date.now() - 60000);
   const recentRequestsRes = await db
-    .selectFrom("otptoken")
-    .select((eb) => eb.fn.count("id").as("count"))
-    .where("ipAddress", "=", ip)
-    .where("createdAt", ">=", oneMinuteAgo)
+    .selectFrom('otptoken')
+    .select((eb) => eb.fn.count('id').as('count'))
+    .where('ipAddress', '=', ip)
+    .where('createdAt', '>=', oneMinuteAgo)
     .executeTakeFirst();
 
   const recentRequestsCount = Number(recentRequestsRes?.count ?? 0);
 
   if (recentRequestsCount >= 3) {
-    throw new Error("Too many requests from this device. Please wait a minute.");
+    throw new Error(
+      'Too many requests from this device. Please wait a minute.',
+    );
   }
 
-  await db
-    .deleteFrom("otptoken")
-    .where("expires", "<", new Date())
-    .execute();
+  await db.deleteFrom('otptoken').where('expires', '<', new Date()).execute();
 
   const token = Math.floor(100000 + Math.random() * 900000).toString();
-  const expires = new Date(Date.now() + 2 * 60 * 1000); 
-  
+  const expires = new Date(Date.now() + 2 * 60 * 1000);
+
   await db
-    .insertInto("otptoken")
+    .insertInto('otptoken')
     .values({
       id: crypto.randomUUID(),
       email: cleanEmail,
@@ -55,8 +54,8 @@ export async function generateAndSendOtp(email: string, ip: string) {
     await transporter.sendMail({
       from: `"Astrospectrum" <${process.env.SMTP_USER}>`,
       to: cleanEmail,
-      subject: "Your Astrospectrum Verification Code",
-      text: `Your login code is: ${token}. It expires in 2 minutes.`, 
+      subject: 'Your Astrospectrum Verification Code',
+      text: `Your login code is: ${token}. It expires in 2 minutes.`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f9f9f9; padding: 40px 20px; color: #333;">
           <div style="max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e5e5e5; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
@@ -87,54 +86,48 @@ export async function generateAndSendOtp(email: string, ip: string) {
         </div>
       `,
     });
-    console.log("DEBUG: Email sent successfully!");
+    console.log('DEBUG: Email sent successfully!');
   } catch (error) {
-    console.error("DEBUG: SMTP FAILED with error:", error);
+    console.error('DEBUG: SMTP FAILED with error:', error);
     throw error;
   }
 }
 
 export async function verifyOtp(email: string, inputToken: string) {
   const cleanEmail = email.toLowerCase().trim();
-  
+
   const tokenRecord = await db
-    .selectFrom("otptoken")
+    .selectFrom('otptoken')
     .selectAll()
-    .where("email", "=", cleanEmail)
-    .orderBy("createdAt", "desc")
+    .where('email', '=', cleanEmail)
+    .orderBy('createdAt', 'desc')
     .executeTakeFirst();
 
-  if (!tokenRecord) throw new Error("No active code found.");
+  if (!tokenRecord) throw new Error('No active code found.');
 
   if (new Date() > tokenRecord.expires) {
-    await db
-      .deleteFrom("otptoken")
-      .where("id", "=", tokenRecord.id)
-      .execute();
-    throw new Error("Code expired.");
+    await db.deleteFrom('otptoken').where('id', '=', tokenRecord.id).execute();
+    throw new Error('Code expired.');
   }
 
   if (tokenRecord.token === inputToken) {
-    await db
-      .deleteFrom("otptoken")
-      .where("email", "=", cleanEmail)
-      .execute();
+    await db.deleteFrom('otptoken').where('email', '=', cleanEmail).execute();
     return { success: true };
   } else {
     const newAttempts = (tokenRecord.failedAttempts ?? 0) + 1;
 
     await db
-      .updateTable("otptoken")
+      .updateTable('otptoken')
       .set({ failedAttempts: newAttempts })
-      .where("id", "=", tokenRecord.id)
+      .where('id', '=', tokenRecord.id)
       .execute();
 
     if (newAttempts >= 5) {
       await db
-        .deleteFrom("otptoken")
-        .where("id", "=", tokenRecord.id)
+        .deleteFrom('otptoken')
+        .where('id', '=', tokenRecord.id)
         .execute();
-      throw new Error("Too many failed attempts. Code invalidated.");
+      throw new Error('Too many failed attempts. Code invalidated.');
     }
 
     throw new Error(`Invalid code. (${5 - newAttempts} attempts remaining)`);
