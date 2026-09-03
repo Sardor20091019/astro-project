@@ -16,6 +16,7 @@ import { TelegramWebhookController } from './telegram/telegram-webhook.controlle
 import { UserCountController } from './user/user-count.controller';
 import { UserFollowController } from './user/user-follow.controller';
 import { UsersSearchController } from './users/users-search.controller';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { UsersSearchController } from './users/users-search.controller';
     }),
     KyselyModule,
     PhotosModule,
+    PaymentsModule,
   ],
   controllers: [
     AppController,
