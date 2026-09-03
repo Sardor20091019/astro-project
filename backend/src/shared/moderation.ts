@@ -10,7 +10,7 @@ interface SightEngineResponse {
 
 export async function moderateImageUrl(url: string) {
   try {
-    const response = await axios.get<SightEngineResponse>(
+    const response = await axios.get(
       'https://api.sightengine.com/1.0/check.json',
       {
         timeout: 7000,
@@ -23,15 +23,14 @@ export async function moderateImageUrl(url: string) {
       },
     );
 
-    if (!response.data || response.data.status === 'failure') {
-      console.error(
-        'SightEngine API returned a failure status:',
-        response.data,
-      );
+    const data = response.data as SightEngineResponse;
+
+    if (!data || data.status === 'failure') {
+      console.error('SightEngine API returned a failure status:', data);
       return { isSafe: false, reason: 'API_FAILURE' };
     }
 
-    const { nudity } = response.data;
+    const { nudity } = data;
     if (!nudity) {
       return { isSafe: false, reason: 'INVALID_RESPONSE' };
     }
