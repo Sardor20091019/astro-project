@@ -83,9 +83,16 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   const viewerIsAdmin = isAdmin(session?.user?.email);
   const canDelete = isSelf || viewerIsAdmin;
 
+  const sanitizedUser = {
+    id: user.id,
+    name: user.name,
+    image: user.image,
+    email: isSelf || viewerIsAdmin ? user.email : null,
+  };
+
   return (
    <ProfileClientView
-  user={user}
+  user={sanitizedUser}
   photos={photos}
   followers={followers}
   following={following}
