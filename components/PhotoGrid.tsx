@@ -1,9 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
-"use client"
-import { useState, useMemo } from "react"
-import { CATEGORIES, type PhotoCategory } from "../data/photos"
-import { ChevronDown, X } from "lucide-react"
-import PhotoCard from "./PhotoCard"
+"use client";
+import React, { useState, useMemo, useCallback } from "react";
+import { CATEGORIES, type PhotoCategory } from "../data/photos";
+import { ChevronDown, X } from "lucide-react";
+import PhotoCard from "./PhotoCard";
 
 type PhotoType = {
   id: number;
@@ -24,18 +24,36 @@ export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType
   const [activeCategory, setActiveCategory] = useState<PhotoCategory | "ALL">("ALL");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
+  // Single-pass O(N) frequency map for category counts
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    counts.set("ALL", allPhotos.length);
+    for (let i = 0; i < allPhotos.length; i++) {
+      const cat = allPhotos[i].category || "OTHER";
+      counts.set(cat, (counts.get(cat) || 0) + 1);
+    }
+    return counts;
+  }, [allPhotos]);
+
   const filtered = useMemo(() => {
     if (activeCategory === "ALL") return allPhotos;
     return allPhotos.filter(p => (p.category || "OTHER") === activeCategory);
   }, [allPhotos, activeCategory]);
 
-  const visible = filtered.slice(0, visibleCount);
+  const visible = useMemo(() => {
+    return filtered.slice(0, visibleCount);
+  }, [filtered, visibleCount]);
+
   const hasMore = visibleCount < filtered.length;
 
-  const handleCategoryChange = (cat: PhotoCategory | "ALL") => {
+  const handleCategoryChange = useCallback((cat: PhotoCategory | "ALL") => {
     setActiveCategory(cat);
     setVisibleCount(PAGE_SIZE);
-  };
+  }, []);
+
+  const handleShowMore = useCallback(() => {
+    setVisibleCount(v => v + PAGE_SIZE);
+  }, []);
 
   return (
     <section className="py-8">
@@ -43,9 +61,7 @@ export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType
       <div className="mb-6 overflow-x-auto pb-2 scrollbar-none">
         <div className="flex gap-2 min-w-max">
           {CATEGORIES.map(cat => {
-            const count = cat.value === "ALL" 
-              ? allPhotos.length 
-              : allPhotos.filter(p => (p.category || "OTHER") === cat.value).length;
+            const count = categoryCounts.get(cat.value) || 0;
             const isActive = activeCategory === cat.value;
             return (
               <button
@@ -113,7 +129,7 @@ export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType
                 {filtered.length - visibleCount} more images remaining
               </p>
               <button
-                onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+                onClick={handleShowMore}
                 className="flex items-center gap-2 px-8 py-3.5 rounded-xl border border-(--border) bg-(--surface-1) text-(--text) hover:bg-(--surface-2) hover:border-(--border-hover) transition-all duration-200 text-[11px] font-black uppercase tracking-widest shadow-sm cursor-pointer"
               >
                 Show more

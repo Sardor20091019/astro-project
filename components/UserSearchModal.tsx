@@ -44,24 +44,47 @@ export default function UserSearchModal({ isOpen, onClose }: UserSearchModalProp
   }, [isOpen, onClose]);
 
 
+  // Client-side search cache for instant repeat lookups
+  const searchCacheRef = useRef<Map<string, SearchedUser[]>>(new Map());
+  const activeQueryRef = useRef<string>("");
+
   useEffect(() => {
+    const trimmed = query.trim().toLowerCase();
+    activeQueryRef.current = trimmed;
+
+    if (!trimmed) {
+      setResults([]);
+      setIsLoading(false);
+      return;
+    }
+
+    // Instant return if result is in memory cache
+    if (searchCacheRef.current.has(trimmed)) {
+      setResults(searchCacheRef.current.get(trimmed)!);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
     const delayDebounceFn = setTimeout(async () => {
-      if (query.trim().length > 0) {
-        setIsLoading(true);
-        try {
-          const users = await searchUsers(query);
+      try {
+        const users = await searchUsers(trimmed);
+        searchCacheRef.current.set(trimmed, users);
+        // Guard against race condition: only set results if query matches current active search
+        if (activeQueryRef.current === trimmed) {
           setResults(users);
-        } catch (error) {
-          console.error("Failed to search users:", error);
+        }
+      } catch (error) {
+        console.error("Failed to search users:", error);
+        if (activeQueryRef.current === trimmed) {
           setResults([]);
-        } finally {
+        }
+      } finally {
+        if (activeQueryRef.current === trimmed) {
           setIsLoading(false);
         }
-      } else {
-        setResults([]);
-        setIsLoading(false);
       }
-    }, 200);
+    }, 180);
 
     return () => clearTimeout(delayDebounceFn);
   }, [query]);
@@ -141,7 +164,15 @@ export default function UserSearchModal({ isOpen, onClose }: UserSearchModalProp
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="h-8 w-8 shrink-0 rounded-full bg-[var(--surface-3)] border border-[var(--border)] flex items-center justify-center overflow-hidden text-[var(--text-dim)] shadow-inner">
                         {user.image ? (
-                          <img src={user.image} alt="" className="h-full w-full object-cover" />
+                          <img 
+                            src={user.image} 
+                            alt={user.name || "User avatar"} 
+                            width={32}
+                            height={32}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-full w-full object-cover" 
+                          />
                         ) : (
                           <UserIcon className="h-3.5 w-3.5" />
                         )}

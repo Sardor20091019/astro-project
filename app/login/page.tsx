@@ -197,7 +197,7 @@ export default function LoginPage() {
           initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="relative rounded-[2.5rem] p-8 sm:p-14 bg-(--surface-1)/50 backdrop-blur-3xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.5)] overflow-hidden"
+          className="relative rounded-[2.5rem] p-8 sm:p-14 glass-panel overflow-hidden"
         >
           {/* Subtle top ethereal light rim */}
           <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-(--accent)/60 to-transparent" />

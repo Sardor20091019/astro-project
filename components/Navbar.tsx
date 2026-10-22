@@ -7,14 +7,25 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Menu, X, User as UserIcon, Edit3, Check, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import dynamic from "next/dynamic";
 import UserSearchTrigger from "@/components/UserSearchTrigger";
 import ThemeToggle from "@/components/ThemeToggle";
 import UserMenu from "@/components/UserMenu";
-import type { OurFileRouter } from "../backend/src/uploadthing/uploadthing.router";
+import type { OurFileRouter } from "@/server/uploadthing";
 import { updateUserProfile } from "@/lib/actions";
-import { generateUploadButton } from "@uploadthing/react";
 
-const UploadButton = generateUploadButton<OurFileRouter>();
+const UploadButton = dynamic(
+  () =>
+    import("@uploadthing/react").then((mod) =>
+      mod.generateUploadButton<OurFileRouter>()
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-10 w-full animate-pulse rounded-xl bg-[var(--surface-3)]" />
+    ),
+  }
+);
 
 interface NavLinkProps {
   href: string;
@@ -61,8 +72,18 @@ export default function Navbar() {
   }, [user]);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 15);
-    window.addEventListener("scroll", handleScroll);
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const isScrolled = window.scrollY > 15;
+          setScrolled(prev => (prev !== isScrolled ? isScrolled : prev));
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -90,10 +111,10 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ease-out ${
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out ${
         scrolled 
-          ? "bg-[var(--bg)]/85 backdrop-blur-2xl border-b border-[var(--border)] shadow-md" 
-          : "bg-gradient-to-b from-[var(--bg)]/90 via-[var(--bg)]/40 to-transparent backdrop-blur-md"
+          ? "bg-[var(--glass-nav-bg)] backdrop-blur-2xl backdrop-saturate-180 border-b border-[var(--glass-border)] shadow-[0_10px_30px_-10px_rgba(0,0,0,0.3)]" 
+          : "bg-gradient-to-b from-[var(--bg)]/85 via-[var(--bg)]/35 to-transparent backdrop-blur-md"
       }`}>
         <div className="flex items-center justify-between h-[68px] w-full px-3 sm:px-6">
           <Link href="/" className="flex items-center h-full text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] hover:opacity-80 transition-opacity shrink-0">

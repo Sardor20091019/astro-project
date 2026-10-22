@@ -1,5 +1,8 @@
 import PhotoViewer from "@/components/PhotoViewer";
-import { getApprovedPhotos, getPhotoById } from "@/lib/api/photos";
+import {
+  getApprovedPhotos,
+  getPhotoById,
+} from "@/server/photos.service";
 import { authOptions } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
@@ -7,7 +10,11 @@ import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default async function PhotoPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PhotoPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const session = await getServerSession(authOptions);
   const cookieStore = await cookies();
   const { id } = await params;
@@ -18,12 +25,16 @@ export default async function PhotoPage({ params }: { params: Promise<{ id: stri
   const userId = session?.user?.id;
   const anonymousToken = cookieStore.get("astro_guest")?.value;
 
-  const [currentPhoto, recentPhotos] = await Promise.all([
+  const [currentPhoto, recentPhotosRes] = await Promise.all([
     getPhotoById(photoId, userId, anonymousToken).catch(() => null),
-    getApprovedPhotos(1, 20).catch(() => []),
+    getApprovedPhotos(1, 20).catch(() => ({ photos: [] })),
   ]);
 
   if (!currentPhoto) notFound();
+
+  const recentPhotos = Array.isArray(recentPhotosRes)
+    ? recentPhotosRes
+    : recentPhotosRes?.photos || [];
 
   return (
     <div className="fixed inset-0 z-[9999] overflow-hidden bg-black">

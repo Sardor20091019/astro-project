@@ -1,7 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
+import React, { memo } from "react";
 import Link from "next/link";
 import { CATEGORIES } from "../data/photos";
 import { MapPin } from "lucide-react";
+
+// Pre-index category icons and labels to eliminate O(K) lookups inside the render loop
+const CATEGORY_MAP = new Map<string, (typeof CATEGORIES)[number]>(CATEGORIES.map(c => [c.value, c]));
 
 type PhotoCardProps = {
   photo: {
@@ -19,8 +23,10 @@ type PhotoCardProps = {
   onOpenComments?: (photo: any) => void;
 };
 
-export default function PhotoCard({ photo, index }: PhotoCardProps) {
+const PhotoCard = memo(function PhotoCard({ photo, index }: PhotoCardProps) {
   const imageSource = photo.url || photo.src || photo.imageUrl || photo.image_url || "";
+  const categoryMeta = photo.category ? CATEGORY_MAP.get(photo.category) : undefined;
+  const isAboveFold = index < 4;
 
   return (
     <div className="block group relative h-full">
@@ -32,8 +38,10 @@ export default function PhotoCard({ photo, index }: PhotoCardProps) {
               <img
                 src={imageSource}
                 alt={photo.title || "Photo"}
+                loading={isAboveFold ? "eager" : "lazy"}
+                decoding="async"
+                fetchPriority={index < 2 ? "high" : "auto"}
                 className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                loading="lazy"
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-[10px] uppercase text-[var(--text-muted)] tracking-widest">
@@ -43,13 +51,13 @@ export default function PhotoCard({ photo, index }: PhotoCardProps) {
           </Link>
           
           <div className="relative z-10 flex items-center justify-between p-3 pointer-events-none">
-            {photo.category && photo.category !== "OTHER" ? (
-              <span className="text-[9px] font-black uppercase tracking-[0.16em] bg-black/60 backdrop-blur-md border border-white/10 text-white/90 px-2.5 py-1 rounded-md">
-                {CATEGORIES.find(c => c.value === photo.category)?.icon} {photo.category}
+            {photo.category && photo.category !== "OTHER" && categoryMeta ? (
+              <span className="text-[9px] font-black uppercase tracking-[0.16em] glass-pill text-white/95 px-2.5 py-1 rounded-md">
+                {categoryMeta.icon} {photo.category}
               </span>
             ) : <span />}
             
-            <span className="font-mono text-[9px] tracking-widest text-white/70 bg-black/60 px-2 py-1 rounded-md backdrop-blur-md border border-white/10 shadow-md">
+            <span className="font-mono text-[9px] tracking-widest text-white/80 glass-pill px-2 py-1 rounded-md">
               {String(index + 1).padStart(2, "0")}
             </span>
           </div>
@@ -76,4 +84,6 @@ export default function PhotoCard({ photo, index }: PhotoCardProps) {
       </article>
     </div>
   );
-}
+});
+
+export default PhotoCard;

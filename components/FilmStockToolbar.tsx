@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { memo } from "react";
 import { Film } from "lucide-react";
 
 export const FILM_STOCKS = [
@@ -11,9 +11,10 @@ export const FILM_STOCKS = [
   { id: "bleach", label: "Bleach Bypass", filter: "grayscale(0.4) contrast(1.4) brightness(0.9)" },
 ];
 
+const FILM_FILTER_MAP = new Map(FILM_STOCKS.map((s) => [s.id, s.filter]));
+
 export function getFilmFilterStyle(stockId: string): string {
-  const stock = FILM_STOCKS.find((s) => s.id === stockId);
-  return stock ? stock.filter : "none";
+  return FILM_FILTER_MAP.get(stockId) || "none";
 }
 
 interface FilmStockToolbarProps {
@@ -21,7 +22,10 @@ interface FilmStockToolbarProps {
   onSelectStock: (stockId: string) => void;
 }
 
-export function FilmStockToolbar({ activeStock, onSelectStock }: FilmStockToolbarProps) {
+export const FilmStockToolbar = memo(function FilmStockToolbar({
+  activeStock,
+  onSelectStock,
+}: FilmStockToolbarProps) {
   return (
     <div className="flex items-center gap-1.5 overflow-x-auto py-2 px-4 bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl">
       <Film className="h-3.5 w-3.5 text-amber-400 shrink-0" />
@@ -40,4 +44,4 @@ export function FilmStockToolbar({ activeStock, onSelectStock }: FilmStockToolba
       ))}
     </div>
   );
-}
+});

@@ -1,7 +1,10 @@
-import { getApprovedPhotos } from "@/lib/api/photos";
+import {
+  getApprovedPhotos,
+  type PaginatedPhotosResult,
+} from "@/server/photos.service";
 import PhotosClientView from "@/components/PhotosClientView";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export type CategoryOption = {
   label: string;
@@ -18,18 +21,26 @@ const CATEGORIES: CategoryOption[] = [
   { label: "Abstract", value: "ABSTRACT" },
   { label: "Other", value: "OTHER" },
 ];
+
 export default async function PhotosPage() {
-  let photos: Awaited<ReturnType<typeof getApprovedPhotos>> = [];
+  const initialSeed = Math.floor(Math.random() * 1000000);
+  let initialData: PaginatedPhotosResult = {
+    photos: [],
+    nextCursor: null,
+    seed: initialSeed,
+  };
 
   try {
-    photos = await getApprovedPhotos();
+    initialData = await getApprovedPhotos({ seed: initialSeed, limit: 16 });
   } catch (error) {
-    console.error("Failed to load photos from NestJS backend:", error);
+    console.error("Failed to load photos:", error);
   }
 
   return (
-    <PhotosClientView 
-      initialPhotos={photos} 
+    <PhotosClientView
+      initialPhotos={initialData.photos}
+      initialCursor={initialData.nextCursor}
+      initialSeed={initialData.seed}
       categories={CATEGORIES}
     />
   );

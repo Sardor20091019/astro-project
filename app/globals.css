@@ -25,7 +25,12 @@
   --radius-md: 12px;
   --radius-lg: 14px;
   --shadow-btn: none;
-  --glass-blur: blur(0px);
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-nav-bg: rgba(244, 241, 234, 0.78);
+  --glass-border: rgba(5, 5, 5, 0.09);
+  --glass-highlight: inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+  --glass-shadow: 0 20px 45px -12px rgba(0, 0, 0, 0.08);
+  --glass-blur: blur(20px);
   --btn-style: 0.5rem;
   --footer-padding: 2rem;
   --image-viewer-shadow: none;
@@ -49,6 +54,11 @@
   --accent-soft: rgba(232, 66, 26, 0.12);
   --border: rgba(240, 235, 225, 0.08);
   --border-hover: rgba(240, 235, 225, 0.16);
+  --glass-bg: rgba(10, 10, 10, 0.65);
+  --glass-nav-bg: rgba(5, 5, 5, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+  --glass-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.65);
   --btn-border: 1px solid var(--text);
 }
 
@@ -68,7 +78,6 @@ html {
 
 body {
   background: var(--bg);
-  background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-mono);
   font-weight: 400;
@@ -82,7 +91,6 @@ body {
   width: 100%;
 }
 
-/* Subtle Cinematic Film Grain Overlay (Desktop Only) */
 @media (min-width: 1024px) {
   body::before {
     content: '';
@@ -90,11 +98,17 @@ body {
     inset: 0;
     pointer-events: none;
     z-index: 99990;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='1'/%3E%3C/svg%3E");
-    opacity: 0.032;
-    mix-blend-mode: overlay;
-    background-size: 256px 256px;
+    opacity: 0.025;
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAElBMVEUAAAAAAAAAAAAAAAAAAAAAAADgKxmiAAAABnRSTlMDf3+AgICA0k1vAAAAQUlEQVQ4y2NgQAX8DIxgwsDAwM7AwMDOwMBwAIiBgYGBnYGB4QAQAwMDA8MBIEYGBgZ2BgaGA0AMDOD4wAMHBgAAvrUEeYj18LgAAAAASUVORK5CYII=");
+    background-repeat: repeat;
+    transform: translateZ(0);
   }
+}
+
+.photo-card-optimized {
+  content-visibility: auto;
+  contain-intrinsic-size: 350px 450px;
+  transform: translateZ(0);
 }
 
 /* Custom Scrollbars */
@@ -212,6 +226,30 @@ h1, h2, h3, h4 {
   .world-card:hover {
     transform: translateY(-4px);
     box-shadow: var(--image-viewer-shadow);
+  }
+
+  .glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur) saturate(160%);
+    -webkit-backdrop-filter: var(--glass-blur) saturate(160%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow), var(--glass-highlight);
+  }
+
+  .glass-pill {
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.18);
+  }
+
+  .glass-dropdown {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur) saturate(170%);
+    -webkit-backdrop-filter: var(--glass-blur) saturate(170%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.55), var(--glass-highlight);
   }
 }
 

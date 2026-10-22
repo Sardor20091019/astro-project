@@ -16,20 +16,32 @@ const transporter = nodemailer.createTransport({
 
 export async function generateAndSendOtp(email: string, ip: string) {
   const cleanEmail = email.toLowerCase().trim();
-  console.log("DEBUG: Starting generateAndSendOtp for", cleanEmail);
 
   const oneMinuteAgo = new Date(Date.now() - 60000);
-  const recentRequestsRes = await db
-    .selectFrom("otptoken")
-    .select((eb) => eb.fn.count("id").as("count"))
-    .where("ipAddress", "=", ip)
-    .where("createdAt", ">=", oneMinuteAgo)
-    .executeTakeFirst();
+  const [recentIpRequestsRes, recentEmailRequestsRes] = await Promise.all([
+    db
+      .selectFrom("otptoken")
+      .select((eb) => eb.fn.count("id").as("count"))
+      .where("ipAddress", "=", ip)
+      .where("createdAt", ">=", oneMinuteAgo)
+      .executeTakeFirst(),
+    db
+      .selectFrom("otptoken")
+      .select((eb) => eb.fn.count("id").as("count"))
+      .where("email", "=", cleanEmail)
+      .where("createdAt", ">=", oneMinuteAgo)
+      .executeTakeFirst(),
+  ]);
 
-  const recentRequestsCount = Number(recentRequestsRes?.count ?? 0);
+  const recentIpCount = Number(recentIpRequestsRes?.count ?? 0);
+  const recentEmailCount = Number(recentEmailRequestsRes?.count ?? 0);
 
-  if (recentRequestsCount >= 3) {
+  if (recentIpCount >= 5) {
     throw new Error("Too many requests from this device. Please wait a minute.");
+  }
+
+  if (recentEmailCount >= 3) {
+    throw new Error("Too many verification requests for this email. Please wait a minute.");
   }
 
   await db
@@ -38,6 +50,10 @@ export async function generateAndSendOtp(email: string, ip: string) {
     .execute();
 
   const token = crypto.randomInt(100000, 1000000).toString();
+<<<<<<< HEAD
+=======
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+>>>>>>> 65a6b4c (fix: update)
   const expires = new Date(Date.now() + 2 * 60 * 1000); 
   
   await db
@@ -45,7 +61,7 @@ export async function generateAndSendOtp(email: string, ip: string) {
     .values({
       id: crypto.randomUUID(),
       email: cleanEmail,
-      token,
+      token: hashedToken,
       expires,
       ipAddress: ip,
     })
@@ -87,7 +103,6 @@ export async function generateAndSendOtp(email: string, ip: string) {
         </div>
       `,
     });
-    console.log("DEBUG: Email sent successfully!");
   } catch (error) {
     console.error("DEBUG: SMTP FAILED with error:", error);
     throw error;
@@ -96,6 +111,7 @@ export async function generateAndSendOtp(email: string, ip: string) {
 
 export async function verifyOtp(email: string, inputToken: string) {
   const cleanEmail = email.toLowerCase().trim();
+  const rawInput = inputToken.trim();
   
   const tokenRecord = await db
     .selectFrom("otptoken")
@@ -114,6 +130,7 @@ export async function verifyOtp(email: string, inputToken: string) {
     throw new Error("Code expired.");
   }
 
+<<<<<<< HEAD
   const tokenBuf = Buffer.from(tokenRecord.token);
   const inputBuf = Buffer.from(inputToken);
   const isMatch =
@@ -121,6 +138,18 @@ export async function verifyOtp(email: string, inputToken: string) {
     crypto.timingSafeEqual(tokenBuf, inputBuf);
 
   if (isMatch) {
+=======
+  const inputHashed = crypto.createHash("sha256").update(rawInput).digest("hex");
+  const isHashed = tokenRecord.token.length === 64;
+  const targetExpected = isHashed ? inputHashed : rawInput;
+
+  const isTokenMatch =
+    typeof tokenRecord.token === "string" &&
+    Buffer.byteLength(tokenRecord.token) === Buffer.byteLength(targetExpected) &&
+    crypto.timingSafeEqual(Buffer.from(tokenRecord.token), Buffer.from(targetExpected));
+
+  if (isTokenMatch) {
+>>>>>>> 65a6b4c (fix: update)
     await db
       .deleteFrom("otptoken")
       .where("email", "=", cleanEmail)

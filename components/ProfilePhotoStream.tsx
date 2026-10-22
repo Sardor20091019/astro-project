@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, MapPin, Trash2 } from "lucide-react";
 
@@ -17,11 +17,10 @@ interface ProfilePhotoStreamProps {
   canDelete: boolean;
 }
 
-export default function ProfilePhotoStream({ photos, canDelete }: ProfilePhotoStreamProps) {
+const ProfilePhotoStream = memo(function ProfilePhotoStream({ photos, canDelete }: ProfilePhotoStreamProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [localPhotos, setLocalPhotos] = useState(photos);
-
 
   useEffect(() => {
     setLocalPhotos(photos);
@@ -30,12 +29,14 @@ export default function ProfilePhotoStream({ photos, canDelete }: ProfilePhotoSt
   const pageSize = 9;
   const totalPages = Math.ceil(localPhotos.length / pageSize);
 
-  const paginatedPhotos = localPhotos.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  const paginatedPhotos = useMemo(() => {
+    return localPhotos.slice(
+      (currentPage - 1) * pageSize,
+      currentPage * pageSize
+    );
+  }, [localPhotos, currentPage]);
 
-  const handleDelete = async (photoId: string, e: React.MouseEvent) => {
+  const handleDelete = useCallback(async (photoId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!confirm("Are you sure you want to delete this frame?")) return;
@@ -56,7 +57,7 @@ export default function ProfilePhotoStream({ photos, canDelete }: ProfilePhotoSt
     } finally {
       setDeletingId(null);
     }
-  };
+  }, [paginatedPhotos.length, currentPage]);
 
   if (localPhotos.length === 0) {
     return (
@@ -72,7 +73,7 @@ export default function ProfilePhotoStream({ photos, canDelete }: ProfilePhotoSt
     <div className="w-full flex flex-col gap-8">
       {/* Photo Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {paginatedPhotos.map((photo) => (
+        {paginatedPhotos.map((photo, index) => (
           <Link
             key={photo.id}
             href={`/photo/${photo.id}`}
@@ -82,6 +83,9 @@ export default function ProfilePhotoStream({ photos, canDelete }: ProfilePhotoSt
               <img
                 src={photo.url}
                 alt={photo.title || "Gallery Photo"}
+                loading={index < 3 ? "eager" : "lazy"}
+                decoding="async"
+                fetchPriority={index < 2 ? "high" : "auto"}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
               {canDelete && (
@@ -153,4 +157,6 @@ export default function ProfilePhotoStream({ photos, canDelete }: ProfilePhotoSt
       )}
     </div>
   );
-}
+});
+
+export default ProfilePhotoStream;

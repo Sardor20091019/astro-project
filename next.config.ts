@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 
+<<<<<<< HEAD
 const backendUrl =
   process.env.NEXT_PUBLIC_API_URL || "https://astro-project-1213.onrender.com";
 
@@ -47,10 +48,18 @@ const securityHeaders = [
   },
 ];
 
+=======
+>>>>>>> 65a6b4c (fix: update)
 const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["pg"],
+  compress: true,
+  experimental: {
+    optimizePackageImports: ["lucide-react", "framer-motion"],
+  },
   images: {
+    minimumCacheTTL: 31536000,
+    formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     remotePatterns: [
       {
@@ -87,6 +96,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+<<<<<<< HEAD
   async headers() {
     return [
       {
@@ -111,6 +121,8 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+=======
+>>>>>>> 65a6b4c (fix: update)
 };
 
 export default nextConfig;

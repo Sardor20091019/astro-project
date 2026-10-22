@@ -1,8 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef, memo } from "react";
+import React, { useState, useMemo, useEffect, useRef, memo, useCallback, useDeferredValue } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, 
@@ -27,9 +28,12 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import SubmitPhotoModal from "@/components/SubmitPhotoModal";
+import { getApprovedPhotos } from "@/lib/api/photos";
 
 interface PhotosClientViewProps {
   initialPhotos: any[];
+  initialCursor?: string | null;
+  initialSeed?: number;
   categories: { label: string; value: string }[];
 }
 
@@ -65,26 +69,47 @@ const PhotoCard = memo(function PhotoCard({
   const isNsfw = photo.isNsfw;
   const showBlur = isNsfw && (!ageVerified || !nsfwRevealed);
 
+  const isOptimizable =
+    photo.url &&
+    (photo.url.startsWith("/") ||
+      photo.url.includes("utfs.io") ||
+      photo.url.includes("ufs.sh") ||
+      photo.url.includes("googleusercontent.com") ||
+      photo.url.includes("uploadthing.com") ||
+      photo.url.includes("placehold.co"));
+
   return (
-    <motion.article 
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: (index % 8) * 0.04, ease: [0.16, 1, 0.3, 1] }}
-      className={`break-inside-avoid ${layoutMode === "compact" ? "mb-6 sm:mb-8" : "mb-16 sm:mb-24"} relative group rounded-3xl overflow-hidden bg-(--surface) border border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.65)] hover:shadow-[0_35px_80px_rgba(0,0,0,0.85)] hover:border-white/25 transition-all duration-500 text-left cursor-pointer`}
+    <article 
+      className={`photo-card-optimized break-inside-avoid ${layoutMode === "compact" ? "mb-6 sm:mb-8" : "mb-16 sm:mb-24"} relative group rounded-3xl overflow-hidden bg-(--surface) border border-white/10 shadow-xl hover:shadow-2xl hover:border-white/25 transition-transform duration-300 text-left cursor-pointer`}
       onClick={() => {
         if (showBlur) return;
         router.push(`/photos/${photo.id}`);
       }}
     >
-      <div className="relative w-full overflow-hidden bg-(--surface-2)">
-        <img
-          src={photo.url}
-          alt={photo.title || "Gallery Item"}
-          className={`w-full h-auto object-cover block transition-transform duration-700 group-hover:scale-105 ${
-            showBlur ? "blur-2xl scale-110 select-none" : ""
-          }`}
-          loading={index < 4 ? "eager" : "lazy"}
-        />
+      <div className="relative w-full aspect-[4/5] overflow-hidden bg-(--surface-2)">
+        {isOptimizable ? (
+          <Image
+            src={photo.url}
+            alt={photo.title || "Gallery Item"}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, 25vw"
+            loading={index < 4 ? "eager" : "lazy"}
+            priority={index < 2}
+            className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
+              showBlur ? "blur-2xl scale-110 select-none" : ""
+            }`}
+          />
+        ) : (
+          <img
+            src={photo.url}
+            alt={photo.title || "Gallery Item"}
+            loading={index < 4 ? "eager" : "lazy"}
+            decoding="async"
+            className={`w-full h-full object-cover block transition-transform duration-500 group-hover:scale-105 ${
+              showBlur ? "blur-2xl scale-110 select-none" : ""
+            }`}
+          />
+        )}
 
         {showBlur && (
           <div 
@@ -171,24 +196,24 @@ const PhotoCard = memo(function PhotoCard({
                   </span>
                 )}
                 {foc && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-black/50 backdrop-blur-md border border-white/15 font-mono text-[9px] text-white/80">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg glass-pill font-mono text-[9px] text-white/90">
                     <span>{foc}</span>
                   </span>
                 )}
                 {apt && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-md border border-white/15 font-mono text-[9px] text-white/80">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg glass-pill font-mono text-[9px] text-white/90">
                     <Aperture className="w-3 h-3 text-(--accent)" />
                     <span>{apt}</span>
                   </span>
                 )}
                 {sht && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-md border border-white/15 font-mono text-[9px] text-white/80">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg glass-pill font-mono text-[9px] text-white/90">
                     <Clock className="w-3 h-3 text-(--accent)" />
                     <span>{sht}</span>
                   </span>
                 )}
                 {isoVal && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-md border border-white/15 font-mono text-[9px] text-white/80">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg glass-pill font-mono text-[9px] text-white/90">
                     <span className="text-(--accent) font-bold">ISO</span>
                     <span>{isoVal}</span>
                   </span>
@@ -199,154 +224,34 @@ const PhotoCard = memo(function PhotoCard({
 
         </div>
       </div>
-    </motion.article>
+    </article>
   );
 });
 
-export default function PhotosClientView({
-  initialPhotos,
-  categories = [],
-}: PhotosClientViewProps) {
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const timelineRef = useRef<HTMLElement>(null);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-  const categoryDropdownRef = useRef<HTMLDivElement>(null);
-  const isDraggingRef = useRef(false);
-  const [isSubmitOpen, setIsSubmitOpen] = useState(false);
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(12);
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [showScrollTop, setShowScrollTop] = useState(false);
+const TimelineScrubber = memo(function TimelineScrubber() {
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [isDraggingTimeline, setIsDraggingTimeline] = useState(false);
-  const [layoutMode, setLayoutMode] = useState<"large" | "compact">("large");
-  
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const [ageVerified, setAgeVerified] = useState(false);
-  const [showAgeModal, setShowAgeModal] = useState(false);
-  
-  const [lightboxPhotoId, setLightboxPhotoId] = useState<string | null>(null);
-  const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(false);
-  
-  const [photosState] = useState(() => {
-    const shuffled = Array.isArray(initialPhotos) ? [...initialPhotos] : [];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  });
+  const [isDragging, setIsDragging] = useState(false);
+  const timelineRef = useRef<HTMLElement>(null);
+  const isDraggingRef = useRef(false);
 
   useEffect(() => {
-    try {
-      const storedFavs = localStorage.getItem("astrospectrum_favorites");
-      if (storedFavs) setFavorites(JSON.parse(storedFavs));
-      
-      const isVerified = localStorage.getItem("astrospectrum_age_verified");
-      if (isVerified === "true") setAgeVerified(true);
-
-      const storedLayout = localStorage.getItem("astrospectrum_layout_mode");
-      if (storedLayout === "compact" || storedLayout === "large") {
-        setLayoutMode(storedLayout);
-      }
-    } catch (e) {
-      console.error("Failed to load local storage preferences", e);
-    }
-
+    let ticking = false;
     const handleScroll = () => {
-      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (totalHeight > 0) {
-        const progress = (window.scrollY / totalHeight) * 100;
-        setScrollProgress(progress);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+          if (totalHeight > 0) {
+            const progress = (window.scrollY / totalHeight) * 100;
+            setScrollProgress(progress);
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
-      setShowScrollTop(window.scrollY > 400);
     };
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(e.target as Node)) {
-        setIsCategoryDropdownOpen(false);
-      }
-    };
-
     window.addEventListener("scroll", handleScroll, { passive: true });
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  const handleToggleLayout = () => {
-    const nextMode = layoutMode === "large" ? "compact" : "large";
-    setLayoutMode(nextMode);
-    try {
-      localStorage.setItem("astrospectrum_layout_mode", nextMode);
-    } catch (e) {}
-  };
-
-  const handleVerifyAge = () => {
-    setAgeVerified(true);
-    setShowAgeModal(false);
-    try {
-      localStorage.setItem("astrospectrum_age_verified", "true");
-    } catch (e) {}
-  };
-
-  const filteredPhotos = useMemo(() => {
-    let result = Array.isArray(photosState) ? photosState.map(p => ({
-      ...p,
-      url: p.url ? p.url.replace(/([a-z0-9]+)\.ufs\.sh/g, 'utfs.io') : p.url
-    })) : [];
-
-    if (showFavoritesOnly) {
-      result = result.filter((p) => favorites.includes(p.id));
-    }
-
-    if (selectedCategory) {
-      result = result.filter(
-        (p) => p.category === selectedCategory || p.categoryId === selectedCategory
-      );
-    }
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      result = result.filter(
-        (p) =>
-          p.title?.toLowerCase().includes(q) ||
-          p.location?.toLowerCase().includes(q) ||
-          p.authorName?.toLowerCase().includes(q) ||
-          p.camera?.toLowerCase().includes(q)
-      );
-    }
-
-    return result;
-  }, [photosState, showFavoritesOnly, selectedCategory, favorites, searchQuery]);
-
-  useEffect(() => {
-    const currentSentinel = loadMoreRef.current;
-    if (!currentSentinel) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisibleCount((prev) => Math.min(prev + 12, filteredPhotos.length));
-        }
-      },
-      { rootMargin: "400px" }
-    );
-
-    observer.observe(currentSentinel);
-    return () => {
-      if (currentSentinel) observer.unobserve(currentSentinel);
-    };
-  }, [filteredPhotos.length]);
-
-  const displayedPhotos = useMemo(() => {
-    return filteredPhotos.slice(0, visibleCount);
-  }, [filteredPhotos, visibleCount]);
 
   const updateScrollFromClientY = (clientY: number) => {
     if (!timelineRef.current) return;
@@ -365,11 +270,11 @@ export default function PhotosClientView({
 
   const handlePointerDown = (e: React.PointerEvent) => {
     isDraggingRef.current = true;
-    setIsDraggingTimeline(true);
+    setIsDragging(true);
     updateScrollFromClientY(e.clientY);
     try {
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    } catch (err) {}
+    } catch {}
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -380,14 +285,184 @@ export default function PhotosClientView({
   const handlePointerUp = (e: React.PointerEvent) => {
     if (isDraggingRef.current) {
       isDraggingRef.current = false;
-      setIsDraggingTimeline(false);
+      setIsDragging(false);
       try {
         (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-      } catch (err) {}
+      } catch {}
     }
   };
 
-  const toggleFavorite = (photoId: string, e?: React.MouseEvent) => {
+  return (
+    <aside
+      ref={timelineRef}
+      aria-label="Page scroll position scrubber"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      className={`fixed right-4 sm:right-6 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-end justify-between h-[50vh] py-2 px-3 cursor-ns-resize touch-none select-none transition-opacity ${
+        isDragging ? "opacity-100 scale-105" : "opacity-75 hover:opacity-100"
+      }`}
+    >
+      {Array.from({ length: 150 }).map((_, i) => {
+        const tickProgress = (i / 149) * 100;
+        const distance = Math.abs(scrollProgress - tickProgress);
+        const isActive = distance < 2.0;
+        const isMajor = i % 15 === 0;
+        const isSemiMajor = i % 5 === 0;
+
+        return (
+          <span
+            key={i}
+            className={`rounded-full transition-all duration-150 ease-out pointer-events-none ${
+              isActive 
+                ? "w-8 h-[2.5px] bg-(--accent) shadow-[0_0_15px_var(--accent)] scale-125" 
+                : isMajor
+                ? "w-5 h-[1.5px] bg-[var(--text)]/60"
+                : isSemiMajor
+                ? "w-3.5 h-[1.2px] bg-[var(--text)]/35"
+                : "w-2 h-[1px] bg-[var(--text)]/15"
+            }`}
+          />
+        );
+      })}
+    </aside>
+  );
+});
+
+const ScrollToTopButton = memo(function ScrollToTopButton() {
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const visible = window.scrollY > 400;
+          setShowScrollTop(prev => (prev !== visible ? visible : prev));
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return (
+    <AnimatePresence>
+      {showScrollTop && (
+        <motion.button
+          initial={{ opacity: 0, scale: 0.8, y: 15 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.8, y: 15 }}
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          aria-label="Scroll to top"
+          className="fixed bottom-6 right-6 z-40 p-3.5 rounded-2xl glass-panel text-(--text) hover:bg-(--accent) hover:text-(--bg) hover:border-(--accent) transition-all cursor-pointer"
+        >
+          <ArrowUp className="h-4 w-4" />
+        </motion.button>
+      )}
+    </AnimatePresence>
+  );
+});
+
+const normalizePhotoUrl = (p: any) => ({
+  ...p,
+  url: p?.url ? p.url.replace(/([a-z0-9]+)\.ufs\.sh/g, "utfs.io") : p?.url,
+});
+
+export default function PhotosClientView({
+  initialPhotos = [],
+  initialCursor = null,
+  initialSeed,
+  categories = [],
+}: PhotosClientViewProps) {
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  const [isSubmitOpen, setIsSubmitOpen] = useState(false);
+
+  const [photos, setPhotos] = useState<any[]>(() =>
+    Array.isArray(initialPhotos) ? initialPhotos.map(normalizePhotoUrl) : []
+  );
+  const [nextCursor, setNextCursor] = useState<string | null>(initialCursor ?? null);
+  const [seed] = useState<number>(() =>
+    typeof initialSeed === "number" && !Number.isNaN(initialSeed)
+      ? initialSeed
+      : Math.floor(Math.random() * 1000000)
+  );
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [layoutMode, setLayoutMode] = useState<"large" | "compact">("large");
+  
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const favoriteSet = useMemo(() => new Set(favorites), [favorites]);
+  const [ageVerified, setAgeVerified] = useState(false);
+  const [showAgeModal, setShowAgeModal] = useState(false);
+  
+  const [lightboxPhotoId, setLightboxPhotoId] = useState<string | null>(null);
+  const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(false);
+
+  useEffect(() => {
+    try {
+      const storedFavs = localStorage.getItem("astrospectrum_favorites");
+      if (storedFavs) setFavorites(JSON.parse(storedFavs));
+      
+      const isVerified = localStorage.getItem("astrospectrum_age_verified");
+      if (isVerified === "true") setAgeVerified(true);
+
+      const storedLayout = localStorage.getItem("astrospectrum_layout_mode");
+      if (storedLayout === "compact" || storedLayout === "large") {
+        setLayoutMode(storedLayout);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(e.target as Node)) {
+        setIsCategoryDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleToggleLayout = useCallback(() => {
+    setLayoutMode((prev) => {
+      const nextMode = prev === "large" ? "compact" : "large";
+      try {
+        localStorage.setItem("astrospectrum_layout_mode", nextMode);
+      } catch (e) {}
+      return nextMode;
+    });
+  }, []);
+
+  const handleVerifyAge = useCallback(() => {
+    setAgeVerified(true);
+    setShowAgeModal(false);
+    try {
+      localStorage.setItem("astrospectrum_age_verified", "true");
+    } catch (e) {}
+  }, []);
+
+  const handleOpenLightbox = useCallback((id: string) => {
+    setLightboxPhotoId(id);
+  }, []);
+
+  const handleRequireAgeVerification = useCallback(() => {
+    setShowAgeModal(true);
+  }, []);
+
+  const toggleFavorite = useCallback((photoId: string, e?: React.MouseEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
     
@@ -399,11 +474,135 @@ export default function PhotosClientView({
       try {
         localStorage.setItem("astrospectrum_favorites", JSON.stringify(updated));
       } catch (err) {
-        console.error("Failed to save favorites", err);
+        console.error(err);
       }
       return updated;
     });
-  };
+  }, []);
+
+  useEffect(() => {
+    if (photos.length === 0 && !isLoadingMore) {
+      setIsLoadingMore(true);
+      getApprovedPhotos({
+        seed,
+        limit: 16,
+      })
+        .then((res) => {
+          if (res && Array.isArray(res.photos) && res.photos.length > 0) {
+            setPhotos(res.photos.map(normalizePhotoUrl));
+            setNextCursor(res.nextCursor ?? null);
+          }
+        })
+        .catch(console.error)
+        .finally(() => setIsLoadingMore(false));
+    }
+  }, []);
+
+  const handleLoadMore = useCallback(async () => {
+    if (!nextCursor || isLoadingMore) return;
+    setIsLoadingMore(true);
+
+    try {
+      const res = await getApprovedPhotos({
+        cursor: nextCursor,
+        seed,
+        limit: 16,
+        category: selectedCategory || undefined,
+      });
+
+      if (res && Array.isArray(res.photos) && res.photos.length > 0) {
+        const normalized = res.photos.map(normalizePhotoUrl);
+        setPhotos((prev) => {
+          const existingIds = new Set(prev.map((p) => p.id));
+          const newItems = normalized.filter((p) => !existingIds.has(p.id));
+          return [...prev, ...newItems];
+        });
+        setNextCursor(res.nextCursor ?? null);
+      } else {
+        setNextCursor(null);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [nextCursor, isLoadingMore, seed, selectedCategory]);
+
+  const handleSelectCategory = useCallback(async (catValue: string) => {
+    setSelectedCategory(catValue);
+    setIsCategoryDropdownOpen(false);
+    setIsLoadingMore(true);
+
+    try {
+      const res = await getApprovedPhotos({
+        cursor: null,
+        seed,
+        limit: 16,
+        category: catValue || undefined,
+      });
+
+      if (res && Array.isArray(res.photos)) {
+        setPhotos(res.photos.map(normalizePhotoUrl));
+        setNextCursor(res.nextCursor);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [seed]);
+
+  const handleResetFilters = useCallback(async () => {
+    setSearchQuery("");
+    setSelectedCategory("");
+    setShowFavoritesOnly(false);
+    setIsLoadingMore(true);
+
+    try {
+      const res = await getApprovedPhotos({
+        cursor: null,
+        seed,
+        limit: 16,
+      });
+
+      if (res && Array.isArray(res.photos)) {
+        setPhotos(res.photos.map(normalizePhotoUrl));
+        setNextCursor(res.nextCursor);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [seed]);
+
+  const filteredPhotos = useMemo(() => {
+    if (!Array.isArray(photos)) return [];
+    let result = photos;
+
+    if (showFavoritesOnly) {
+      result = result.filter((p) => favoriteSet.has(p.id));
+    }
+
+    if (selectedCategory) {
+      result = result.filter(
+        (p) => p.category === selectedCategory || p.categoryId === selectedCategory
+      );
+    }
+
+    if (deferredSearchQuery.trim()) {
+      const q = deferredSearchQuery.toLowerCase().trim();
+      result = result.filter(
+        (p) =>
+          p.title?.toLowerCase().includes(q) ||
+          p.location?.toLowerCase().includes(q) ||
+          p.authorName?.toLowerCase().includes(q) ||
+          p.camera?.toLowerCase().includes(q)
+      );
+    }
+
+    return result;
+  }, [photos, showFavoritesOnly, selectedCategory, favoriteSet, deferredSearchQuery]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -470,13 +669,6 @@ export default function PhotosClientView({
     return () => clearInterval(interval);
   }, [isSlideshowPlaying, lightboxPhotoId, filteredPhotos]);
 
-  const handleResetFilters = () => {
-    setSearchQuery("");
-    setSelectedCategory("");
-    setShowFavoritesOnly(false);
-    setVisibleCount(12);
-  };
-
   const selectedCategoryLabel = useMemo(() => {
     if (!selectedCategory) return "All Categories";
     const found = categories.find((c) => c.value === selectedCategory);
@@ -495,7 +687,7 @@ export default function PhotosClientView({
         }
       `}</style>
 
-      <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-(--bg)/85 backdrop-blur-2xl">
+      <header className="sticky top-0 z-40 w-full border-b border-(--glass-border) bg-(--glass-nav-bg) backdrop-blur-2xl backdrop-saturate-180">
         <div className="w-full px-6 sm:px-12 h-20 flex items-center justify-between">
           <Link
             href="/"
@@ -520,40 +712,7 @@ export default function PhotosClientView({
         </div>
       </header>
 
-      <aside
-        ref={timelineRef}
-        aria-label="Page scroll position scrubber"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        className={`fixed right-4 sm:right-6 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-end justify-between h-[50vh] py-2 px-3 cursor-ns-resize touch-none select-none transition-opacity ${
-          isDraggingTimeline ? "opacity-100 scale-105" : "opacity-75 hover:opacity-100"
-        }`}
-      >
-        {Array.from({ length: 150 }).map((_, i) => {
-          const tickProgress = (i / 149) * 100;
-          const distance = Math.abs(scrollProgress - tickProgress);
-          const isActive = distance < 2.0;
-          const isMajor = i % 15 === 0;
-          const isSemiMajor = i % 5 === 0;
-
-          return (
-            <span
-              key={i}
-              className={`rounded-full transition-all duration-150 ease-out pointer-events-none ${
-                isActive 
-                  ? "w-8 h-[2.5px] bg-(--accent) shadow-[0_0_15px_var(--accent)] scale-125" 
-                  : isMajor
-                  ? "w-5 h-[1.5px] bg-[var(--text)]/60"
-                  : isSemiMajor
-                  ? "w-3.5 h-[1.2px] bg-[var(--text)]/35"
-                  : "w-2 h-[1px] bg-[var(--text)]/15"
-              }`}
-            />
-          );
-        })}
-      </aside>
+      <TimelineScrubber />
 
       <main className="flex-1 w-full max-w-[2200px] mx-auto px-4 sm:px-8 lg:px-12 py-12 sm:py-20 flex flex-col items-center text-center gap-12">
         
@@ -566,17 +725,14 @@ export default function PhotosClientView({
           </p>
         </div>
 
-        <div className="w-full max-w-4xl flex flex-col sm:flex-row items-center gap-4 bg-(--surface)/90 border border-white/10 p-4 rounded-3xl backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] relative z-30">
+        <div className="w-full max-w-4xl flex flex-col sm:flex-row items-center gap-4 glass-panel p-4 rounded-3xl relative z-30">
           <div className="relative w-full flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-(--text-dim)" />
             <input
               ref={searchInputRef}
               type="text"
               value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setVisibleCount(12);
-              }}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search gallery captures, locations, cameras..."
               aria-label="Search gallery"
               className="w-full bg-(--surface-2) border border-white/10 rounded-2xl pl-11 pr-11 py-3.5 font-mono text-[11px] text-(--text) placeholder:text-(--text-muted) focus:outline-none focus:border-(--accent) transition-all shadow-inner"
@@ -594,10 +750,7 @@ export default function PhotosClientView({
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap sm:flex-nowrap">
             <button
-              onClick={() => {
-                setShowFavoritesOnly(!showFavoritesOnly);
-                setVisibleCount(12);
-              }}
+              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
               className={`px-4.5 py-3.5 rounded-2xl font-mono text-[10px] uppercase tracking-[0.15em] transition-all whitespace-nowrap border cursor-pointer inline-flex items-center justify-center gap-2 flex-1 sm:flex-initial ${
                 showFavoritesOnly
                   ? "bg-rose-500 text-white border-rose-500 font-bold shadow-[0_0_20px_rgba(244,63,94,0.4)]"
@@ -648,14 +801,10 @@ export default function PhotosClientView({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2.5 w-64 bg-zinc-950 border border-white/15 rounded-3xl shadow-2xl overflow-hidden z-50 p-2 flex flex-col text-left backdrop-blur-2xl"
+                    className="absolute right-0 mt-2.5 w-64 glass-dropdown rounded-3xl overflow-hidden z-50 p-2 flex flex-col text-left"
                   >
                     <button
-                      onClick={() => {
-                        setSelectedCategory("");
-                        setIsCategoryDropdownOpen(false);
-                        setVisibleCount(12);
-                      }}
+                      onClick={() => handleSelectCategory("")}
                       className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl font-mono text-[10px] uppercase tracking-wider transition-all cursor-pointer ${
                         !selectedCategory
                           ? "bg-white text-black font-bold shadow-md"
@@ -674,11 +823,7 @@ export default function PhotosClientView({
                         return (
                           <button
                             key={cat.value}
-                            onClick={() => {
-                              setSelectedCategory(cat.value);
-                              setIsCategoryDropdownOpen(false);
-                              setVisibleCount(12);
-                            }}
+                            onClick={() => handleSelectCategory(cat.value)}
                             className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl font-mono text-[10px] uppercase tracking-wider transition-all cursor-pointer ${
                               isSelected
                                 ? "bg-white text-black font-bold shadow-md"
@@ -717,51 +862,54 @@ export default function PhotosClientView({
                 ? "sm:columns-3 lg:columns-4 xl:columns-6 gap-6 sm:gap-8 space-y-10 sm:space-y-14"
                 : "sm:columns-2 lg:columns-3 xl:columns-4 gap-8 sm:gap-12 space-y-16 sm:space-y-24"
             }`}>
-              {displayedPhotos.map((photo, index) => (
+              {filteredPhotos.map((photo, index) => (
                 <PhotoCard
                   key={photo.id}
                   photo={photo}
                   index={index}
-                  isFavorited={favorites.includes(photo.id)}
+                  isFavorited={favoriteSet.has(photo.id)}
                   onToggleFavorite={toggleFavorite}
-                  onOpenLightbox={(id) => setLightboxPhotoId(id)}
+                  onOpenLightbox={handleOpenLightbox}
                   ageVerified={ageVerified}
-                  onRequireAgeVerification={() => setShowAgeModal(true)}
+                  onRequireAgeVerification={handleRequireAgeVerification}
                   layoutMode={layoutMode}
                 />
               ))}
             </div>
 
-            <div ref={loadMoreRef} className="w-full py-24 flex items-center justify-center">
-              {visibleCount < filteredPhotos.length ? (
-                <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-(--text-muted) animate-pulse">
-                  Loading more captures... ({visibleCount} of {filteredPhotos.length})
+            <div className="w-full py-16 sm:py-24 flex flex-col items-center justify-center gap-4">
+              {nextCursor ? (
+                <button
+                  type="button"
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                  className="group relative inline-flex items-center justify-center gap-3.5 px-8 sm:px-10 py-4 rounded-2xl bg-(--surface) border border-white/15 text-(--text) font-mono text-[11px] sm:text-xs uppercase tracking-[0.25em] font-semibold hover:border-(--accent) hover:bg-(--surface-2) hover:shadow-[0_0_35px_rgba(232,66,26,0.3)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xl active:scale-[0.98]"
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/20 border-t-(--accent) rounded-full animate-spin" />
+                      <span>Loading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-(--accent) group-hover:scale-125 transition-transform shadow-[0_0_8px_var(--accent)]" />
+                      <span>Load More Captures</span>
+                    </>
+                  )}
+                </button>
+              ) : filteredPhotos.length > 0 ? (
+                <div className="inline-flex items-center gap-2.5 px-6 py-3 rounded-full bg-(--surface-2)/70 border border-white/10 font-mono text-[10px] uppercase tracking-[0.25em] text-(--text-dim)">
+                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
+                  <span>End of Gallery Archive</span>
                 </div>
-              ) : (
-                <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-(--text-dim)/60">
-                  End of gallery archive
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
         )}
 
       </main>
 
-      <AnimatePresence>
-        {showScrollTop && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8, y: 15 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 15 }}
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            aria-label="Scroll to top"
-            className="fixed bottom-6 right-6 z-40 p-3.5 rounded-2xl bg-(--surface)/90 border border-white/15 text-(--text) shadow-2xl hover:bg-(--accent) hover:text-(--bg) hover:border-(--accent) transition-all cursor-pointer backdrop-blur-2xl"
-          >
-            <ArrowUp className="h-4 w-4" />
-          </motion.button>
-        )}
-      </AnimatePresence>
+      <ScrollToTopButton />
 
       <AnimatePresence>
         {showAgeModal && (

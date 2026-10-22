@@ -1,12 +1,23 @@
-/**
- * ADMIN CONFIG
- * Add or remove emails here. Anyone listed can delete ANY photo.
- */
-export const ADMIN_EMAILS: string[] = [
-  "sardor091019@gmail.com",
-];
+import { db } from "@/lib/db";
 
-export function isAdmin(email?: string | null): boolean {
-  if (!email) return false;
-  return ADMIN_EMAILS.includes(email.toLowerCase().trim());
+export async function isAdmin(identifier?: string | null): Promise<boolean> {
+  if (!identifier) return false;
+  if (identifier === "ADMIN") return true;
+
+  const user = await db
+    .selectFrom("User")
+    .select("role")
+    .where((eb) =>
+      eb.or([
+        eb("id", "=", identifier),
+        eb("email", "=", identifier.toLowerCase().trim()),
+      ])
+    )
+    .executeTakeFirst();
+
+  return user?.role === "ADMIN";
+}
+
+export function isAdminRole(role?: string | null): boolean {
+  return role === "ADMIN";
 }

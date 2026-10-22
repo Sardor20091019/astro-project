@@ -1,5 +1,5 @@
 "use client";
-import type { OurFileRouter } from "../backend/src/uploadthing/uploadthing.router";
+import type { OurFileRouter } from "@/server/uploadthing";
 import { updateUserProfile } from "@/lib/actions";
 import { generateUploadButton } from "@uploadthing/react";
 const UploadButton = generateUploadButton<OurFileRouter>();
@@ -58,7 +58,7 @@ export default function UserMenu({ user }: UserMenuProps) {
       {isOpen && (
         <div 
           style={{ borderRadius: "var(--radius-md)" }}
-          className="absolute right-0 mt-3 w-72 bg-(--surface) border border-(--border) p-4 z-50 shadow-[0_25px_60px_rgba(0,0,0,0.4)] backdrop-blur-2xl"
+          className="absolute right-0 mt-3 w-72 glass-dropdown p-4 z-50"
         >
           {!isEditing ? (
             <div className="flex flex-col gap-1.5">
