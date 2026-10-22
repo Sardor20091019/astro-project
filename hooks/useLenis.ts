@@ -18,8 +18,20 @@ let rafId: number | null = null;
 
 function startLoop() {
   if (rafId !== null) return;
+  let idleFrames = 0;
   function tick(t: number) {
-    lenisInstance?.raf(t);
+    if (lenisInstance) {
+      lenisInstance.raf(t);
+      if (Math.abs(lenisInstance.velocity || 0) < 0.01 && !lenisInstance.isScrolling) {
+        idleFrames++;
+        if (idleFrames > 60) {
+          rafId = null;
+          return;
+        }
+      } else {
+        idleFrames = 0;
+      }
+    }
     rafId = requestAnimationFrame(tick);
   }
   rafId = requestAnimationFrame(tick);
@@ -51,6 +63,9 @@ export function useLenis(cb?: ScrollCallback) {
           const state: ScrollState = { y: scroll, velocity, direction };
           subscribers.forEach(fn => fn(state));
         });
+        window.addEventListener("wheel", startLoop, { passive: true });
+        window.addEventListener("touchmove", startLoop, { passive: true });
+        window.addEventListener("keydown", startLoop, { passive: true });
       }
       startLoop();
     }
@@ -63,6 +78,9 @@ export function useLenis(cb?: ScrollCallback) {
     return () => {
       mounted = false;
       subscribers.delete(localCb);
+      window.removeEventListener("wheel", startLoop);
+      window.removeEventListener("touchmove", startLoop);
+      window.removeEventListener("keydown", startLoop);
     };
 
   }, []);

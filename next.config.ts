@@ -1,11 +1,15 @@
 import type { NextConfig } from "next";
 
-const backendUrl = process.env.NEXT_PUBLIC_API_URL || "https://astro-project-1213.onrender.com";
-
 const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["pg"],
+  compress: true,
+  experimental: {
+    optimizePackageImports: ["lucide-react", "framer-motion"],
+  },
   images: {
+    minimumCacheTTL: 31536000,
+    formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     remotePatterns: [
       {
@@ -22,7 +26,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "*.ufs.sh", 
+        hostname: "*.ufs.sh",
       },
       {
         protocol: "https",
@@ -41,14 +45,6 @@ const nextConfig: NextConfig = {
         hostname: "placehold.co",
       },
     ],
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path((?!auth).*)",
-        destination: `${backendUrl}/api/:path((?!auth).*)`,
-      },
-    ];
   },
 };
 

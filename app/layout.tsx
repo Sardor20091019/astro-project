@@ -35,12 +35,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${dmSerif.variable} ${dmMono.variable}`} suppressHydrationWarning>
       <body className="bg-[var(--bg)] text-[var(--text)] transition-colors duration-300">
-        <Script src="https://accounts.google.com/gsi/client" async defer />
+        <Script src="https://accounts.google.com/gsi/client" strategy="lazyOnload" />
         <Script
           src="https://datafa.st/js/script.js"
           data-website-id="dfid_zTzCj4xRhDdAFC9uX2856"
           data-domain="astrospectrum.uz"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
 
         <ThemeProvider>

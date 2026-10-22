@@ -170,10 +170,8 @@ export default function CinematicLandingPage() {
         })}
       </aside>
 
-      {/* Cinematic Full-Screen Hero Section */}
       <section className="relative w-full h-screen flex flex-col justify-between p-6 sm:p-12 lg:p-16">
         
-        {/* Background Image with optimized sizes and native fetchPriority */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <Image
             key={heroPhoto.url}
@@ -183,7 +181,6 @@ export default function CinematicLandingPage() {
             priority
             fetchPriority="high"
             sizes="(max-width: 1920px) 100vw, 1920px"
-            unoptimized
             className="object-cover scale-105 filter brightness-90 contrast-110 transition-transform duration-1000 ease-out hover:scale-100"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/60" />

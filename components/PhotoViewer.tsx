@@ -249,13 +249,13 @@ export default function PhotoViewer({
     return () => clearInterval(interval);
   }, [shouldRunSlideshow, slideshowIntervalMs, index, photos.length]);
 
-  const handleStageMouseMove = () => {
-    setIsMouseStationary(false);
+  const handleStageMouseMove = useCallback(() => {
+    setIsMouseStationary((prev) => (prev ? false : prev));
     if (mouseIdleTimerRef.current) clearTimeout(mouseIdleTimerRef.current);
     mouseIdleTimerRef.current = setTimeout(() => {
       setIsMouseStationary(true);
     }, 1000);
-  };
+  }, []);
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -278,6 +278,19 @@ export default function PhotoViewer({
     setFlipH(false);
     setFlipV(false);
   }, [index, scale, x, y]);
+
+  useEffect(() => {
+    if (!photos || photos.length <= 1) return;
+    const nextIdx = (index + 1) % photos.length;
+    const prevIdx = (index - 1 + photos.length) % photos.length;
+
+    [photos[nextIdx]?.url, photos[prevIdx]?.url].forEach((url) => {
+      if (url && typeof window !== "undefined") {
+        const preloader = new window.Image();
+        preloader.src = url;
+      }
+    });
+  }, [index, photos]);
 
   useEffect(() => {
     const updateConstraints = () => {
@@ -310,13 +323,13 @@ export default function PhotoViewer({
     
     let timeout: NodeJS.Timeout;
     const handleActivity = () => {
-      setHudVisible(true);
+      setHudVisible((prev) => (!prev ? true : prev));
       clearTimeout(timeout);
       timeout = setTimeout(() => setHudVisible(false), 3000);
     };
 
-    window.addEventListener("mousemove", handleActivity);
-    window.addEventListener("touchstart", handleActivity);
+    window.addEventListener("mousemove", handleActivity, { passive: true });
+    window.addEventListener("touchstart", handleActivity, { passive: true });
     window.addEventListener("keydown", handleActivity);
     handleActivity();
     
@@ -326,7 +339,7 @@ export default function PhotoViewer({
       window.removeEventListener("keydown", handleActivity);
       clearTimeout(timeout);
     };
-  }, [showDrawer, showShortcuts, showAuthModal, index]);
+  }, [showDrawer, showShortcuts, showAuthModal]);
 
   const navigate = useCallback(
     (nextDirection: number) => {
@@ -640,6 +653,7 @@ export default function PhotoViewer({
                     src={photo.url}
                     alt={photo.title}
                     draggable={false}
+                    decoding="async"
                     onLoad={() => setImageLoaded(true)}
                     className="max-h-[68vh] md:max-h-[82vh] max-w-[92vw] object-contain block pointer-events-none"
                   />
@@ -651,6 +665,7 @@ export default function PhotoViewer({
                       src={photo.url}
                       alt={photo.title}
                       draggable={false}
+                      decoding="async"
                       style={{ filter: activeFilterStyle }}
                       className="max-h-[68vh] md:max-h-[82vh] max-w-[92vw] object-contain block"
                     />
@@ -673,6 +688,7 @@ export default function PhotoViewer({
                   src={photo.url}
                   alt={photo.title}
                   draggable={false}
+                  decoding="async"
                   onLoad={() => setImageLoaded(true)}
                   style={{ filter: activeFilterStyle }}
                   className={`max-h-[68vh] md:max-h-[82vh] max-w-[92vw] object-contain rounded-xl shadow-2xl transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
@@ -745,8 +761,8 @@ export default function PhotoViewer({
               <div className="flex items-center gap-2.5 min-w-0">
                 <MagneticButton
                   onClick={() => router.back()}
-                  className={`flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-xl border transition shrink-0 ${
-                    isDark ? "bg-zinc-900/90 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:text-white" : "bg-white/90 text-zinc-700 border-zinc-200 hover:bg-white hover:text-black shadow-sm"
+                  className={`flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-xl backdrop-saturate-150 border transition shrink-0 ${
+                    isDark ? "bg-zinc-950/65 text-zinc-300 border-white/12 hover:bg-zinc-800/80 hover:text-white shadow-[0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)]" : "bg-white/75 text-zinc-700 border-black/10 hover:bg-white hover:text-black shadow-[0_8px_24px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)]"
                   }`}
                   title="Back to Gallery"
                 >
@@ -756,22 +772,22 @@ export default function PhotoViewer({
                   <h2 className={`text-xs sm:text-sm font-medium truncate max-w-[170px] sm:max-w-xs ${isDark ? "text-zinc-100" : "text-zinc-900"}`}>{photo.title}</h2>
                   <div className="hidden sm:flex items-center gap-1.5 mt-0.5 flex-wrap">
                     {photo.camera && (
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-400" : "bg-white/80 border-zinc-200 text-zinc-600"}`}>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${isDark ? "bg-zinc-950/50 border-white/10 text-zinc-400" : "bg-white/70 border-black/10 text-zinc-600"}`}>
                         📷 {photo.camera}
                       </span>
                     )}
                     {photo.focalLength && (
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-400" : "bg-white/80 border-zinc-200 text-zinc-600"}`}>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${isDark ? "bg-zinc-950/50 border-white/10 text-zinc-400" : "bg-white/70 border-black/10 text-zinc-600"}`}>
                         🔍 {photo.focalLength}
                       </span>
                     )}
                     {photo.aperture && (
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-400" : "bg-white/80 border-zinc-200 text-zinc-600"}`}>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${isDark ? "bg-zinc-950/50 border-white/10 text-zinc-400" : "bg-white/70 border-black/10 text-zinc-600"}`}>
                         ☀️ {photo.aperture}
                       </span>
                     )}
                     {photo.iso && (
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${isDark ? "bg-zinc-900/80 border-zinc-800 text-zinc-400" : "bg-white/80 border-zinc-200 text-zinc-600"}`}>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${isDark ? "bg-zinc-950/50 border-white/10 text-zinc-400" : "bg-white/70 border-black/10 text-zinc-600"}`}>
                         ISO {photo.iso}
                       </span>
                     )}
@@ -780,15 +796,15 @@ export default function PhotoViewer({
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <span className={`px-3 py-1.5 rounded-full backdrop-blur-xl border text-xs font-medium ${
-                  isDark ? "bg-zinc-900/90 border-zinc-800 text-zinc-300" : "bg-white/90 border-zinc-200 text-zinc-700 shadow-sm"
+                <span className={`px-3 py-1.5 rounded-full backdrop-blur-xl backdrop-saturate-150 border text-xs font-medium ${
+                  isDark ? "bg-zinc-950/65 border-white/12 text-zinc-300 shadow-[0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)]" : "bg-white/75 border-black/10 text-zinc-700 shadow-[0_8px_24px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)]"
                 }`}>
                   {displayIndex} / {photos.length}
                 </span>
 
                 <div className="hidden xl:flex items-center gap-2.5">
-                  <div className={`flex items-center gap-2 p-1.5 px-3 rounded-full backdrop-blur-xl border ${
-                    isDark ? "bg-zinc-900/80 border-zinc-800" : "bg-white/90 border-zinc-200 shadow-sm"
+                  <div className={`flex items-center gap-2 p-1.5 px-3 rounded-full backdrop-blur-xl backdrop-saturate-150 border ${
+                    isDark ? "bg-zinc-950/65 border-white/12 shadow-[0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)]" : "bg-white/75 border-black/10 shadow-[0_8px_24px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)]"
                   }`}>
                     <MagneticButton
                       onClick={() => setIsSlideshowPlaying(!isSlideshowPlaying)}
@@ -859,8 +875,8 @@ export default function PhotoViewer({
             </div>
 
             {/* FILM STOCK SELECTOR & ROTATION TOOLBAR */}
-            <div className={`flex items-center gap-1.5 overflow-x-auto w-full max-w-full py-1.5 px-2.5 backdrop-blur-2xl border rounded-2xl scrollbar-none shadow-lg ${
-              isDark ? "bg-zinc-900/90 border-zinc-800 text-zinc-300" : "bg-white/95 border-zinc-200 text-zinc-700"
+            <div className={`flex items-center gap-1.5 overflow-x-auto w-full max-w-full py-1.5 px-2.5 backdrop-blur-2xl backdrop-saturate-150 border rounded-2xl scrollbar-none shadow-xl ${
+              isDark ? "bg-zinc-950/65 border-white/12 text-zinc-300 shadow-[0_12px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.12)]" : "bg-white/75 border-black/10 text-zinc-700 shadow-[0_12px_32px_rgba(0,0,0,0.08),inset_0_1px_1px_rgba(255,255,255,0.85)]"
             }`}>
               <Film size={14} className="text-amber-500 mx-1 shrink-0 hidden sm:block" />
               {FILM_STOCKS.map((stock) => (
@@ -939,8 +955,8 @@ export default function PhotoViewer({
             transition={{ duration: 0.2 }}
             className="absolute bottom-4 sm:bottom-6 inset-x-0 z-40 flex items-center justify-center pointer-events-none px-3"
           >
-            <div className={`pointer-events-auto flex items-center gap-1 sm:gap-1.5 px-3 py-2 backdrop-blur-2xl border rounded-full shadow-2xl max-w-full overflow-x-auto scrollbar-none ${
-              isDark ? "bg-zinc-900/90 border-zinc-800/80 text-zinc-300" : "bg-white/95 border-zinc-200 text-zinc-700"
+            <div className={`pointer-events-auto flex items-center gap-1 sm:gap-1.5 px-3 py-2 backdrop-blur-2xl backdrop-saturate-150 border rounded-full shadow-2xl max-w-full overflow-x-auto scrollbar-none ${
+              isDark ? "bg-zinc-950/65 border-white/12 text-zinc-300 shadow-[0_20px_50px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.15)]" : "bg-white/75 border-black/10 text-zinc-700 shadow-[0_20px_50px_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.85)]"
             }`}>
               <MagneticButton
                 onClick={() => navigate(1)}
@@ -1315,6 +1331,7 @@ function CommentsList({
   isDark: boolean;
   onOpenAuthModal: () => void;
 }) {
+  const { data: session } = useSession();
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(true);
@@ -1335,27 +1352,59 @@ function CommentsList({
   }, [photoId]);
 
   const submit = async () => {
-    if (!comment.trim() || submitting) return;
+    const textToSubmit = comment.trim();
+    if (!textToSubmit || submitting) return;
+
+    // Optimistically insert comment immediately (0ms instant user feedback)
+    const tempId = -Date.now();
+    const optimisticComment = {
+      id: tempId,
+      body: textToSubmit,
+      createdAt: new Date().toISOString(),
+      user: {
+        name: session?.user?.name || "You",
+        image: session?.user?.image || null,
+        customImage: null,
+      },
+    };
+
+    setComment("");
+    setComments(prev => [optimisticComment, ...prev]);
+    setEngagement(c => ({ ...c, commentCount: c.commentCount + 1 }));
     setSubmitting(true);
+
     try {
-      const result = await submitCommentAction(photoId, comment);
+      const result = await submitCommentAction(photoId, textToSubmit);
       if (result.ok) {
-        setComment("");
-        setComments(c => [
-          {
-            id: result.comment.id,
-            body: result.comment.body,
-            createdAt: result.comment.createdAt,
-            user: {
-              name: result.comment.name,
-              image: result.comment.image,
-              customImage: result.comment.customImage,
-            },
-          },
-          ...c,
-        ]);
+        // Reconcile temporary optimistic comment with permanent server identity
+        setComments(prev =>
+          prev.map(c =>
+            c.id === tempId
+              ? {
+                  id: result.comment.id,
+                  body: result.comment.body,
+                  createdAt: result.comment.createdAt,
+                  user: {
+                    name: result.comment.name,
+                    image: result.comment.image,
+                    customImage: result.comment.customImage,
+                  },
+                }
+              : c
+          )
+        );
         setEngagement(c => ({ ...c, commentCount: result.commentCount }));
+      } else {
+        // Revert optimistic update on server rejection
+        setComments(prev => prev.filter(c => c.id !== tempId));
+        setEngagement(c => ({ ...c, commentCount: Math.max(0, c.commentCount - 1) }));
+        setComment(textToSubmit);
       }
+    } catch {
+      // Revert optimistic update on network failure
+      setComments(prev => prev.filter(c => c.id !== tempId));
+      setEngagement(c => ({ ...c, commentCount: Math.max(0, c.commentCount - 1) }));
+      setComment(textToSubmit);
     } finally {
       setSubmitting(false);
     }

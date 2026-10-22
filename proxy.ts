@@ -7,8 +7,13 @@ export default withAuth(
     const isApiAdminRoute = req.nextUrl.pathname.startsWith("/api/admin");
     const isAdminPageRoute = req.nextUrl.pathname.startsWith("/admin");
 
-    if ((isApiAdminRoute || isAdminPageRoute) && token?.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (token?.role !== "ADMIN") {
+      if (isApiAdminRoute) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      if (isAdminPageRoute) {
+        return NextResponse.redirect(new URL("/?forbidden=1", req.url));
+      }
     }
     return NextResponse.next();
   },

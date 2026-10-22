@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
-import { isAdmin } from "@/lib/admin";
 import ProfileClientView from "@/components/ProfileClientView";
 
 export const dynamic = "force-dynamic";
@@ -80,7 +79,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   const isFollowing = Boolean(directRel);
 
   const isSelf = session?.user?.id === userId;
-  const viewerIsAdmin = isAdmin(session?.user?.email);
+  const viewerIsAdmin = session?.user?.role === "ADMIN";
   const canDelete = isSelf || viewerIsAdmin;
 
   const sanitizedUser = {

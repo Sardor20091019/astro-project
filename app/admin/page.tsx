@@ -25,22 +25,31 @@ export default async function AdminPage() {
     redirect("/");
   }
 
-  const [photos, users, commentsRaw] = await Promise.all([
+  const [photos, users, rawComments] = await Promise.all([
     db.selectFrom("Photo").selectAll().orderBy("createdAt", "desc").execute(),
-    db.selectFrom("User").selectAll().orderBy("name", "asc").execute(),
-    db.selectFrom("Comment").selectAll().orderBy("createdAt", "desc").execute(),
+    db.selectFrom("User").select(["id", "name", "email"]).orderBy("name", "asc").execute(),
+    db
+      .selectFrom("Comment")
+      .leftJoin("User", "User.id", "Comment.userId")
+      .select([
+        "Comment.id",
+        "Comment.body",
+        "Comment.createdAt",
+        "Comment.photoId",
+        "Comment.userId",
+        "User.name as userName",
+      ])
+      .orderBy("Comment.createdAt", "desc")
+      .execute(),
   ]);
 
-
-  const userIds = [...new Set(commentsRaw.map((c) => c.userId))];
-  const commentUsers = userIds.length > 0
-    ? await db.selectFrom("User").selectAll().where("id", "in", userIds).execute()
-    : [];
-  const userMap = new Map(commentUsers.map((u) => [u.id, u]));
-
-  const comments = commentsRaw.map((c) => ({
-    ...c,
-    user: userMap.get(c.userId) || null,
+  const comments = rawComments.map((c) => ({
+    id: c.id,
+    body: c.body,
+    createdAt: c.createdAt,
+    photoId: c.photoId,
+    userId: c.userId,
+    user: c.userName ? { name: c.userName } : null,
   }));
 
   return (
