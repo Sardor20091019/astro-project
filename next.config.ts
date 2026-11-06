@@ -1,6 +1,51 @@
 import type { NextConfig } from "next";
 
-const backendUrl = process.env.NEXT_PUBLIC_API_URL || "https://astro-project-1213.onrender.com";
+const backendUrl =
+  process.env.NEXT_PUBLIC_API_URL || "https://astro-project-1213.onrender.com";
+
+const securityHeaders = [
+  {
+    key: "X-DNS-Prefetch-Control",
+    value: "on",
+  },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
+  {
+    key: "X-Frame-Options",
+    value: "DENY",
+  },
+  {
+    key: "X-Content-Type-Options",
+    value: "nosniff",
+  },
+  {
+    key: "Referrer-Policy",
+    value: "strict-origin-when-cross-origin",
+  },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=()",
+  },
+  {
+    key: "Content-Security-Policy",
+    value: `
+      default-src 'self';
+      script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com https://telegram.org https://accounts.google.com;
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' blob: data: https://*.ufs.sh https://ufs.sh https://utfs.io https://lh3.googleusercontent.com https://cdn4.telegram.org https://uploadthing.com https://placehold.co;
+      font-src 'self' data:;
+      connect-src 'self' https://challenges.cloudflare.com https://astro-project-1213.onrender.com https://api.stripe.com;
+      frame-src https://challenges.cloudflare.com https://telegram.org https://accounts.google.com;
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+    `
+      .replace(/\s{2,}/g, " ")
+      .trim(),
+  },
+];
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -22,7 +67,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "*.ufs.sh", 
+        hostname: "*.ufs.sh",
       },
       {
         protocol: "https",
@@ -42,11 +87,27 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: securityHeaders,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {
-        source: "/api/:path((?!auth).*)",
-        destination: `${backendUrl}/api/:path((?!auth).*)`,
+        source: "/api/photos/:path*",
+        destination: `${backendUrl}/api/photos/:path*`,
+      },
+      {
+        source: "/api/payments/:path*",
+        destination: `${backendUrl}/api/payments/:path*`,
+      },
+      {
+        source: "/api/admin/:path*",
+        destination: `${backendUrl}/api/admin/:path*`,
       },
     ];
   },

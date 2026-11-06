@@ -37,7 +37,7 @@ export async function generateAndSendOtp(email: string, ip: string) {
     .where("expires", "<", new Date())
     .execute();
 
-  const token = Math.floor(100000 + Math.random() * 900000).toString();
+  const token = crypto.randomInt(100000, 1000000).toString();
   const expires = new Date(Date.now() + 2 * 60 * 1000); 
   
   await db
@@ -114,7 +114,13 @@ export async function verifyOtp(email: string, inputToken: string) {
     throw new Error("Code expired.");
   }
 
-  if (tokenRecord.token === inputToken) {
+  const tokenBuf = Buffer.from(tokenRecord.token);
+  const inputBuf = Buffer.from(inputToken);
+  const isMatch =
+    tokenBuf.length === inputBuf.length &&
+    crypto.timingSafeEqual(tokenBuf, inputBuf);
+
+  if (isMatch) {
     await db
       .deleteFrom("otptoken")
       .where("email", "=", cleanEmail)

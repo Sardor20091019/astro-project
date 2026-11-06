@@ -22,19 +22,20 @@ export class UsersSearchController {
     }
 
     try {
-      const trimmedQuery = query.trim();
+      const trimmedQuery = query.trim().slice(0, 50);
       if (!trimmedQuery) {
         return [];
       }
 
+      // Restrict returned fields to public profile fields (prevent PII email leakage)
       const users = await this.db
         .selectFrom('User')
-        .select(['id', 'name', 'image', 'email'])
+        .select(['id', 'name', 'image'])
         .where('id', '!=', currentUserId)
         .where((eb) =>
           eb.or([
             eb('name', 'ilike', `%${trimmedQuery}%`),
-            eb('email', 'ilike', `%${trimmedQuery}%`),
+            eb('telegramUsername', 'ilike', `%${trimmedQuery}%`),
           ]),
         )
         .limit(10)

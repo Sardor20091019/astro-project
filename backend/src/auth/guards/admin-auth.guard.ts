@@ -3,74 +3,76 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
-  OnModuleInit,
 } from '@nestjs/common';
 import type { Request } from 'express';
+import * as crypto from 'crypto';
 import { KyselyService } from '../../database/kysely.service';
 
-export const ADMIN_EMAILS: string[] = ['sardor091019@gmail.com'];
+export const ADMIN_EMAILS: string[] = [];
 
 @Injectable()
-export class AdminAuthGuard implements CanActivate, OnModuleInit {
+export class AdminAuthGuard implements CanActivate {
   constructor(private readonly db: KyselyService) {}
-
-  async onModuleInit(): Promise<void> {
-    await this.refreshAdminEmails();
-  }
-
-  async refreshAdminEmails(): Promise<void> {
-    try {
-      const admins = await this.db
-        .selectFrom('User')
-        .select('email')
-        .where('role', '=', 'ADMIN')
-        .execute();
-
-      const dbEmails: string[] = admins
-        .map((a) => a.email)
-        .filter((email): email is string => typeof email === 'string');
-
-      ADMIN_EMAILS.length = 0;
-      ADMIN_EMAILS.push(
-        ...Array.from(new Set(['sardor091019@gmail.com', ...dbEmails])),
-      );
-    } catch (error: unknown) {
-      console.error('Failed to load admin emails from SQL:', error);
-    }
-  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
+    
+    // 1. Verify internal secret if identifying via proxy headers
     const headerEmail = request.headers['x-user-email'];
     const rawEmail = Array.isArray(headerEmail) ? headerEmail[0] : headerEmail;
-    const userEmail = (request as { user?: { email?: unknown } }).user?.email;
-    const email = rawEmail || userEmail;
+    const internalSecretHeader = request.headers['x-internal-secret'];
+    const rawSecret = Array.isArray(internalSecretHeader)
+      ? internalSecretHeader[0]
+      : internalSecretHeader;
 
-    if (!email || typeof email !== 'string') {
-      throw new ForbiddenException('Forbidden');
+    const expectedSecret = process.env.NEXTAUTH_SECRET || process.env.INTERNAL_SECRET;
+
+    let verifiedEmail: string | null = null;
+
+    if (rawEmail && typeof rawEmail === 'string' && rawSecret && typeof rawSecret === 'string') {
+      if (expectedSecret) {
+        const secretBuf = Buffer.from(rawSecret);
+        const expectedBuf = Buffer.from(expectedSecret);
+        if (
+          secretBuf.length === expectedBuf.length &&
+          crypto.timingSafeEqual(secretBuf, expectedBuf)
+        ) {
+          verifiedEmail = rawEmail.toLowerCase().trim();
+        }
+      }
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    // 2. Fall back to cookie session verification if no header email
+    if (!verifiedEmail) {
+      const cookies = request.cookies as Record<string, string> | undefined;
+      const sessionUserId = cookies?.user_session;
 
-    await this.refreshAdminEmails();
+      if (sessionUserId && typeof sessionUserId === 'string') {
+        const user = await this.db
+          .selectFrom('User')
+          .select(['role', 'email'])
+          .where('id', '=', sessionUserId)
+          .executeTakeFirst();
 
-    const isListed = ADMIN_EMAILS.some(
-      (adminEmail: string) =>
-        adminEmail.toLowerCase().trim() === normalizedEmail,
-    );
-
-    if (isListed) {
-      return true;
+        if (user && user.role === 'ADMIN' && user.email) {
+          verifiedEmail = user.email.toLowerCase().trim();
+        }
+      }
     }
 
+    if (!verifiedEmail) {
+      throw new ForbiddenException('Forbidden: Administrative access required');
+    }
+
+    // 3. Confirm ADMIN role in database for verified email
     const dbUser = await this.db
       .selectFrom('User')
       .select('role')
-      .where('email', '=', normalizedEmail)
+      .where('email', '=', verifiedEmail)
       .executeTakeFirst();
 
     if (!dbUser || dbUser.role !== 'ADMIN') {
-      throw new ForbiddenException('Forbidden');
+      throw new ForbiddenException('Forbidden: Insufficient role permissions');
     }
 
     return true;

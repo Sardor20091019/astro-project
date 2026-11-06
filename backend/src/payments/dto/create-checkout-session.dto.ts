@@ -1,10 +1,16 @@
-import { IsNumber, IsString, Min } from 'class-validator';
+import { IsNumber, IsString, IsOptional, Min } from 'class-validator';
 
 export class CreateCheckoutSessionDto {
   @IsNumber()
+  @IsOptional()
+  photoId?: number;
+
+  @IsNumber()
+  @IsOptional()
   @Min(50)
-  amount!: number;
+  amount?: number;
 
   @IsString()
-  name!: string;
+  @IsOptional()
+  name?: string;
 }

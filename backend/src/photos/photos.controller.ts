@@ -18,10 +18,10 @@ import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as crypto from 'crypto';
 import { sql } from 'kysely';
 import { KyselyService } from '../database/kysely.service';
 import { PhotosService } from './photos.service';
-import { ADMIN_EMAILS } from '../auth/guards/admin-auth.guard';
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { UpdatePhotoDto } from './dto/update-photo.dto';
 
@@ -155,20 +155,51 @@ export class PhotosController {
     };
   }
 
+  private async resolveCaller(req: Request) {
+    const rawSecret = req.headers['x-internal-secret'];
+    const rawEmail = req.headers['x-user-email'];
+    const expectedSecret = process.env.NEXTAUTH_SECRET || process.env.INTERNAL_SECRET;
+
+    if (
+      typeof rawSecret === 'string' &&
+      typeof rawEmail === 'string' &&
+      expectedSecret
+    ) {
+      const secretBuf = Buffer.from(rawSecret);
+      const expectedBuf = Buffer.from(expectedSecret);
+      if (
+        secretBuf.length === expectedBuf.length &&
+        crypto.timingSafeEqual(secretBuf, expectedBuf)
+      ) {
+        const user = await this.db
+          .selectFrom('User')
+          .select(['id', 'email', 'role', 'name'])
+          .where('email', '=', rawEmail.toLowerCase().trim())
+          .executeTakeFirst();
+        if (user) return user;
+      }
+    }
+
+    const userId = req.cookies?.user_session as string | undefined;
+    if (userId) {
+      return await this.db
+        .selectFrom('User')
+        .select(['id', 'email', 'role', 'name'])
+        .where('id', '=', userId)
+        .executeTakeFirst();
+    }
+
+    return null;
+  }
+
   @Delete(':id')
   async deletePhoto(@Param('id') id: string, @Req() req: Request) {
-    const userId = req.cookies?.user_session as string | undefined;
-    if (!userId) throw new UnauthorizedException('Unauthorized');
+    const caller = await this.resolveCaller(req);
+    if (!caller) throw new UnauthorizedException('Unauthorized');
 
     const photoId = Number(id);
     if (!Number.isInteger(photoId))
       throw new BadRequestException('Invalid photo id');
-
-    const user = await this.db
-      .selectFrom('User')
-      .select(['email'])
-      .where('id', '=', userId)
-      .executeTakeFirst();
 
     const photo = await this.db
       .selectFrom('Photo')
@@ -178,16 +209,22 @@ export class PhotosController {
 
     if (!photo) throw new NotFoundException('Photo not found');
 
-    const isAdmin = user?.email
-      ? ADMIN_EMAILS.includes(user.email.toLowerCase().trim())
-      : false;
-    if (!isAdmin && photo.userId !== userId) {
+    const isAdmin = caller.role === 'ADMIN';
+    if (!isAdmin && photo.userId !== caller.id) {
       throw new ForbiddenException('You can only delete your own photos');
     }
 
     if (photo.url.startsWith('/uploads/')) {
       try {
-        await fs.unlink(path.join(process.cwd(), 'public', photo.url));
+        const uploadsBase = path.resolve(process.cwd(), 'public', 'uploads');
+        const resolvedPath = path.resolve(
+          process.cwd(),
+          'public',
+          photo.url.replace(/^\//, ''),
+        );
+        if (resolvedPath.startsWith(uploadsBase)) {
+          await fs.unlink(resolvedPath);
+        }
       } catch {
         /* Ignore missing uploaded files */
       }
@@ -203,18 +240,12 @@ export class PhotosController {
     @Body() body: UpdatePhotoDto,
     @Req() req: Request,
   ) {
-    const userId = req.cookies?.user_session as string | undefined;
-    if (!userId) throw new UnauthorizedException('Unauthorized');
+    const caller = await this.resolveCaller(req);
+    if (!caller) throw new UnauthorizedException('Unauthorized');
 
     const photoId = Number(id);
     if (!Number.isInteger(photoId))
       throw new BadRequestException('Invalid photo id');
-
-    const user = await this.db
-      .selectFrom('User')
-      .select(['email'])
-      .where('id', '=', userId)
-      .executeTakeFirst();
 
     const photo = await this.db
       .selectFrom('Photo')
@@ -224,10 +255,8 @@ export class PhotosController {
 
     if (!photo) throw new NotFoundException('Not found');
 
-    const isAdmin = user?.email
-      ? ADMIN_EMAILS.includes(user.email.toLowerCase().trim())
-      : false;
-    if (!isAdmin && photo.userId !== userId)
+    const isAdmin = caller.role === 'ADMIN';
+    if (!isAdmin && photo.userId !== caller.id)
       throw new ForbiddenException('Forbidden');
 
     const updateData: Record<string, unknown> = {};
@@ -259,12 +288,16 @@ export class PhotosController {
   @Post()
   @UseInterceptors(AnyFilesInterceptor())
   async createPhoto(@Body() body: CreatePhotoDto, @Req() req: Request) {
+    if (!body.photoUrl || !String(body.photoUrl).startsWith('https://')) {
+      throw new BadRequestException('Invalid image URL provided');
+    }
     return this.handlePhotoCreation(body, req);
   }
 
   private async handlePhotoCreation(body: CreatePhotoDto, req: Request) {
-    const userId = req.cookies?.user_session as string | undefined;
-    let userName = 'Anonymous';
+    const caller = await this.resolveCaller(req);
+    const userId = caller?.id ?? (req.cookies?.user_session as string | undefined);
+    let userName = caller?.name || 'Anonymous';
 
     if (userId) {
       const dbUser = await this.db

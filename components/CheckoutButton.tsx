@@ -12,7 +12,7 @@ export default function CheckoutButton({ amount, name }: CheckoutButtonProps) {
   const handleCheckout = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3005/payments/create-checkout-session', {
+      const res = await fetch('/api/payments/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount, name }),

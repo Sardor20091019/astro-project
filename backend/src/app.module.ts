@@ -16,6 +16,7 @@ import { TelegramWebhookController } from './telegram/telegram-webhook.controlle
 import { UserCountController } from './user/user-count.controller';
 import { UserFollowController } from './user/user-follow.controller';
 import { UsersSearchController } from './users/users-search.controller';
+import { AdminCommentsController } from './admin/admin-comments.controller';
 import { PaymentsModule } from './payments/payments.module';
 
 @Module({
@@ -41,6 +42,7 @@ import { PaymentsModule } from './payments/payments.module';
     UserCountController,
     UserFollowController,
     UsersSearchController,
+    AdminCommentsController,
   ],
   providers: [AppService],
 })

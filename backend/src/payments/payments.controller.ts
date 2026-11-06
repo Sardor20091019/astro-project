@@ -8,6 +8,10 @@ export class PaymentsController {
 
   @Post('create-checkout-session')
   async createSession(@Body() body: CreateCheckoutSessionDto) {
-    return this.paymentsService.createCheckoutSession(body.amount, body.name);
+    return this.paymentsService.createCheckoutSession(
+      body.photoId,
+      body.amount,
+      body.name,
+    );
   }
 }

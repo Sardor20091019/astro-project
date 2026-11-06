@@ -45,7 +45,13 @@ export class AuthController {
         .update(dataCheckString)
         .digest('hex');
 
-      if (hmac !== hash) {
+      const hmacBuf = Buffer.from(hmac);
+      const hashBuf = Buffer.from(hash);
+
+      if (
+        hmacBuf.length !== hashBuf.length ||
+        !crypto.timingSafeEqual(hmacBuf, hashBuf)
+      ) {
         console.error('HMAC Mismatch!');
         throw new UnauthorizedException('Invalid authentication hash');
       }
