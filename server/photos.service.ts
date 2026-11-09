@@ -3,6 +3,7 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import { db } from "@/lib/db";
 import { moderateImageUrl } from "@/lib/moderation";
+import { sanitizeTitle, sanitizeLocation, sanitizePlainText } from "@/lib/sanitize";
 
 export enum PhotoCategory {
   ASTROPHOTOGRAPHY = "ASTROPHOTOGRAPHY",
@@ -137,6 +138,7 @@ export async function getApprovedPhotos(
     typeof options.seed === "number" && !Number.isNaN(options.seed)
       ? options.seed
       : Math.floor(Math.random() * 1000000);
+  const seedStr = String(seedVal);
   const limitNum = Math.min(50, Math.max(1, Number(options.limit) || 24));
 
   let decodedCursor: { s: string; id: number } | null = null;
@@ -170,7 +172,7 @@ export async function getApprovedPhotos(
       sql<string | null>`COALESCE("User"."customImage", "User"."image")`.as(
         "authorAvatar",
       ),
-      sql<string>`md5("Photo".id::text || ${sql.raw(seedVal.toString())}::text)`.as(
+      sql<string>`md5("Photo".id::text || ${seedStr}::text)`.as(
         "sortKey",
       ),
     ])
@@ -185,13 +187,13 @@ export async function getApprovedPhotos(
     query = query.where((eb) =>
       eb.or([
         eb(
-          sql`md5("Photo".id::text || ${sql.raw(seedVal.toString())}::text)`,
+          sql`md5("Photo".id::text || ${seedStr}::text)`,
           ">",
           cursorSortKey,
         ),
         eb.and([
           eb(
-            sql`md5("Photo".id::text || ${sql.raw(seedVal.toString())}::text)`,
+            sql`md5("Photo".id::text || ${seedStr}::text)`,
             "=",
             cursorSortKey,
           ),
@@ -202,7 +204,7 @@ export async function getApprovedPhotos(
   }
 
   query = query
-    .orderBy(sql`md5("Photo".id::text || ${sql.raw(seedVal.toString())}::text)`, "asc")
+    .orderBy(sql`md5("Photo".id::text || ${seedStr}::text)`, "asc")
     .orderBy("Photo.id", "asc")
     .limit(limitNum + 1);
 
@@ -218,7 +220,7 @@ export async function getApprovedPhotos(
     ).toString("base64url");
   }
 
-  const cleanedPhotos = photos.map(({ sortKey, ...rest }: any) => rest);
+  const cleanedPhotos = photos.map(({ sortKey: _sortKey, ...rest }: any) => rest);
   const enrichedPhotos = await attachPhotoAggregates(cleanedPhotos);
 
   return {
@@ -393,24 +395,21 @@ export async function createPhoto(
     ? (rawCategory as PhotoCategory)
     : PhotoCategory.OTHER;
 
-  const cleanTitle = input.title
-    ? String(input.title).replace(/[<>]/g, "").trim()
-    : "Untitled frame";
+  const cleanTitle = sanitizeTitle(input.title);
+  const cleanLocation = sanitizeLocation(input.location);
 
   return await db
     .insertInto("Photo")
     .values({
       url: photoUrl,
-      title: cleanTitle || "Untitled frame",
-      location: input.location
-        ? input.location.replace(/[<>]/g, "").trim()
-        : null,
-      coordinates: input.coordinates ? input.coordinates.trim() : null,
-      camera: input.camera ? input.camera.trim() : null,
+      title: cleanTitle,
+      location: cleanLocation,
+      coordinates: input.coordinates ? sanitizePlainText(input.coordinates, 100) || null : null,
+      camera: input.camera ? sanitizePlainText(input.camera, 100) || null : null,
       iso: Number.isNaN(parsedIso) ? null : parsedIso,
-      aperture: input.aperture ? input.aperture.trim() : null,
-      shutter: input.shutter ? input.shutter.trim() : null,
-      focalLength: input.focalLength ? input.focalLength.trim() : null,
+      aperture: input.aperture ? sanitizePlainText(input.aperture, 50) || null : null,
+      shutter: input.shutter ? sanitizePlainText(input.shutter, 50) || null : null,
+      focalLength: input.focalLength ? sanitizePlainText(input.focalLength, 50) || null : null,
       authorName: authorName,
       category: category,
       status: photoStatus as any,
@@ -440,13 +439,13 @@ export async function updatePhoto(
 
   const updateData: Record<string, unknown> = {};
   if (typeof input.title === "string" && input.title.trim()) {
-    updateData.title = input.title.replace(/[<>]/g, "").trim();
+    updateData.title = sanitizeTitle(input.title);
   }
   if (typeof input.category === "string") {
     updateData.category = input.category;
   }
   if (typeof input.location === "string") {
-    updateData.location = input.location.replace(/[<>]/g, "").trim() || null;
+    updateData.location = sanitizeLocation(input.location);
   }
 
   if (Object.keys(updateData).length === 0) return photo;

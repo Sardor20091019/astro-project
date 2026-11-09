@@ -69,8 +69,22 @@ export const ourFileRouter = {
 
       return { userId };
     })
-    .onUploadComplete(({ file }) => {
-      return { url: (file as any).ufsUrl ?? file.url };
+    .onUploadComplete(async ({ file }) => {
+      const fileUrl = (file as any).ufsUrl ?? file.url;
+      const moderation = await moderateImageUrl(fileUrl);
+
+      if (!moderation.isSafe) {
+        await utapi.deleteFiles(file.key).catch(() => {});
+        return {
+          isSafe: false,
+          error:
+            moderation.reason === "NUDITY_DETECTED"
+              ? "Avatar rejected: Nudity detected by content moderation."
+              : "Avatar failed safety checks.",
+        };
+      }
+
+      return { isSafe: true, url: fileUrl };
     }),
 } satisfies FileRouter;
 

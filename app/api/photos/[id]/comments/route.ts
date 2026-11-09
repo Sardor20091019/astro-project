@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthenticatedUser } from "@/server/auth.helper";
+import { sanitizeComment } from "@/lib/sanitize";
 
 export async function GET(
   _req: NextRequest,
@@ -84,9 +85,7 @@ export async function POST(
 
   try {
     const bodyData = await req.json();
-    const cleanBody = String(bodyData.body ?? "")
-      .replace(/[<>]/g, "")
-      .trim();
+    const cleanBody = sanitizeComment(bodyData.body);
 
     if (!cleanBody) {
       return NextResponse.json(

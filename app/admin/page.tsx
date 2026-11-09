@@ -11,14 +11,22 @@ export const dynamic = "force-dynamic";
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session || !session.user || !session.user.email) {
+  if (!session?.user?.id && !session?.user?.email) {
     redirect("/");
   }
+
+  const userId = session.user.id;
+  const userEmail = session.user.email;
 
   const dbUser = await db
     .selectFrom("User")
     .select(["role", "id", "name"])
-    .where("email", "=", session.user.email)
+    .where((eb) => {
+      const ors = [];
+      if (userId) ors.push(eb("id", "=", userId));
+      if (userEmail) ors.push(eb("email", "=", userEmail));
+      return ors.length > 0 ? eb.or(ors) : eb.lit(false);
+    })
     .executeTakeFirst();
 
   if (!dbUser || dbUser.role !== "ADMIN") {

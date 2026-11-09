@@ -35,15 +35,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const ip =
-      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      "127.0.0.1";
-
-    if (!email) {
-      return NextResponse.json({ error: "Email required" }, { status: 400 });
+    if (!email || typeof email !== "string") {
+      return NextResponse.json({ error: "Valid email required" }, { status: 400 });
     }
 
-    await generateAndSendOtp(email, ip);
+    const forwarded = req.headers.get("x-forwarded-for");
+    const ip = forwarded ? forwarded.split(",")[0].trim() : "127.0.0.1";
+
+    await generateAndSendOtp(email.trim().toLowerCase(), ip);
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error("OTP Send Error:", error);

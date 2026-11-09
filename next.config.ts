@@ -32,7 +32,7 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: `
       default-src 'self';
-      script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com https://telegram.org https://accounts.google.com;
+      script-src 'self' ${process.env.NODE_ENV === "development" ? "'unsafe-eval'" : ""} 'unsafe-inline' https://challenges.cloudflare.com https://telegram.org https://accounts.google.com;
       style-src 'self' 'unsafe-inline';
       img-src 'self' blob: data: https://*.ufs.sh https://ufs.sh https://utfs.io https://lh3.googleusercontent.com https://cdn4.telegram.org https://uploadthing.com https://placehold.co;
       font-src 'self' data:;

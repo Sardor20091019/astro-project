@@ -19,10 +19,19 @@ export default withAuth(
       }
     }
 
-    // Attach signed internal verification headers to proxied backend admin calls
+
+    // Strip any untrusted client-supplied internal headers to prevent spoofing
     const requestHeaders = new Headers(req.headers);
-    if (token?.email) {
-      requestHeaders.set("x-user-email", token.email);
+    requestHeaders.delete("x-internal-secret");
+    requestHeaders.delete("x-user-email");
+    requestHeaders.delete("x-user-id");
+
+    const identifier = token?.email || token?.id || (typeof token?.sub === "string" ? token.sub : "");
+    if (identifier) {
+      requestHeaders.set("x-user-email", identifier);
+    }
+    if (token?.id) {
+      requestHeaders.set("x-user-id", token.id);
     }
     if (process.env.NEXTAUTH_SECRET) {
       requestHeaders.set("x-internal-secret", process.env.NEXTAUTH_SECRET);

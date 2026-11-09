@@ -5,36 +5,19 @@ import {
   resolveGuestToken,
   attachGuestCookie,
 } from "@/server/auth.helper";
+import { MemoryRateLimiter, getClientIdentifier } from "@/lib/rate-limit";
 
-interface RateLimitEntry {
-  count: number;
-  resetTime: number;
-}
-
-const ratingRateLimitMap = new Map<string, RateLimitEntry>();
-const MAX_RATING_MUTATIONS_PER_MIN = 30;
-const RATING_RATE_WINDOW_MS = 60 * 1000;
+const ratingLimiter = new MemoryRateLimiter(30, 60 * 1000);
 
 export async function POST(req: NextRequest) {
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    "127.0.0.1";
-  const now = Date.now();
-  const entry = ratingRateLimitMap.get(ip);
+  const clientId = getClientIdentifier(req, "ratings");
+  const rateCheck = ratingLimiter.check(clientId, 30, 60 * 1000);
 
-  if (entry && now < entry.resetTime) {
-    if (entry.count >= MAX_RATING_MUTATIONS_PER_MIN) {
-      return NextResponse.json(
-        { error: "Too many rating requests. Please slow down." },
-        { status: 429 },
-      );
-    }
-    entry.count += 1;
-  } else {
-    ratingRateLimitMap.set(ip, {
-      count: 1,
-      resetTime: now + RATING_RATE_WINDOW_MS,
-    });
+  if (!rateCheck.allowed) {
+    return NextResponse.json(
+      { error: "Too many rating requests. Please slow down." },
+      { status: 429 },
+    );
   }
 
   try {

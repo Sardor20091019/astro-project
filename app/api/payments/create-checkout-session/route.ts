@@ -26,9 +26,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(session);
   } catch (err: any) {
     console.error("Stripe Checkout Error:", err);
-    const status = err.message?.includes("Invalid product tier") ? 400 : 500;
+    const isClientError = err.message?.includes("Invalid product tier");
+    const status = isClientError ? 400 : 500;
+    const clientMessage = isClientError
+      ? "Invalid product tier specified"
+      : "An internal error occurred while processing checkout";
     return NextResponse.json(
-      { error: err.message || "An internal error occurred" },
+      { error: clientMessage },
       { status },
     );
   }

@@ -4,10 +4,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 
-const DEFAULT_SECRET =
-  process.env.NEXTAUTH_SECRET 
-|| ""
+const DEFAULT_SECRET = process.env.NEXTAUTH_SECRET || "";
+
 export function signCookie(val: string, secret = DEFAULT_SECRET): string {
+  if (!secret) {
+    throw new Error("Cannot sign cookie: NEXTAUTH_SECRET is not configured");
+  }
   const sig = crypto
     .createHmac("sha256", secret)
     .update(val)
@@ -17,7 +19,7 @@ export function signCookie(val: string, secret = DEFAULT_SECRET): string {
 }
 
 export function unsignCookie(val: string, secret = DEFAULT_SECRET): string | false {
-  if (typeof val !== "string" || !val.startsWith("s:")) return false;
+  if (!secret || typeof val !== "string" || !val.startsWith("s:")) return false;
   const str = val.slice(2);
   const dotIndex = str.lastIndexOf(".");
   if (dotIndex === -1) return false;
@@ -37,13 +39,14 @@ export function unsignCookie(val: string, secret = DEFAULT_SECRET): string | fal
   return false;
 }
 
-export function parseCookieValue(rawVal: string | undefined): string | null {
-  if (!rawVal) return null;
+export function parseCookieValue(rawVal: string | undefined, secret = DEFAULT_SECRET): string | null {
+  if (!rawVal || typeof rawVal !== "string") return null;
+  // Strictly enforce cryptographic signature: reject unsigned or tampered cookies
   if (rawVal.startsWith("s:")) {
-    const unsigned = unsignCookie(rawVal);
+    const unsigned = unsignCookie(rawVal, secret);
     return unsigned ? unsigned : null;
   }
-  return rawVal;
+  return null;
 }
 
 export async function getAuthenticatedUser(

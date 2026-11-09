@@ -1355,7 +1355,7 @@ function CommentsList({
     const textToSubmit = comment.trim();
     if (!textToSubmit || submitting) return;
 
-    // Optimistically insert comment immediately (0ms instant user feedback)
+
     const tempId = -Date.now();
     const optimisticComment = {
       id: tempId,
@@ -1376,7 +1376,7 @@ function CommentsList({
     try {
       const result = await submitCommentAction(photoId, textToSubmit);
       if (result.ok) {
-        // Reconcile temporary optimistic comment with permanent server identity
+
         setComments(prev =>
           prev.map(c =>
             c.id === tempId
@@ -1395,13 +1395,13 @@ function CommentsList({
         );
         setEngagement(c => ({ ...c, commentCount: result.commentCount }));
       } else {
-        // Revert optimistic update on server rejection
+
         setComments(prev => prev.filter(c => c.id !== tempId));
         setEngagement(c => ({ ...c, commentCount: Math.max(0, c.commentCount - 1) }));
         setComment(textToSubmit);
       }
     } catch {
-      // Revert optimistic update on network failure
+
       setComments(prev => prev.filter(c => c.id !== tempId));
       setEngagement(c => ({ ...c, commentCount: Math.max(0, c.commentCount - 1) }));
       setComment(textToSubmit);

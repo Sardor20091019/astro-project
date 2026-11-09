@@ -14,7 +14,14 @@ const pool =
     max: process.env.NODE_ENV === 'production' ? 15 : 5,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+    ssl:
+      process.env.NODE_ENV === 'production'
+        ? {
+            rejectUnauthorized:
+              process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false',
+            ca: process.env.DATABASE_CA_CERT,
+          }
+        : undefined,
   });
 
 export const db =

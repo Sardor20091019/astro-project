@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { sanitizeComment } from "@/lib/sanitize";
 
 export async function submitComment(photoId: number, body: string) {
   const session = await getServerSession(authOptions);
@@ -13,18 +14,17 @@ export async function submitComment(photoId: number, body: string) {
   }
 
   const parsedPhotoId = Number(photoId);
-  const cleanBody = String(body ?? "").trim();
+  const cleanBody = sanitizeComment(body);
 
   if (!Number.isInteger(parsedPhotoId) || cleanBody.length < 2) {
     return { ok: false as const, error: "INVALID_COMMENT" };
   }
 
-
   const inserted = await db
     .insertInto("Comment")
     .values({
       photoId: parsedPhotoId,
-      body: cleanBody.slice(0, 1200),
+      body: cleanBody,
       userId: session.user.id,
     })
     .returning("id")

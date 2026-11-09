@@ -44,7 +44,7 @@ export default function UserSearchModal({ isOpen, onClose }: UserSearchModalProp
   }, [isOpen, onClose]);
 
 
-  // Client-side search cache for instant repeat lookups
+
   const searchCacheRef = useRef<Map<string, SearchedUser[]>>(new Map());
   const activeQueryRef = useRef<string>("");
 
@@ -58,7 +58,7 @@ export default function UserSearchModal({ isOpen, onClose }: UserSearchModalProp
       return;
     }
 
-    // Instant return if result is in memory cache
+
     if (searchCacheRef.current.has(trimmed)) {
       setResults(searchCacheRef.current.get(trimmed)!);
       setIsLoading(false);
@@ -70,7 +70,7 @@ export default function UserSearchModal({ isOpen, onClose }: UserSearchModalProp
       try {
         const users = await searchUsers(trimmed);
         searchCacheRef.current.set(trimmed, users);
-        // Guard against race condition: only set results if query matches current active search
+
         if (activeQueryRef.current === trimmed) {
           setResults(users);
         }

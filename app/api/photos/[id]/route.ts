@@ -64,12 +64,15 @@ export async function PATCH(
     );
     return NextResponse.json(updated);
   } catch (err: any) {
+    console.error("Photo update error:", err);
+    const isClientError = err.message?.includes("Forbidden") || err.message?.includes("not found");
     const status = err.message?.includes("Forbidden")
       ? 403
       : err.message?.includes("not found")
         ? 404
         : 500;
-    return NextResponse.json({ error: err.message }, { status });
+    const clientMessage = isClientError ? err.message : "An internal error occurred";
+    return NextResponse.json({ error: clientMessage }, { status });
   }
 }
 
@@ -97,12 +100,15 @@ export async function DELETE(
     );
     return NextResponse.json(result);
   } catch (err: any) {
+    console.error("Photo update error:", err);
+    const isClientError = err.message?.includes("Forbidden") || err.message?.includes("not found");
     const status = err.message?.includes("Forbidden")
       ? 403
       : err.message?.includes("not found")
         ? 404
         : 500;
-    return NextResponse.json({ error: err.message }, { status });
+    const clientMessage = isClientError ? err.message : "An internal error occurred";
+    return NextResponse.json({ error: clientMessage }, { status });
   }
 }
 

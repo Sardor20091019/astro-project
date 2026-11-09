@@ -24,7 +24,7 @@ export default function PhotoGrid({ initialPhotos }: { initialPhotos?: PhotoType
   const [activeCategory, setActiveCategory] = useState<PhotoCategory | "ALL">("ALL");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  // Single-pass O(N) frequency map for category counts
+
   const categoryCounts = useMemo(() => {
     const counts = new Map<string, number>();
     counts.set("ALL", allPhotos.length);

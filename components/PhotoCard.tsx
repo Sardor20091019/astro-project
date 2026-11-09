@@ -4,7 +4,7 @@ import Link from "next/link";
 import { CATEGORIES } from "../data/photos";
 import { MapPin } from "lucide-react";
 
-// Pre-index category icons and labels to eliminate O(K) lookups inside the render loop
+
 const CATEGORY_MAP = new Map<string, (typeof CATEGORIES)[number]>(CATEGORIES.map(c => [c.value, c]));
 
 type PhotoCardProps = {

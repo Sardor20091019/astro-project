@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthenticatedUser } from "@/server/auth.helper";
+import { sanitizeComment } from "@/lib/sanitize";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -64,9 +65,7 @@ export async function POST(req: NextRequest) {
     const { photoId, rating, comment } = body;
     const parsedPhotoId = Number(photoId);
     const parsedRating = Number(rating);
-    const cleanComment = String(comment ?? "")
-      .replace(/[<>]/g, "")
-      .trim();
+    const cleanComment = sanitizeComment(comment);
 
     if (
       !Number.isInteger(parsedPhotoId) ||

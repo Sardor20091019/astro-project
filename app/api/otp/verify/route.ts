@@ -1,38 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyOtp } from "@/lib/otp";
+import { MemoryRateLimiter, getClientIdentifier } from "@/lib/rate-limit";
 
-interface RateLimitEntry {
-  count: number;
-  resetTime: number;
-}
-
-const verifyRateLimitMap = new Map<string, RateLimitEntry>();
-const MAX_VERIFY_ATTEMPTS = 10;
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const otpVerifyLimiter = new MemoryRateLimiter(10, 15 * 60 * 1000);
 
 export async function POST(req: NextRequest) {
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    "127.0.0.1";
-  const now = Date.now();
-  const entry = verifyRateLimitMap.get(ip);
+  const clientId = getClientIdentifier(req, "otp-verify");
+  const rateCheck = otpVerifyLimiter.check(clientId, 10, 15 * 60 * 1000);
 
-  if (entry && now < entry.resetTime) {
-    if (entry.count >= MAX_VERIFY_ATTEMPTS) {
-      return NextResponse.json(
-        {
-          error:
-            "Too many verification attempts from this network. Please try again in 15 minutes.",
-        },
-        { status: 429 },
-      );
-    }
-    entry.count += 1;
-  } else {
-    verifyRateLimitMap.set(ip, {
-      count: 1,
-      resetTime: now + RATE_LIMIT_WINDOW_MS,
-    });
+  if (!rateCheck.allowed) {
+    return NextResponse.json(
+      {
+        error:
+          "Too many verification attempts from this network. Please try again in 15 minutes.",
+      },
+      { status: 429 },
+    );
   }
 
   try {

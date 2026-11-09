@@ -5,36 +5,19 @@ import {
   resolveGuestToken,
   attachGuestCookie,
 } from "@/server/auth.helper";
+import { MemoryRateLimiter, getClientIdentifier } from "@/lib/rate-limit";
 
-interface RateLimitEntry {
-  count: number;
-  resetTime: number;
-}
-
-const likeRateLimitMap = new Map<string, RateLimitEntry>();
-const MAX_LIKE_MUTATIONS_PER_MIN = 60;
-const LIKE_RATE_WINDOW_MS = 60 * 1000;
+const likeLimiter = new MemoryRateLimiter(60, 60 * 1000);
 
 export async function POST(req: NextRequest) {
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    "127.0.0.1";
-  const now = Date.now();
-  const entry = likeRateLimitMap.get(ip);
+  const clientId = getClientIdentifier(req, "likes");
+  const rateCheck = likeLimiter.check(clientId, 60, 60 * 1000);
 
-  if (entry && now < entry.resetTime) {
-    if (entry.count >= MAX_LIKE_MUTATIONS_PER_MIN) {
-      return NextResponse.json(
-        { error: "Too many like requests. Please slow down." },
-        { status: 429 },
-      );
-    }
-    entry.count += 1;
-  } else {
-    likeRateLimitMap.set(ip, {
-      count: 1,
-      resetTime: now + LIKE_RATE_WINDOW_MS,
-    });
+  if (!rateCheck.allowed) {
+    return NextResponse.json(
+      { error: "Too many like requests. Please slow down." },
+      { status: 429 },
+    );
   }
 
   try {

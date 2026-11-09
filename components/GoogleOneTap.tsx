@@ -44,7 +44,6 @@ export default function GoogleOneTap() {
             notification?.isSkippedMoment?.() ||
             notification?.isDismissedMoment?.()
           ) {
-            // Dismissed or skipped quietly
           }
         });
       } catch {}

@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 export async function deleteUser(userId: string) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.email) {
+  if (!session?.user?.id && !session?.user?.email) {
     return { success: false, error: "Unauthorized" };
   }
 
@@ -16,11 +16,19 @@ export async function deleteUser(userId: string) {
     return { success: false, error: "Invalid target user ID" };
   }
 
+  const sessionUserId = session.user.id;
+  const sessionEmail = session.user.email;
+
   // Authorize caller against database
   const caller = await db
     .selectFrom("User")
     .select(["id", "role"])
-    .where("email", "=", session.user.email)
+    .where((eb) => {
+      const ors = [];
+      if (sessionUserId) ors.push(eb("id", "=", sessionUserId));
+      if (sessionEmail) ors.push(eb("email", "=", sessionEmail));
+      return ors.length > 0 ? eb.or(ors) : eb.lit(false);
+    })
     .executeTakeFirst();
 
   if (!caller || caller.role !== "ADMIN") {

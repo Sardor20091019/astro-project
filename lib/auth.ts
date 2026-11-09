@@ -182,7 +182,12 @@ export const authOptions: NextAuthOptions = {
             .returningAll()
             .executeTakeFirstOrThrow();
         }
-        return { id: user.id, name: user.name ?? undefined, image: user.image ?? undefined } as User;
+        return {
+          id: user.id,
+          name: user.name ?? undefined,
+          image: user.image ?? undefined,
+          role: user.role,
+        } as User;
       },
     }),
   ],
@@ -236,18 +241,19 @@ export const authOptions: NextAuthOptions = {
           .where("id", "=", user.id)
           .executeTakeFirst();
         token.id = user.id;
-        token.role = dbUser?.role || "USER";
+        token.role = dbUser?.role || (user as any).role || "USER";
         return token;
       }
 
-      if (token.email || token.sub) {
+      const lookupId = token.id || token.sub;
+      if (lookupId || token.email) {
         const dbUser = await db
           .selectFrom("User")
           .select(["id", "role"])
           .where((eb) => {
             const ors = [];
+            if (lookupId) ors.push(eb("id", "=", lookupId));
             if (token.email) ors.push(eb("email", "=", token.email));
-            if (token.sub) ors.push(eb("telegramId", "=", token.sub));
             return ors.length > 0 ? eb.or(ors) : eb.lit(false);
           })
           .executeTakeFirst();
