@@ -62,21 +62,17 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Code expired.");
         }
 
-<<<<<<< HEAD
-        const tokenBuf = Buffer.from(tokenRecord.token);
-        const inputBuf = Buffer.from(inputToken);
+        const rawInput = inputToken.trim();
+        const inputHashed = crypto.createHash("sha256").update(rawInput).digest("hex");
+        const isHashed = tokenRecord.token.length === 64;
+        const targetExpected = isHashed ? inputHashed : rawInput;
+
         const isMatch =
-          tokenBuf.length === inputBuf.length &&
-          crypto.timingSafeEqual(tokenBuf, inputBuf);
+          typeof tokenRecord.token === "string" &&
+          Buffer.byteLength(tokenRecord.token) === Buffer.byteLength(targetExpected) &&
+          crypto.timingSafeEqual(Buffer.from(tokenRecord.token), Buffer.from(targetExpected));
 
         if (!isMatch) {
-=======
-        const isTokenMatch =
-          tokenRecord.token.length === inputToken.length &&
-          crypto.timingSafeEqual(Buffer.from(tokenRecord.token), Buffer.from(inputToken));
-
-        if (!isTokenMatch) {
->>>>>>> 65a6b4c (fix: update)
           const newCount = (tokenRecord.failedAttempts ?? 0) + 1;
           
           if (newCount >= 5) {
@@ -140,17 +136,11 @@ export const authOptions: NextAuthOptions = {
         const authDate = Number(credentials.auth_date);
         const nowSec = Math.floor(Date.now() / 1000);
         if (isNaN(authDate) || Math.abs(nowSec - authDate) > 86400) {
-          throw new Error("Telegram authentication data has expired.");
+          throw new Error("Telegram authentication data expired.");
         }
 
         const botToken = process.env.TELEGRAM_BOT_TOKEN;
         if (!botToken) throw new Error("TELEGRAM_BOT_TOKEN is missing.");
-
-        const authDate = Number(credentials.auth_date);
-        const nowSec = Math.floor(Date.now() / 1000);
-        if (isNaN(authDate) || Math.abs(nowSec - authDate) > 86400) {
-          throw new Error("Telegram authentication data expired.");
-        }
 
         const fields = ["id", "first_name", "username", "photo_url", "auth_date"];
         const dataCheckString = fields
@@ -163,7 +153,6 @@ export const authOptions: NextAuthOptions = {
         const secretKey = crypto.createHash("sha256").update(botToken).digest();
         const generatedHash = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
 
-<<<<<<< HEAD
         const genHashBuf = Buffer.from(generatedHash);
         const credHashBuf = Buffer.from(credentials.hash);
         if (
@@ -172,13 +161,6 @@ export const authOptions: NextAuthOptions = {
         ) {
           throw new Error("Invalid Telegram signature.");
         }
-=======
-        const isHashValid =
-          generatedHash.length === credentials.hash.length &&
-          crypto.timingSafeEqual(Buffer.from(generatedHash, "hex"), Buffer.from(credentials.hash, "hex"));
-
-        if (!isHashValid) throw new Error("Invalid Telegram signature.");
->>>>>>> 65a6b4c (fix: update)
 
         let user = await db
           .selectFrom("User")

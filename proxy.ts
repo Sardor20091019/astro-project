@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-export { default, config } from "./middleware";
-=======
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
@@ -12,13 +9,30 @@ export default withAuth(
 
     if (token?.role !== "ADMIN") {
       if (isApiAdminRoute) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        return NextResponse.json(
+          { error: "Forbidden: Root clearance required" },
+          { status: 403 }
+        );
       }
       if (isAdminPageRoute) {
-        return NextResponse.redirect(new URL("/?forbidden=1", req.url));
+        return NextResponse.redirect(new URL("/", req.url));
       }
     }
-    return NextResponse.next();
+
+    // Attach signed internal verification headers to proxied backend admin calls
+    const requestHeaders = new Headers(req.headers);
+    if (token?.email) {
+      requestHeaders.set("x-user-email", token.email);
+    }
+    if (process.env.NEXTAUTH_SECRET) {
+      requestHeaders.set("x-internal-secret", process.env.NEXTAUTH_SECRET);
+    }
+
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   },
   {
     callbacks: {
@@ -30,4 +44,3 @@ export default withAuth(
 export const config = {
   matcher: ["/admin/:path*", "/api/admin/:path*"],
 };
->>>>>>> 65a6b4c (fix: update)

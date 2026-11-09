@@ -1,33 +1,57 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Image from "next/image";
+import { AnimatePresence, motion, useMotionValue, useTransform, useSpring } from "framer-motion";
+import { Session } from "next-auth";
+import { signIn, useSession } from "next-auth/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Camera,
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  MapPin,
+  MessageCircle,
+  X,
+  Star,
+  Info,
+  Maximize2,
+  Minimize2,
+  Download,
+  Share2,
+  Check,
+  Film,
+  Sun,
+  Moon,
+  Play,
+  Pause,
+  HelpCircle,
+  SlidersHorizontal,
+  Clock,
+  LogIn,
+  RotateCw,
+  RotateCcw,
+  FlipHorizontal,
+  FlipVertical,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import type { Session } from "next-auth";
-import { Heart, MessageCircle, ArrowLeft, Share2, CreditCard, ChevronLeft, ChevronRight, Camera, MapPin } from "lucide-react";
-import StarRating from "./StarRating";
 import { submitComment as submitCommentAction } from "@/app/actions/comments";
+import StarRating from "./StarRating";
 
 type GalleryPhoto = {
   id: number;
   url: string;
   title: string;
   location: string | null;
+  coordinates?: string | null;
   camera: string | null;
   iso: number | null;
   aperture: string | null;
   shutter: string | null;
   focalLength: string | null;
   authorName?: string | null;
-};
-
-type Engagement = {
-  ratingAverage: number;
-  ratingCount: number;
-  viewerRating: number | null;
-  likeCount: number;
-  viewerLiked: boolean;
-  commentCount: number;
 };
 
 type CommentItem = {
@@ -42,52 +66,181 @@ type CommentItem = {
   };
 };
 
+type Engagement = {
+  ratingAverage: number;
+  ratingCount: number;
+  viewerRating: number | null;
+  likeCount: number;
+  viewerLiked: boolean;
+  commentCount: number;
+};
+
+export const FILM_STOCKS = [
+  { id: "normal", label: "Original", filter: "none" },
+  { id: "portra", label: "Portra 400 (Warm)", filter: "sepia(0.15) saturate(1.2) contrast(1.05)" },
+  { id: "ektar", label: "Ektar 100 (Vibrant)", filter: "saturate(1.4) contrast(1.1) brightness(1.02)" },
+  { id: "provia", label: "Provia 100F (Cool)", filter: "hue-rotate(-10deg) saturate(1.15) contrast(1.1)" },
+  { id: "cinestill", label: "CineStill 800T (Teal)", filter: "hue-rotate(15deg) saturate(1.3) brightness(0.95)" },
+  { id: "acros", label: "Acros 100 (Fine B&W)", filter: "grayscale(1) contrast(1.2) brightness(1.02)" },
+  { id: "monochrome", label: "Ilford HP5 (Noir)", filter: "grayscale(1) contrast(1.35) brightness(1.05)" },
+  { id: "bleach", label: "Bleach Bypass", filter: "grayscale(0.4) contrast(1.4) brightness(0.9)" },
+  { id: "lomo", label: "Lomo Chrome", filter: "hue-rotate(35deg) saturate(1.5) contrast(1.2)" },
+];
+
+function MagneticButton({
+  children,
+  className,
+  onClick,
+  title,
+  disabled
+}: {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: (e: React.MouseEvent) => void;
+  title?: string;
+  disabled?: boolean;
+}) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const xSpring = useSpring(x, { stiffness: 300, damping: 20 });
+  const ySpring = useSpring(y, { stiffness: 300, damping: 20 });
+
+  const handleMouse = (e: React.MouseEvent) => {
+    if (!ref.current || disabled) return;
+    const { clientX, clientY } = e;
+    const { height, width, left, top } = ref.current.getBoundingClientRect();
+    x.set((clientX - (left + width / 2)) * 0.2);
+    y.set((clientY - (top + height / 2)) * 0.2);
+  };
+
+  const reset = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.button
+      ref={ref}
+      onMouseMove={handleMouse}
+      onMouseLeave={reset}
+      style={{ x: xSpring, y: ySpring }}
+      className={className}
+      onClick={onClick}
+      title={title}
+      disabled={disabled}
+    >
+      {children}
+    </motion.button>
+  );
+}
+
+const Spinner = ({ dark }: { dark?: boolean }) => (
+  <motion.div
+    animate={{ rotate: 360 }}
+    transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
+    className={`w-5 h-5 rounded-full border-2 ${dark ? "border-zinc-300 border-t-zinc-900" : "border-white/20 border-t-white"}`}
+  />
+);
+
 export default function PhotoViewer({
   photos,
   initialId,
+  stats,
   initialEngagement,
   session,
 }: {
   photos: GalleryPhoto[];
   initialId: number;
+  stats: { avg: number; total: number; likes?: number; comments?: number };
   initialEngagement: Engagement;
   session: Session | null;
-  stats?: { avg?: number; total?: number; likes?: number; comments?: number };
 }) {
   const router = useRouter();
-  const currentIndex = photos.findIndex((p) => p.id === initialId);
-  const [index, setIndex] = useState(currentIndex >= 0 ? currentIndex : 0);
-  const photo = photos[index] || photos[0];
+  const { data: liveSession, status: sessionStatus } = useSession({ required: false });
+  const authSession = sessionStatus === "loading" ? session : liveSession ?? session;
+  const isLoggedIn = Boolean(authSession);
+  const isAuthLoading = sessionStatus === "loading" && !session;
 
+  const initialIndex = useMemo(() => photos.findIndex((p) => p.id === initialId), [photos, initialId]);
+  const [index, setIndex] = useState(initialIndex >= 0 ? initialIndex : 0);
+  const [direction, setDirection] = useState(0);
   const [engagement, setEngagement] = useState<Engagement>(initialEngagement);
-  const [comments, setComments] = useState<CommentItem[]>([]);
-  const [commentText, setCommentText] = useState("");
-  const [submittingComment, setSubmittingComment] = useState(false);
-  const [loadingComments, setLoadingComments] = useState(false);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
 
-  // System Dark/Light Mode Detection
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  const [hudVisible, setHudVisible] = useState(true);
+  const [showDrawer, setShowDrawer] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [hearts, setHearts] = useState<{ id: number; x: number; y: number }[]>([]);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
+
+
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [activeFilmStock, setActiveFilmStock] = useState("normal");
+  const [rotation, setRotation] = useState<number>(0);
+  const [flipH, setFlipH] = useState<boolean>(false);
+  const [flipV, setFlipV] = useState<boolean>(false);
+
+
+  const isTransformed = (rotation % 360 !== 0) || flipH || flipV;
+
+  const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(false);
+  const [slideshowIntervalMs, setSlideshowIntervalMs] = useState<number>(4000);
+  
+  const [isHovered, setIsHovered] = useState(false);
+  const [isMouseStationary, setIsMouseStationary] = useState(false);
+  const mouseIdleTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [isComparing, setIsComparing] = useState(false);
+  const [splitPos, setSplitPos] = useState(50);
+
+  const showWarning = (msg: string) => {
+    setWarningMessage(msg);
+    setTimeout(() => setWarningMessage(null), 3000);
+  };
+
+
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    setIsDarkMode(mediaQuery.matches);
-    const handler = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
-    mediaQuery.addEventListener("change", handler);
-    return () => mediaQuery.removeEventListener("change", handler);
+    if (isTransformed && isComparing) {
+      setIsComparing(false);
+    }
+  }, [isTransformed, isComparing]);
+
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+  const photo = photos[index];
+  
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const scale = useMotionValue(1);
+  const [currentScale, setCurrentScale] = useState(1);
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [constraints, setConstraints] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
+
+  void stats;
+
+  const rotateTilt = useTransform(x, [-300, 0, 300], isZoomed ? [0, 0, 0] : [-2, 0, 2]);
+
+  const displayIndex = photos.length - index;
+
+  useEffect(() => {
+    setMounted(true);
+    const mql = window.matchMedia("(max-width: 768px)");
+    setIsMobile(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
   }, []);
 
-  // Touch swipe state
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const minSwipeDistance = 50;
+  const shouldRunSlideshow = isSlideshowPlaying && (!isHovered || isMouseStationary);
 
-<<<<<<< HEAD
-  const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-=======
   useEffect(() => {
     if (!shouldRunSlideshow) return;
     const interval = setInterval(() => {
@@ -103,23 +256,12 @@ export default function PhotoViewer({
       setIsMouseStationary(true);
     }, 1000);
   }, []);
->>>>>>> 65a6b4c (fix: update)
 
-  const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    setIsMouseStationary(false);
   };
 
-<<<<<<< HEAD
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    if (distance > minSwipeDistance) {
-      // Swipe left -> Next photo
-      setIndex((i) => (i + 1) % photos.length);
-    } else if (distance < -minSwipeDistance) {
-      // Swipe right -> Prev photo
-      setIndex((i) => (i - 1 + photos.length) % photos.length);
-=======
   const handleMouseLeave = () => {
     setIsHovered(false);
     setIsMouseStationary(false);
@@ -225,66 +367,87 @@ export default function PhotoViewer({
     if (newScale === 1) {
       x.set(0);
       y.set(0);
->>>>>>> 65a6b4c (fix: update)
+    }
+  };
+
+  const toggleZoom = () => {
+    const current = scale.get();
+    if (current > 1.05) {
+      scale.set(1);
+      x.set(0);
+      y.set(0);
+    } else {
+      scale.set(3);
     }
   };
 
   useEffect(() => {
-    if (!photo) return;
-    setLoadingComments(true);
-    fetch(`/api/photos/${photo.id}/comments`)
-      .then((res) => res.json())
-      .then((data) => {
-        const arr = Array.isArray(data) ? data : data.comments || data.data || [];
-        setComments(arr);
-      })
-      .catch(() => setComments([]))
-      .finally(() => setLoadingComments(false));
-
-    if (photo.id !== initialId) {
-      fetch(`/api/photos/${photo.id}/engagement`)
-        .then((res) => res.json())
-        .then((data) => setEngagement(data))
-        .catch(() => {});
-    }
-  }, [photo, initialId]);
-
-  const handleBuy = async () => {
-    if (checkoutLoading) return;
-    setCheckoutLoading(true);
-    try {
-      const res = await fetch("/api/payments/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          photoId: photo.id,
-          name: `High-Res Photo: ${photo.title}`,
-        }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert("Failed to initialize checkout.");
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === "ArrowRight" && !isZoomed) navigate(-1);
+      if (event.key === "ArrowLeft" && !isZoomed) navigate(1);
+      if (event.key === "i" || event.key === "I") setShowDrawer((prev) => !prev);
+      if (event.key === "f" || event.key === "F") toggleZoom();
+      if (event.key === "p" || event.key === "P") setIsSlideshowPlaying((prev) => !prev);
+      if (event.key === "c" || event.key === "C") {
+        if (isTransformed) {
+          showWarning("Comparison isn't available while image is rotated or mirrored.");
+        } else {
+          setIsComparing((prev) => !prev);
+        }
       }
-    } catch (err) {
-      console.error(err);
-      alert("Something went wrong with payment.");
-    } finally {
-      setCheckoutLoading(false);
-    }
-  };
+      if (event.key === "r" || event.key === "R") {
+        event.preventDefault();
+        setRotation((prev) => prev + 90);
+      }
+      if (event.key === "?" || event.key === "/") {
+        event.preventDefault();
+        setShowShortcuts((prev) => !prev);
+      }
+      if (event.key === "Escape") {
+        if (scale.get() > 1.05) {
+          scale.set(1);
+          x.set(0);
+          y.set(0);
+        } else if (showAuthModal) {
+          setShowAuthModal(false);
+        } else if (showDrawer) {
+          setShowDrawer(false);
+        } else if (showShortcuts) {
+          setShowShortcuts(false);
+        } else {
+          router.back();
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [navigate, router, showDrawer, showShortcuts, showAuthModal, scale, x, y, isZoomed, isTransformed]);
 
-  const toggleLike = async () => {
-    if (!session) {
-      router.push("/api/auth/signin");
+  useEffect(() => {
+    if (!photo) return;
+    if (photo.id === initialId) {
+      setEngagement(initialEngagement);
       return;
     }
-    const nextLiked = !engagement.viewerLiked;
-    setEngagement((prev) => ({
-      ...prev,
-      viewerLiked: nextLiked,
-      likeCount: Math.max(0, prev.likeCount + (nextLiked ? 1 : -1)),
+
+    fetch(`/api/photos/${photo.id}/engagement`)
+      .then((res) => res.json())
+      .then((data) => setEngagement(data))
+      .catch(() => undefined);
+  }, [photo, initialId, initialEngagement]);
+
+  const toggleLike = async () => {
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    const nextLikedState = !engagement.viewerLiked;
+    
+    setEngagement((current) => ({
+      ...current,
+      viewerLiked: nextLikedState,
+      likeCount: Math.max(0, current.likeCount + (nextLikedState ? 1 : -1)),
     }));
 
     await fetch("/api/likes", {
@@ -295,11 +458,12 @@ export default function PhotoViewer({
   };
 
   const handleRating = async (val: number) => {
-    if (!session) {
-      router.push("/api/auth/signin");
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
       return;
     }
-    setEngagement((prev) => ({ ...prev, viewerRating: val }));
+
+    setEngagement((current) => ({ ...current, viewerRating: val }));
     const res = await fetch("/api/ratings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -307,8 +471,8 @@ export default function PhotoViewer({
     });
     const data = await res.json();
     if (res.ok) {
-      setEngagement((prev) => ({
-        ...prev,
+      setEngagement((current) => ({
+        ...current,
         ratingAverage: data.ratingAverage,
         ratingCount: data.ratingCount,
         viewerRating: data.viewerRating,
@@ -316,29 +480,17 @@ export default function PhotoViewer({
     }
   };
 
-  const submitComment = async () => {
-    if (!commentText.trim() || submittingComment || !session) return;
-    setSubmittingComment(true);
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: photo.title, url: shareUrl });
+        return;
+      } catch {
+
+      }
+    }
     try {
-<<<<<<< HEAD
-      const result = await submitCommentAction(photo.id, commentText);
-      if (result.ok) {
-        setCommentText("");
-        setComments((prev) => [
-          {
-            id: result.comment.id,
-            body: result.comment.body,
-            createdAt: result.comment.createdAt,
-            user: {
-              name: result.comment.name,
-              image: result.comment.image,
-              customImage: result.comment.customImage,
-            },
-          },
-          ...prev,
-        ]);
-        setEngagement((prev) => ({ ...prev, commentCount: result.commentCount }));
-=======
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -1247,7 +1399,6 @@ function CommentsList({
         setComments(prev => prev.filter(c => c.id !== tempId));
         setEngagement(c => ({ ...c, commentCount: Math.max(0, c.commentCount - 1) }));
         setComment(textToSubmit);
->>>>>>> 65a6b4c (fix: update)
       }
     } catch {
       // Revert optimistic update on network failure
@@ -1255,265 +1406,72 @@ function CommentsList({
       setEngagement(c => ({ ...c, commentCount: Math.max(0, c.commentCount - 1) }));
       setComment(textToSubmit);
     } finally {
-      setSubmittingComment(false);
+      setSubmitting(false);
     }
   };
 
-  const recommendations = photos.filter((p) => p.id !== photo.id).slice(0, 3);
-
   return (
-    <div
-      className={`min-h-screen transition-colors duration-300 flex flex-col items-center py-10 px-4 ${
-        isDarkMode ? "bg-neutral-950 text-neutral-100" : "bg-neutral-50 text-neutral-900"
-      }`}
-    >
-      {/* Expanded Max Width for a Bigger, More Cinematic View */}
-      <div className="w-full max-w-[640px] flex flex-col gap-6">
-        
-        {/* Top Navigation Bar */}
-        <div className="flex items-center justify-between px-1">
+    <div className="flex flex-col gap-3">
+      {isAuthLoading ? (
+        <div className={`h-10 w-full rounded-xl animate-pulse ${isDark ? "bg-zinc-900" : "bg-zinc-200"}`} />
+      ) : isLoggedIn ? (
+        <div className="flex gap-2">
+          <input
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && submit()}
+            className={`flex-1 h-10 px-3.5 text-xs border transition-colors rounded-xl focus:outline-none ${
+              isDark 
+                ? "bg-zinc-900 border-zinc-800 text-white placeholder-zinc-500 focus:border-zinc-700" 
+                : "bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:border-zinc-300"
+            }`}
+            placeholder="Write a comment..."
+          />
           <button
-            onClick={() => router.back()}
-            className={`flex items-center gap-2 text-xs font-medium transition-colors ${
-              isDarkMode ? "text-neutral-400 hover:text-white" : "text-neutral-600 hover:text-black"
+            onClick={submit}
+            disabled={submitting || !comment.trim()}
+            className={`h-10 px-4 text-xs font-medium transition disabled:opacity-40 rounded-xl flex items-center justify-center min-w-[64px] ${
+              isDark ? "bg-white text-black hover:bg-zinc-200" : "bg-zinc-900 text-white hover:bg-zinc-800"
             }`}
           >
-            <ArrowLeft size={16} /> Back to Gallery
+            {submitting ? <Spinner dark={!isDark} /> : "Post"}
           </button>
-          <span className="text-xs font-mono tracking-wider opacity-60">
-            {index + 1} / {photos.length}
-          </span>
         </div>
-
-        {/* Bigger Cinematic Image Container with Touch Support */}
-        <div
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-          className={`relative w-full h-[500px] sm:h-[600px] rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 ${
-            isDarkMode ? "bg-neutral-900 border border-neutral-800/80" : "bg-neutral-200 border border-neutral-300/60"
+      ) : (
+        <button
+          onClick={onOpenAuthModal}
+          className={`w-full border px-4 py-2.5 text-xs font-medium transition rounded-xl ${
+            isDark ? "border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800" : "border-zinc-200 bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
           }`}
         >
-          <Image
-            src={photo.url}
-            alt={photo.title}
-            fill
-            className="object-cover select-none"
-            priority
-          />
+          Sign in to comment
+        </button>
+      )}
 
-          {/* Navigation Controls Overlay */}
-          {photos.length > 1 && (
-            <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none">
-              <button
-                onClick={() => setIndex((i) => (i - 1 + photos.length) % photos.length)}
-                className={`p-3 rounded-full backdrop-blur-xl pointer-events-auto transition-all transform hover:scale-105 shadow-lg ${
-                  isDarkMode
-                    ? "bg-black/50 text-white border border-white/10 hover:bg-black/80"
-                    : "bg-white/70 text-black border border-black/10 hover:bg-white"
-                }`}
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <button
-                onClick={() => setIndex((i) => (i + 1) % photos.length)}
-                className={`p-3 rounded-full backdrop-blur-xl pointer-events-auto transition-all transform hover:scale-105 shadow-lg ${
-                  isDarkMode
-                    ? "bg-black/50 text-white border border-white/10 hover:bg-black/80"
-                    : "bg-white/70 text-black border border-black/10 hover:bg-white"
-                }`}
-              >
-                <ChevronRight size={20} />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Photo Metadata & Purchase Card */}
-        <div
-          className={`flex flex-col gap-5 p-6 rounded-3xl backdrop-blur-2xl shadow-xl transition-colors duration-300 ${
-            isDarkMode
-              ? "bg-neutral-900/70 border border-neutral-800/80"
-              : "bg-white/80 border border-neutral-200/80"
-          }`}
-        >
-          <div className="flex justify-between items-start gap-4">
-            <div>
-              <h1 className="text-xl font-bold tracking-tight">{photo.title}</h1>
-              <div className="flex flex-wrap items-center gap-3 text-xs opacity-70 mt-1.5 font-medium">
-                {photo.location && (
-                  <span className="flex items-center gap-1">
-                    <MapPin size={13} /> {photo.location}
-                  </span>
-                )}
-                {photo.camera && (
-                  <span className="flex items-center gap-1">
-                    <Camera size={13} /> {photo.camera}
-                  </span>
-                )}
-                {photo.iso && <span>ISO {photo.iso}</span>}
-                {photo.aperture && <span>{photo.aperture}</span>}
-                {photo.shutter && <span>{photo.shutter}</span>}
+      <div className="space-y-3 pt-2">
+        {loading ? (
+          <div className="flex justify-center py-6">
+            <Spinner dark={!isDark} />
+          </div>
+        ) : comments.length === 0 ? (
+          <p className={`text-xs text-center py-6 ${isDark ? "text-zinc-500" : "text-zinc-400"}`}>No comments yet.</p>
+        ) : (
+          comments.map((item) => (
+            <div key={item.id} className="flex gap-3 group">
+              <img
+                src={item.user.customImage || item.user.image || "/default-pfp.png"}
+                alt=""
+                className={`h-7 w-7 rounded-full object-cover border shrink-0 ${isDark ? "border-zinc-800" : "border-zinc-200"}`}
+              />
+              <div className={`flex-1 min-w-0 border p-3 rounded-xl ${
+                isDark ? "bg-zinc-950 border-zinc-900" : "bg-zinc-50 border-zinc-200"
+              }`}>
+                <p className={`text-xs font-medium mb-1 ${isDark ? "text-zinc-300" : "text-zinc-800"}`}>{item.user.name || "User"}</p>
+                <p className={`text-xs break-words leading-relaxed ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>{item.body ?? item.comment}</p>
               </div>
             </div>
-            <div className="text-right shrink-0">
-              <span className="text-2xl font-black text-emerald-500 tracking-tight">$0.50</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 pt-4 border-t border-current/10">
-            <button
-              onClick={toggleLike}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-semibold transition-all border ${
-                engagement.viewerLiked
-                  ? "bg-red-500/10 border-red-500/30 text-red-500"
-                  : isDarkMode
-                  ? "bg-neutral-800/50 border-neutral-700/50 text-neutral-300 hover:bg-neutral-800"
-                  : "bg-neutral-100 border-neutral-200 text-neutral-700 hover:bg-neutral-200"
-              }`}
-            >
-              <Heart size={16} className={engagement.viewerLiked ? "fill-current" : ""} />
-              <span>{engagement.likeCount}</span>
-            </button>
-
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-              }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-semibold transition-all border ${
-                isDarkMode
-                  ? "bg-neutral-800/50 border-neutral-700/50 text-neutral-300 hover:bg-neutral-800"
-                  : "bg-neutral-100 border-neutral-200 text-neutral-700 hover:bg-neutral-200"
-              }`}
-            >
-              <Share2 size={16} />
-              <span>{copied ? "Copied!" : "Share"}</span>
-            </button>
-
-            <button
-              onClick={handleBuy}
-              disabled={checkoutLoading}
-              className="flex-1 py-3 px-5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl transition-all duration-200 flex items-center justify-center gap-2 text-xs shadow-lg shadow-emerald-500/20 disabled:opacity-50"
-            >
-              <CreditCard size={16} />
-              <span>{checkoutLoading ? "Processing..." : "Buy High-Res ($0.50)"}</span>
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between pt-3 border-t border-current/10 text-xs opacity-80 font-medium">
-            <span>Community Rating ({engagement.ratingCount})</span>
-            <StarRating value={engagement.viewerRating ?? 0} onSelect={handleRating} />
-          </div>
-        </div>
-
-        {/* Comments Section */}
-        <div
-          className={`flex flex-col gap-4 p-6 rounded-3xl backdrop-blur-2xl shadow-xl transition-colors duration-300 ${
-            isDarkMode
-              ? "bg-neutral-900/70 border border-neutral-800/80"
-              : "bg-white/80 border border-neutral-200/80"
-          }`}
-        >
-          <h2 className="text-xs font-bold uppercase tracking-wider opacity-70 flex items-center gap-2">
-            <MessageCircle size={15} /> Comments ({engagement.commentCount})
-          </h2>
-
-          {session ? (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && submitComment()}
-                placeholder="Share your thoughts..."
-                className={`flex-1 h-11 px-4 rounded-2xl text-xs transition-all outline-none border ${
-                  isDarkMode
-                    ? "bg-neutral-950 border-neutral-800 text-white placeholder-neutral-500 focus:border-neutral-600"
-                    : "bg-neutral-100 border-neutral-200 text-black placeholder-neutral-400 focus:border-neutral-400"
-                }`}
-              />
-              <button
-                onClick={submitComment}
-                disabled={submittingComment || !commentText.trim()}
-                className="px-5 h-11 bg-white text-black text-xs font-bold rounded-2xl hover:bg-neutral-200 transition-all disabled:opacity-50 shadow-md"
-              >
-                Post
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => router.push("/api/auth/signin")}
-              className={`w-full py-3 rounded-2xl text-xs font-semibold transition-all border ${
-                isDarkMode
-                  ? "bg-neutral-800/40 border-neutral-700/50 text-neutral-300 hover:bg-neutral-800"
-                  : "bg-neutral-100 border-neutral-200 text-neutral-700 hover:bg-neutral-200"
-              }`}
-            >
-              Sign in to leave a comment
-            </button>
-          )}
-
-          <div className="space-y-3 pt-2">
-            {loadingComments ? (
-              <p className="text-xs opacity-50 text-center py-6">Loading comments...</p>
-            ) : comments.length === 0 ? (
-              <p className="text-xs opacity-50 text-center py-6">No comments yet. Be the first!</p>
-            ) : (
-              comments.map((c) => (
-                <div key={c.id} className="flex gap-3 text-xs">
-                  <img
-                    src={c.user.customImage || c.user.image || "/default-pfp.png"}
-                    alt=""
-                    className="w-7 h-7 rounded-full object-cover border border-current/10 shrink-0 mt-0.5"
-                  />
-                  <div
-                    className={`flex-1 p-3.5 rounded-2xl border ${
-                      isDarkMode
-                        ? "bg-neutral-950/80 border-neutral-800/80"
-                        : "bg-neutral-50 border-neutral-200/80"
-                    }`}
-                  >
-                    <span className="font-bold opacity-90 block mb-1">{c.user.name || "User"}</span>
-                    <span className="opacity-80 break-words leading-relaxed">{c.body || c.comment}</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Recommendations Section */}
-        {recommendations.length > 0 && (
-          <div className="flex flex-col gap-3 pt-2">
-            <h2 className="text-xs font-bold uppercase tracking-wider opacity-70 px-1">
-              More from the Gallery
-            </h2>
-            <div className="grid grid-cols-3 gap-3">
-              {recommendations.map((rec) => (
-                <button
-                  key={rec.id}
-                  onClick={() => {
-                    setIndex(photos.findIndex((p) => p.id === rec.id));
-                    window.history.replaceState(null, "", `/photos/${rec.id}`);
-                  }}
-                  className={`relative h-36 rounded-2xl overflow-hidden group border transition-all duration-300 ${
-                    isDarkMode ? "bg-neutral-900 border-neutral-800 hover:border-neutral-600" : "bg-neutral-200 border-neutral-300 hover:border-neutral-400"
-                  }`}
-                >
-                  <Image
-                    src={rec.url}
-                    alt={rec.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
+          ))
         )}
-
       </div>
     </div>
   );

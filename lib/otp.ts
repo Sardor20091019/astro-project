@@ -50,10 +50,7 @@ export async function generateAndSendOtp(email: string, ip: string) {
     .execute();
 
   const token = crypto.randomInt(100000, 1000000).toString();
-<<<<<<< HEAD
-=======
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
->>>>>>> 65a6b4c (fix: update)
   const expires = new Date(Date.now() + 2 * 60 * 1000); 
   
   await db
@@ -130,15 +127,6 @@ export async function verifyOtp(email: string, inputToken: string) {
     throw new Error("Code expired.");
   }
 
-<<<<<<< HEAD
-  const tokenBuf = Buffer.from(tokenRecord.token);
-  const inputBuf = Buffer.from(inputToken);
-  const isMatch =
-    tokenBuf.length === inputBuf.length &&
-    crypto.timingSafeEqual(tokenBuf, inputBuf);
-
-  if (isMatch) {
-=======
   const inputHashed = crypto.createHash("sha256").update(rawInput).digest("hex");
   const isHashed = tokenRecord.token.length === 64;
   const targetExpected = isHashed ? inputHashed : rawInput;
@@ -149,7 +137,6 @@ export async function verifyOtp(email: string, inputToken: string) {
     crypto.timingSafeEqual(Buffer.from(tokenRecord.token), Buffer.from(targetExpected));
 
   if (isTokenMatch) {
->>>>>>> 65a6b4c (fix: update)
     await db
       .deleteFrom("otptoken")
       .where("email", "=", cleanEmail)
