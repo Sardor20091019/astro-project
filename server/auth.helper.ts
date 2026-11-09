@@ -5,10 +5,8 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 const DEFAULT_SECRET =
-  process.env.INTERNAL_API_SECRET ||
-  process.env.NEXTAUTH_SECRET ||
-  "fallback-astrospectrum-secret";
-
+  process.env.NEXTAUTH_SECRET 
+|| ""
 export function signCookie(val: string, secret = DEFAULT_SECRET): string {
   const sig = crypto
     .createHmac("sha256", secret)
