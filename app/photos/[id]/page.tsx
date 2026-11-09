@@ -36,10 +36,14 @@ export default async function PhotoPage({
     ? recentPhotosRes
     : recentPhotosRes?.photos || [];
 
+  const photosList = recentPhotos.some((p: any) => p.id === photoId)
+    ? recentPhotos
+    : [currentPhoto, ...recentPhotos];
+
   return (
     <div className="fixed inset-0 z-[9999] overflow-hidden bg-black">
       <PhotoViewer
-        photos={recentPhotos}
+        photos={photosList}
         initialId={photoId}
         stats={{
           avg: currentPhoto.ratingAverage ?? 0,

@@ -220,7 +220,10 @@ export async function getApprovedPhotos(
     ).toString("base64url");
   }
 
-  const cleanedPhotos = photos.map(({ sortKey: _sortKey, ...rest }: any) => rest);
+  const cleanedPhotos = photos.map(({ sortKey: _, ...rest }: any) => {
+    void _;
+    return rest;
+  });
   const enrichedPhotos = await attachPhotoAggregates(cleanedPhotos);
 
   return {

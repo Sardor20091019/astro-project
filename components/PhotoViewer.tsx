@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @next/next/no-img-element */
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { AnimatePresence, motion, useMotionValue, useTransform, useSpring } from "framer-motion";
@@ -226,9 +223,27 @@ export default function PhotoViewer({
 
   void stats;
 
-  const rotateTilt = useTransform(x, [-300, 0, 300], isZoomed ? [0, 0, 0] : [-2, 0, 2]);
+  const rotateTilt = useTransform(x, [-300, 0, 300], isZoomed ? [0, 0, 0] : [-1.5, 0, 1.5]);
 
-  const displayIndex = photos.length - index;
+  const displayIndex = index + 1;
+
+  const resetTransforms = useCallback(() => {
+    scale.set(1);
+    x.set(0);
+    y.set(0);
+    setCurrentScale(1);
+    setIsZoomed(false);
+    setRotation(0);
+    setFlipH(false);
+    setFlipV(false);
+    setIsComparing(false);
+  }, [scale, x, y]);
+
+  const resetOrientation = useCallback(() => {
+    setRotation(0);
+    setFlipH(false);
+    setFlipV(false);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -239,15 +254,34 @@ export default function PhotoViewer({
     return () => mql.removeEventListener("change", handler);
   }, []);
 
+  const navigate = useCallback(
+    (step: number) => {
+      if (photos.length <= 1) return;
+      // Synchronously reset zoom and rotation so subsequent photos never start zoomed or rotated
+      resetTransforms();
+      setDirection(step);
+      setIndex((current) => {
+        const nextIndex = (current + step + photos.length) % photos.length;
+        const nextPhoto = photos[nextIndex];
+        if (nextPhoto) {
+          window.history.replaceState(null, "", `/photos/${nextPhoto.id}`);
+        }
+        setHearts([]);
+        return nextIndex;
+      });
+    },
+    [photos, resetTransforms],
+  );
+
   const shouldRunSlideshow = isSlideshowPlaying && (!isHovered || isMouseStationary);
 
   useEffect(() => {
     if (!shouldRunSlideshow) return;
     const interval = setInterval(() => {
-      navigate(-1);
+      navigate(1);
     }, slideshowIntervalMs);
     return () => clearInterval(interval);
-  }, [shouldRunSlideshow, slideshowIntervalMs, index, photos.length]);
+  }, [shouldRunSlideshow, slideshowIntervalMs, navigate]);
 
   const handleStageMouseMove = useCallback(() => {
     setIsMouseStationary((prev) => (prev ? false : prev));
@@ -268,16 +302,10 @@ export default function PhotoViewer({
     if (mouseIdleTimerRef.current) clearTimeout(mouseIdleTimerRef.current);
   };
 
-
   useEffect(() => {
     setImageLoaded(false);
-    scale.set(1);
-    x.set(0);
-    y.set(0);
-    setRotation(0);
-    setFlipH(false);
-    setFlipV(false);
-  }, [index, scale, x, y]);
+    resetTransforms();
+  }, [index, resetTransforms]);
 
   useEffect(() => {
     if (!photos || photos.length <= 1) return;
@@ -308,7 +336,7 @@ export default function PhotoViewer({
   }, [currentScale, imageLoaded]);
 
   useEffect(() => {
-    const unsubscribeScale = scale.onChange((val) => {
+    const unsubscribeScale = scale.on("change", (val: number) => {
       setCurrentScale(val);
       setIsZoomed(val > 1.05);
     });
@@ -341,50 +369,59 @@ export default function PhotoViewer({
     };
   }, [showDrawer, showShortcuts, showAuthModal]);
 
-  const navigate = useCallback(
-    (nextDirection: number) => {
-      if (photos.length === 0 || isZoomed) return;
-      x.set(0);
-      y.set(0);
-      scale.set(1);
-      setDirection(nextDirection);
-      setIndex((current) => {
-        const nextIndex = (current + nextDirection + photos.length) % photos.length;
-        window.history.replaceState(null, "", `/photos/${photos[nextIndex].id}`);
-        setHearts([]);
-        return nextIndex;
-      });
-    },
-    [photos, x, y, scale, isZoomed],
-  );
-
   const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const currentVal = scale.get();
-    const zoomFactor = e.deltaY < 0 ? 1.2 : 0.8;
-    const newScale = Math.min(Math.max(currentVal * zoomFactor, 1), 6);
-    scale.set(newScale);
-    if (newScale === 1) {
-      x.set(0);
-      y.set(0);
+    // Only zoom when user holds Ctrl/Cmd or pinch-zooms on trackpad (which sets ctrlKey=true)
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const currentVal = scale.get();
+      const delta = -e.deltaY * 0.008;
+      const newScale = Math.min(Math.max(currentVal + delta, 1), 4);
+      scale.set(newScale);
+      setCurrentScale(newScale);
+      const zoomed = newScale > 1.05;
+      setIsZoomed(zoomed);
+      if (!zoomed) {
+        x.set(0);
+        y.set(0);
+      }
     }
   };
 
-  const toggleZoom = () => {
+  const toggleZoom = useCallback(() => {
     const current = scale.get();
     if (current > 1.05) {
       scale.set(1);
       x.set(0);
       y.set(0);
+      setCurrentScale(1);
+      setIsZoomed(false);
     } else {
-      scale.set(3);
+      scale.set(2.5);
+      setCurrentScale(2.5);
+      setIsZoomed(true);
     }
-  };
+  }, [scale, x, y]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (event.key === "ArrowRight" && !isZoomed) navigate(-1);
-      if (event.key === "ArrowLeft" && !isZoomed) navigate(1);
+      // Don't intercept shortcuts while user is typing in comments or inputs!
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.isContentEditable
+      ) {
+        return;
+      }
+
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        navigate(1);
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        navigate(-1);
+      }
       if (event.key === "i" || event.key === "I") setShowDrawer((prev) => !prev);
       if (event.key === "f" || event.key === "F") toggleZoom();
       if (event.key === "p" || event.key === "P") setIsSlideshowPlaying((prev) => !prev);
@@ -397,7 +434,7 @@ export default function PhotoViewer({
       }
       if (event.key === "r" || event.key === "R") {
         event.preventDefault();
-        setRotation((prev) => prev + 90);
+        setRotation((prev) => (prev + 90) % 360);
       }
       if (event.key === "?" || event.key === "/") {
         event.preventDefault();
@@ -405,9 +442,7 @@ export default function PhotoViewer({
       }
       if (event.key === "Escape") {
         if (scale.get() > 1.05) {
-          scale.set(1);
-          x.set(0);
-          y.set(0);
+          resetTransforms();
         } else if (showAuthModal) {
           setShowAuthModal(false);
         } else if (showDrawer) {
@@ -421,7 +456,7 @@ export default function PhotoViewer({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [navigate, router, showDrawer, showShortcuts, showAuthModal, scale, x, y, isZoomed, isTransformed]);
+  }, [navigate, router, showDrawer, showShortcuts, showAuthModal, scale, isTransformed, toggleZoom, resetTransforms]);
 
   useEffect(() => {
     if (!photo) return;
@@ -555,9 +590,26 @@ export default function PhotoViewer({
   const isDark = theme === "dark";
 
 
-  const transformStyle = {
-    transform: `rotate(${rotation}deg) scaleX(${flipH ? -1 : 1}) scaleY(${flipV ? -1 : 1})`,
+  const slideVariants = {
+    enter: (dir: number) => ({
+      x: dir > 0 ? 80 : dir < 0 ? -80 : 0,
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (dir: number) => ({
+      x: dir > 0 ? -80 : dir < 0 ? 80 : 0,
+      opacity: 0,
+    }),
+  };
+
+  const normalizedRotation = ((rotation % 360) + 360) % 360;
+  const transformStyle: React.CSSProperties = {
+    transform: `rotate(${normalizedRotation}deg) scaleX(${flipH ? -1 : 1}) scaleY(${flipV ? -1 : 1})`,
     transition: "transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+    imageOrientation: "from-image" as const,
   };
 
   return (
@@ -606,97 +658,162 @@ export default function PhotoViewer({
           </div>
         )}
 
-        <AnimatePresence custom={direction} mode="wait">
+        <AnimatePresence custom={direction} mode="wait" initial={false}>
           <motion.div
             key={photo.id}
             custom={direction}
-            onClick={handleTouchOrClick}
-            onTouchStart={handleTouchOrClick}
-            style={{ x, y, rotate: rotateTilt, scale }}
-            drag={mounted && !isComparing ? true : false}
-            dragConstraints={isZoomed ? constraints : { left: 0, right: 0, top: 0, bottom: 0 }}
-            dragElastic={0.05}
-            dragMomentum={false}
-            onDragEnd={(_, info) => {
-              if (isZoomed || isComparing) return;
-              const offset = info.offset.x;
-              const velocity = info.velocity.x;
-              if (offset < -70 || velocity < -400) navigate(-1);
-              if (offset > 70 || velocity > 400) navigate(1);
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{
+              x: { type: "spring", stiffness: 280, damping: 28 },
+              opacity: { duration: 0.18 },
             }}
-            initial={{ opacity: 0, scale: 0.94, filter: "blur(4px)" }}
-            animate={{ opacity: 1, scale: scale.get(), filter: "blur(0px)", cursor: isZoomed ? "grab" : "zoom-in" }}
-            exit={{ opacity: 0, scale: 1.04, filter: "blur(4px)" }}
-            transition={{ type: "spring", stiffness: 260, damping: 28 }}
-            className="relative flex items-center justify-center touch-none"
+            className="relative flex items-center justify-center touch-none max-w-full max-h-full"
           >
-            {!imageLoaded && (
-              <div className={`absolute inset-0 flex items-center justify-center backdrop-blur-md z-20 rounded-xl overflow-hidden min-w-[250px] min-h-[250px] ${
-                isDark ? "bg-zinc-900/50" : "bg-zinc-200/50"
-              }`}>
-                <div className="flex flex-col items-center gap-3">
-                  <Spinner dark={!isDark} />
-                  <span className={`text-xs font-medium ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>Loading image...</span>
+            <motion.div
+              style={{ x, y, rotate: rotateTilt, scale }}
+              drag={mounted && !isComparing ? (isZoomed ? true : "x") : false}
+              dragConstraints={isZoomed ? constraints : { left: 0, right: 0, top: 0, bottom: 0 }}
+              dragSnapToOrigin={!isZoomed}
+              dragElastic={isZoomed ? 0.08 : 0.25}
+              dragMomentum={false}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                toggleZoom();
+              }}
+              onClick={handleTouchOrClick}
+              onTouchStart={handleTouchOrClick}
+              onDragEnd={(_, info) => {
+                if (isZoomed || isComparing) return;
+                const offset = info.offset.x;
+                const velocity = info.velocity.x;
+                // Swiping left moves to next photo (index + 1)
+                if (offset < -60 || velocity < -350) {
+                  navigate(1);
+                }
+                // Swiping right moves to previous photo (index - 1)
+                else if (offset > 60 || velocity > 350) {
+                  navigate(-1);
+                }
+              }}
+              className={`relative flex items-center justify-center ${
+                isZoomed ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"
+              }`}
+            >
+              {!imageLoaded && (
+                <div className={`absolute inset-0 flex items-center justify-center backdrop-blur-md z-20 rounded-xl overflow-hidden min-w-[250px] min-h-[250px] ${
+                  isDark ? "bg-zinc-900/50" : "bg-zinc-200/50"
+                }`}>
+                  <div className="flex flex-col items-center gap-3">
+                    <Spinner dark={!isDark} />
+                    <span className={`text-xs font-medium ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>Loading image...</span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {isComparing && activeFilmStock !== "normal" && !isTransformed ? (
-              <div 
-                ref={imageContainerRef}
-                onMouseMove={handleSplitDrag}
-                onTouchMove={handleSplitDrag}
-                className="relative max-h-[68vh] md:max-h-[82vh] max-w-[92vw] flex items-center justify-center overflow-hidden rounded-xl shadow-2xl select-none border border-white/10 cursor-ew-resize"
-              >
-                <div style={transformStyle} className="relative flex items-center justify-center">
-                  <img
-                    src={photo.url}
-                    alt={photo.title}
-                    draggable={false}
-                    decoding="async"
-                    onLoad={() => setImageLoaded(true)}
-                    className="max-h-[68vh] md:max-h-[82vh] max-w-[92vw] object-contain block pointer-events-none"
-                  />
-                  <div 
-                    className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center"
-                    style={{ clipPath: `polygon(0 0, ${splitPos}% 0, ${splitPos}% 100%, 0 100%)` }}
-                  >
+              {isComparing && activeFilmStock !== "normal" && !isTransformed ? (
+                <div 
+                  ref={imageContainerRef}
+                  onMouseMove={handleSplitDrag}
+                  onTouchMove={handleSplitDrag}
+                  className="relative max-h-[68vh] md:max-h-[82vh] max-w-[92vw] flex items-center justify-center overflow-hidden rounded-xl shadow-2xl select-none border border-white/10 cursor-ew-resize"
+                >
+                  <div style={transformStyle} className="relative flex items-center justify-center">
                     <img
                       src={photo.url}
                       alt={photo.title}
                       draggable={false}
                       decoding="async"
-                      style={{ filter: activeFilterStyle }}
-                      className="max-h-[68vh] md:max-h-[82vh] max-w-[92vw] object-contain block"
+                      onLoad={() => setImageLoaded(true)}
+                      style={{ imageOrientation: "from-image" }}
+                      className="max-h-[68vh] md:max-h-[82vh] max-w-[92vw] object-contain block pointer-events-none"
                     />
+                    <div 
+                      className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center"
+                      style={{ clipPath: `polygon(0 0, ${splitPos}% 0, ${splitPos}% 100%, 0 100%)` }}
+                    >
+                      <img
+                        src={photo.url}
+                        alt={photo.title}
+                        draggable={false}
+                        decoding="async"
+                        style={{ filter: activeFilterStyle, imageOrientation: "from-image" }}
+                        className="max-h-[68vh] md:max-h-[82vh] max-w-[92vw] object-contain block"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div 
-                  className="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_10px_rgba(0,0,0,0.8)] pointer-events-none flex items-center justify-center z-10"
-                  style={{ left: `${splitPos}%` }}
-                >
-                  <div className="w-7 h-7 rounded-full bg-white text-black shadow-lg flex items-center justify-center text-[10px] font-bold">
-                    VS
+                  <div 
+                    className="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_10px_rgba(0,0,0,0.8)] pointer-events-none flex items-center justify-center z-10"
+                    style={{ left: `${splitPos}%` }}
+                  >
+                    <div className="w-7 h-7 rounded-full bg-white text-black shadow-lg flex items-center justify-center text-[10px] font-bold">
+                      VS
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div style={transformStyle} className="relative flex items-center justify-center">
-                <img
-                  ref={imgRef}
-                  src={photo.url}
-                  alt={photo.title}
-                  draggable={false}
-                  decoding="async"
-                  onLoad={() => setImageLoaded(true)}
-                  style={{ filter: activeFilterStyle }}
-                  className={`max-h-[68vh] md:max-h-[82vh] max-w-[92vw] object-contain rounded-xl shadow-2xl transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
-                />
-              </div>
-            )}
+              ) : (
+                <div style={transformStyle} className="relative flex items-center justify-center">
+                  <img
+                    ref={imgRef}
+                    src={photo.url}
+                    alt={photo.title}
+                    draggable={false}
+                    decoding="async"
+                    onLoad={() => setImageLoaded(true)}
+                    style={{ filter: activeFilterStyle, imageOrientation: "from-image" }}
+                    className={`max-h-[68vh] md:max-h-[82vh] max-w-[92vw] object-contain rounded-xl shadow-2xl transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+                  />
+                </div>
+              )}
+            </motion.div>
           </motion.div>
         </AnimatePresence>
+
+        {/* FLOATING SIDE CHEVRONS (Desktop) */}
+        {!isMobile && hudVisible && photos.length > 1 && (
+          <>
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 pointer-events-auto"
+            >
+              <MagneticButton
+                onClick={() => navigate(-1)}
+                className={`flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full backdrop-blur-2xl border transition-all shadow-2xl cursor-pointer ${
+                  isDark
+                    ? "bg-zinc-950/70 border-white/12 text-zinc-300 hover:text-white hover:bg-zinc-900/90 hover:scale-110 shadow-[0_8px_30px_rgba(0,0,0,0.6)]"
+                    : "bg-white/80 border-black/10 text-zinc-700 hover:text-black hover:bg-white hover:scale-110 shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
+                }`}
+                title="Previous Photo [←]"
+              >
+                <ChevronLeft size={22} strokeWidth={2.2} />
+              </MagneticButton>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 pointer-events-auto"
+            >
+              <MagneticButton
+                onClick={() => navigate(1)}
+                className={`flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full backdrop-blur-2xl border transition-all shadow-2xl cursor-pointer ${
+                  isDark
+                    ? "bg-zinc-950/70 border-white/12 text-zinc-300 hover:text-white hover:bg-zinc-900/90 hover:scale-110 shadow-[0_8px_30px_rgba(0,0,0,0.6)]"
+                    : "bg-white/80 border-black/10 text-zinc-700 hover:text-black hover:bg-white hover:scale-110 shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
+                }`}
+                title="Next Photo [→]"
+              >
+                <ChevronRight size={22} strokeWidth={2.2} />
+              </MagneticButton>
+            </motion.div>
+          </>
+        )}
 
         <AnimatePresence>
           {copied && (
@@ -940,6 +1057,17 @@ export default function PhotoViewer({
               >
                 <FlipVertical size={15} />
               </button>
+
+              {isTransformed && (
+                <button
+                  onClick={resetOrientation}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[11px] font-medium hover:bg-amber-500/30 transition shrink-0 cursor-pointer ml-1"
+                  title="Reset Orientation"
+                >
+                  <RotateCcw size={12} />
+                  <span>Reset</span>
+                </button>
+              )}
             </div>
           </motion.div>
         )}
@@ -959,9 +1087,9 @@ export default function PhotoViewer({
               isDark ? "bg-zinc-950/65 border-white/12 text-zinc-300 shadow-[0_20px_50px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.15)]" : "bg-white/75 border-black/10 text-zinc-700 shadow-[0_20px_50px_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.85)]"
             }`}>
               <MagneticButton
-                onClick={() => navigate(1)}
+                onClick={() => navigate(-1)}
                 className={`p-2.5 rounded-full transition shrink-0 ${isDark ? "hover:bg-zinc-800/60 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
-                title="Newer Photo [←]"
+                title="Previous Photo [←]"
               >
                 <ChevronLeft size={18} strokeWidth={2} />
               </MagneticButton>
@@ -1050,19 +1178,40 @@ export default function PhotoViewer({
               {!isMobile && (
                 <MagneticButton
                   onClick={toggleZoom}
-                  className={`p-2.5 rounded-full transition shrink-0 ${isDark ? "hover:bg-zinc-800/60 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
-                  title={isZoomed ? "Zoom Out" : "Zoom In [F]"}
+                  className={`p-2.5 rounded-full transition shrink-0 ${
+                    isZoomed 
+                      ? "bg-amber-500 text-black font-semibold shadow-md"
+                      : isDark ? "hover:bg-zinc-800/60 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"
+                  }`}
+                  title={isZoomed ? "Zoom Out [Esc]" : "Zoom In [F]"}
                 >
                   {isZoomed ? <Minimize2 size={16} strokeWidth={2} /> : <Maximize2 size={16} strokeWidth={2} />}
                 </MagneticButton>
               )}
 
+              {isZoomed && (
+                <button
+                  onClick={() => {
+                    scale.set(1);
+                    x.set(0);
+                    y.set(0);
+                    setCurrentScale(1);
+                    setIsZoomed(false);
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-mono hover:bg-amber-500/30 transition shrink-0 cursor-pointer"
+                  title="Reset Zoom [Esc]"
+                >
+                  <span>{Math.round(currentScale * 100)}%</span>
+                  <X size={10} />
+                </button>
+              )}
+
               <div className={`w-[1px] h-4 mx-0.5 shrink-0 ${isDark ? "bg-zinc-800" : "bg-zinc-200"}`} />
 
               <MagneticButton
-                onClick={() => navigate(-1)}
+                onClick={() => navigate(1)}
                 className={`p-2.5 rounded-full transition shrink-0 ${isDark ? "hover:bg-zinc-800/60 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
-                title="Older Photo [→]"
+                title="Next Photo [→]"
               >
                 <ChevronRight size={18} strokeWidth={2} />
               </MagneticButton>
@@ -1169,8 +1318,12 @@ export default function PhotoViewer({
 
               <div className="space-y-2.5 text-xs">
                 <div className="flex justify-between items-center py-1 border-b border-zinc-900">
-                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Newer / Older Photo</span>
+                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Previous / Next Photo</span>
                   <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">← / →</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-zinc-900">
+                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Zoom In / Out (or Double-Click)</span>
+                  <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">F</span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-zinc-900">
                   <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Rotate 90° Clockwise</span>
@@ -1181,19 +1334,15 @@ export default function PhotoViewer({
                   <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">I</span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-zinc-900">
-                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Toggle Zoom / Fullscreen</span>
-                  <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">F</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-zinc-900">
                   <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Play / Pause Slideshow</span>
                   <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">P</span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-zinc-900">
-                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Toggle Before / After Split (When unrotated)</span>
+                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Toggle Before / After Split</span>
                   <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">C</span>
                 </div>
                 <div className="flex justify-between items-center py-1">
-                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Close / Go Back</span>
+                  <span className={isDark ? "text-zinc-400" : "text-zinc-600"}>Close Drawer / Reset Zoom</span>
                   <span className="font-mono bg-zinc-900 px-2 py-1 rounded text-amber-400 border border-zinc-800">Esc</span>
                 </div>
               </div>
