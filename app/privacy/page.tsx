@@ -141,7 +141,7 @@ export default function PrivacyPolicy() {
 
         <section className="mb-6">
           <h2 className="text-lg font-semibold">4. Contact Us</h2>
-          <p>If you have any questions or concerns about this privacy policy or your data, you can contact us at: <a href="mailto:astrospectrum@astrospectrum.uz" className="text-blue-500 underline">astrospectrum@astrospectrum.uz</a></p>
+          <p>If you have any questions or concerns about this privacy policy or your data, you can contact us at: <a href="mailto:sardor091019@gmail.com" className="text-blue-500 underline">sardor091019@gmail.com</a></p>
         </section>
       </main>
     </div>

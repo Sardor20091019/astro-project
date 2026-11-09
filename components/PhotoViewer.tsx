@@ -176,6 +176,8 @@ export default function PhotoViewer({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
 
 
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -534,19 +536,192 @@ export default function PhotoViewer({
   };
 
   const handleDownload = async () => {
+    if (isDownloading) return;
+    setIsDownloading(true);
+
     try {
-      const response = await fetch(photo.url);
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
+      const currentFilterStyle = FILM_STOCKS.find((s) => s.id === activeFilmStock)?.filter || "none";
+      const isFiltered = activeFilmStock !== "normal" && currentFilterStyle !== "none";
+      const currentNormalizedRotation = ((rotation % 360) + 360) % 360;
+      const isRotatedOrFlipped = currentNormalizedRotation !== 0 || flipH || flipV;
+
+      const isPng = photo.url.toLowerCase().endsWith(".png");
+      const isWebp = photo.url.toLowerCase().endsWith(".webp");
+      const mimeType = isPng ? "image/png" : isWebp ? "image/webp" : "image/jpeg";
+      const extension = isPng ? "png" : isWebp ? "webp" : "jpg";
+      const cleanTitle = photo.title.toLowerCase().replace(/[^a-z0-9]/g, "-") || "photo";
+      const filterSuffix = isFiltered ? `-${activeFilmStock}` : "";
+      const filename = `${cleanTitle}-${photo.id}${filterSuffix}.${extension}`;
+
+      const triggerBlobDownload = (blob: Blob) => {
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => window.URL.revokeObjectURL(downloadUrl), 4000);
+      };
+
+      // 1. Fetch raw image blob directly or via same-origin proxy
+      let rawBlob: Blob | null = null;
+      try {
+        const directRes = await fetch(photo.url);
+        if (directRes.ok) {
+          rawBlob = await directRes.blob();
+        }
+      } catch (directErr) {
+        console.warn("Direct fetch was blocked, trying proxy:", directErr);
+      }
+
+      if (!rawBlob) {
+        try {
+          const proxyRes = await fetch(`/api/photos/${photo.id}/download`);
+          if (proxyRes.ok) {
+            rawBlob = await proxyRes.blob();
+          }
+        } catch (proxyErr) {
+          console.warn("Proxy fetch failed:", proxyErr);
+        }
+      }
+
+      // 2. If no filter or rotation is needed, download raw blob directly
+      if (!isFiltered && !isRotatedOrFlipped && rawBlob) {
+        triggerBlobDownload(rawBlob);
+        setDownloadSuccess("Photo downloaded successfully!");
+        setTimeout(() => setDownloadSuccess(null), 3000);
+        return;
+      }
+
+      // 3. Bake filter and orientation onto canvas
+      let canvasRendered = false;
+
+      // Method A: Render from fetched rawBlob
+      if (rawBlob) {
+        const objectUrl = window.URL.createObjectURL(rawBlob);
+        try {
+          const img = new Image();
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error("Failed to decode blob image"));
+            img.src = objectUrl;
+          });
+
+          const isSideways = currentNormalizedRotation === 90 || currentNormalizedRotation === 270;
+          const canvasWidth = isSideways ? img.naturalHeight : img.naturalWidth;
+          const canvasHeight = isSideways ? img.naturalWidth : img.naturalHeight;
+
+          const canvas = document.createElement("canvas");
+          canvas.width = canvasWidth;
+          canvas.height = canvasHeight;
+
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            if (!isPng) {
+              ctx.fillStyle = "#ffffff";
+              ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            }
+            if (isFiltered) {
+              ctx.filter = currentFilterStyle;
+            }
+            ctx.translate(canvasWidth / 2, canvasHeight / 2);
+            if (currentNormalizedRotation !== 0) {
+              ctx.rotate((currentNormalizedRotation * Math.PI) / 180);
+            }
+            const scaleX = flipH ? -1 : 1;
+            const scaleY = flipV ? -1 : 1;
+            if (scaleX !== 1 || scaleY !== 1) {
+              ctx.scale(scaleX, scaleY);
+            }
+            ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
+
+            const filteredBlob = await new Promise<Blob | null>((resolve) => {
+              canvas.toBlob((b) => resolve(b), mimeType, isPng ? undefined : 0.95);
+            });
+
+            if (filteredBlob) {
+              triggerBlobDownload(filteredBlob);
+              canvasRendered = true;
+            }
+          }
+        } finally {
+          window.URL.revokeObjectURL(objectUrl);
+        }
+      }
+
+      // Method B: If blob fetch failed, try drawing the on-screen <img> element directly
+      if (!canvasRendered && imgRef.current && imgRef.current.complete) {
+        try {
+          const imgEl = imgRef.current;
+          const isSideways = currentNormalizedRotation === 90 || currentNormalizedRotation === 270;
+          const naturalW = imgEl.naturalWidth || imgEl.width || 1200;
+          const naturalH = imgEl.naturalHeight || imgEl.height || 800;
+          const canvasWidth = isSideways ? naturalH : naturalW;
+          const canvasHeight = isSideways ? naturalW : naturalH;
+
+          const canvas = document.createElement("canvas");
+          canvas.width = canvasWidth;
+          canvas.height = canvasHeight;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            if (!isPng) {
+              ctx.fillStyle = "#ffffff";
+              ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            }
+            if (isFiltered) {
+              ctx.filter = currentFilterStyle;
+            }
+            ctx.translate(canvasWidth / 2, canvasHeight / 2);
+            if (currentNormalizedRotation !== 0) {
+              ctx.rotate((currentNormalizedRotation * Math.PI) / 180);
+            }
+            const scaleX = flipH ? -1 : 1;
+            const scaleY = flipV ? -1 : 1;
+            if (scaleX !== 1 || scaleY !== 1) {
+              ctx.scale(scaleX, scaleY);
+            }
+            ctx.drawImage(imgEl, -naturalW / 2, -naturalH / 2);
+
+            const fallbackBlob = await new Promise<Blob | null>((resolve) => {
+              canvas.toBlob((b) => resolve(b), mimeType, isPng ? undefined : 0.95);
+            });
+
+            if (fallbackBlob) {
+              triggerBlobDownload(fallbackBlob);
+              canvasRendered = true;
+            }
+          }
+        } catch (canvasErr) {
+          console.warn("DOM img canvas export failed (tainted canvas):", canvasErr);
+        }
+      }
+
+      if (canvasRendered) {
+        const filterStock = FILM_STOCKS.find((s) => s.id === activeFilmStock);
+        setDownloadSuccess(
+          isFiltered
+            ? `Downloaded with ${filterStock?.label.split(" ")[0] || activeFilmStock} filter!`
+            : "Photo downloaded successfully!"
+        );
+        setTimeout(() => setDownloadSuccess(null), 3000);
+        return;
+      }
+
+      // Final fallback: trigger clean download link without navigating current page
       const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = `${photo.title.toLowerCase().replace(/[^a-z0-9]/g, "-") || "photo"}-${photo.id}.jpg`;
+      a.href = photo.url;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      window.URL.revokeObjectURL(blobUrl);
-    } catch {
-      window.open(photo.url, "_blank");
+      setDownloadSuccess("Download initiated!");
+      setTimeout(() => setDownloadSuccess(null), 3000);
+    } catch (err) {
+      console.error("Download failed:", err);
+      showWarning("Could not complete image download.");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -760,6 +935,7 @@ export default function PhotoViewer({
                     ref={imgRef}
                     src={photo.url}
                     alt={photo.title}
+                    crossOrigin="anonymous"
                     draggable={false}
                     decoding="async"
                     onLoad={() => setImageLoaded(true)}
@@ -826,6 +1002,21 @@ export default function PhotoViewer({
               }`}
             >
               <Check size={14} className="text-emerald-500" /> Link copied to clipboard
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {downloadSuccess && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              className={`absolute top-28 z-50 flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md shadow-2xl text-xs font-medium ${
+                isDark ? "bg-emerald-950/90 border border-emerald-600/50 text-emerald-200" : "bg-emerald-50/95 border border-emerald-300 text-emerald-900 shadow-emerald-500/10"
+              }`}
+            >
+              <Check size={14} className="text-emerald-500" /> {downloadSuccess}
             </motion.div>
           )}
         </AnimatePresence>
@@ -1153,10 +1344,23 @@ export default function PhotoViewer({
 
               <MagneticButton
                 onClick={handleDownload}
-                className={`p-2.5 rounded-full transition shrink-0 ${isDark ? "hover:bg-zinc-800/60 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"}`}
-                title="Download"
+                disabled={isDownloading}
+                className={`p-2.5 rounded-full transition shrink-0 ${
+                  isDark ? "hover:bg-zinc-800/60 hover:text-white text-zinc-400" : "hover:bg-zinc-100 hover:text-black text-zinc-600"
+                } ${isDownloading ? "opacity-60 cursor-wait" : ""}`}
+                title={
+                  isDownloading
+                    ? "Processing download..."
+                    : activeFilmStock !== "normal"
+                    ? `Download Photo with ${FILM_STOCKS.find((s) => s.id === activeFilmStock)?.label || activeFilmStock} filter`
+                    : "Download Photo"
+                }
               >
-                <Download size={16} strokeWidth={2} />
+                {isDownloading ? (
+                  <Spinner dark={!isDark} />
+                ) : (
+                  <Download size={16} strokeWidth={2} />
+                )}
               </MagneticButton>
 
               <MagneticButton
@@ -1403,11 +1607,29 @@ export default function PhotoViewer({
                     </MagneticButton>
                     <MagneticButton
                       onClick={handleDownload}
+                      disabled={isDownloading}
                       className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium rounded-xl transition ${
                         isDark ? "bg-white text-black hover:bg-zinc-200" : "bg-zinc-900 text-white hover:bg-zinc-800"
-                      }`}
+                      } ${isDownloading ? "opacity-60 cursor-wait" : ""}`}
+                      title={
+                        isDownloading
+                          ? "Processing download..."
+                          : activeFilmStock !== "normal"
+                          ? `Download Photo with ${FILM_STOCKS.find((s) => s.id === activeFilmStock)?.label || activeFilmStock} filter`
+                          : "Download Photo"
+                      }
                     >
-                      <Download size={15} strokeWidth={2} /> Download
+                      {isDownloading ? (
+                        <>
+                          <Spinner dark={isDark} />
+                          <span>Processing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download size={15} strokeWidth={2} />
+                          <span>{activeFilmStock !== "normal" ? "Download Filtered" : "Download"}</span>
+                        </>
+                      )}
                     </MagneticButton>
                   </div>
                 </div>

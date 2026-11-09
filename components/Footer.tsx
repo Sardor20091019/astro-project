@@ -31,9 +31,9 @@ export default function Footer() {
             </p>
             <ul className="flex flex-col items-center md:items-start gap-3 text-xs">
               <li>
-                <a href="mailto:astrospectrum@astrospectrum.uz" className="flex items-center gap-2.5 text-(--text-dim) hover:text-(--accent) transition-colors group">
+                <a href="mailto:sardor091019@gmail.com" className="flex items-center gap-2.5 text-(--text-dim) hover:text-(--accent) transition-colors group">
                   <Mail size={14} className="text-(--accent) group-hover:scale-110 transition-transform" />
-                  <span>astrospectrum@astrospectrum.uz</span>
+                  <span>sardor091019@gmail.com</span>
                 </a>
               </li>
               <li>

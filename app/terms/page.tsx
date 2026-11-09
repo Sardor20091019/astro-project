@@ -115,7 +115,7 @@ export default function TermsOfUse() {
         <h1 className="text-2xl font-bold mb-4">Terms of Use <span className="text-sm font-normal text-red-500">(IT DOESNT APPLY YET, IT IS JUST A DRAFT)</span></h1>
         
         <section className="mb-6">
-          <h2 className="text-lg font-semibold">1. User Content & Copyright</h2>
+          <h2 className="text-lg font-semibold mb-2">1. User Content & Copyright</h2>
           <p>You retain full copyright ownership of the photos you upload. However, by uploading content, you grant us a non-exclusive license to host, display, and distribute your content within the platform.</p>
           <p className="mt-2 text-red-600 font-medium">
             <strong>Liability Disclaimer:</strong> We are not responsible for any copyright infringement caused by user-uploaded content. Users are solely responsible for ensuring they have the rights to the content they upload. If you believe your copyright has been violated, please contact us immediately for removal.
@@ -123,7 +123,15 @@ export default function TermsOfUse() {
         </section>
 
         <section className="mb-6">
-          <h2 className="text-lg font-semibold">2. Conduct & Moderation</h2>
+          <h2 className="text-lg font-semibold mb-2">2. Image Downloads & Permitted Use</h2>
+          <p>By publishing photos on this platform, you agree to make them available for free download. Anyone is granted a worldwide, non-exclusive, sublicensable, irrevocable license to download, copy, modify, distribute, and use the photos for personal or commercial projects without seeking explicit permission or providing attribution.</p>
+          <p className="mt-2 text-amber-500 font-medium">
+            <strong>Platform Restriction:</strong> This permission does not grant the right to scrape, aggregate, or compile photos from this website to replicate a competing service.
+          </p>
+        </section>
+
+        <section className="mb-6">
+          <h2 className="text-lg font-semibold mb-2">3. Conduct & Moderation</h2>
           <p>We reserve the right to remove any content or terminate user accounts at our sole discretion, especially if content is flagged by our moderation systems as harmful, illegal, or inappropriate.</p>
         </section>
       </main>

@@ -36,7 +36,7 @@ const securityHeaders = [
       style-src 'self' 'unsafe-inline';
       img-src 'self' blob: data: https://*.ufs.sh https://ufs.sh https://utfs.io https://lh3.googleusercontent.com https://cdn4.telegram.org https://uploadthing.com https://placehold.co;
       font-src 'self' data:;
-      connect-src 'self' https://challenges.cloudflare.com https://astro-project-1213.onrender.com https://api.stripe.com;
+      connect-src 'self' https://challenges.cloudflare.com https://astro-project-1213.onrender.com https://api.stripe.com https://*.ufs.sh https://ufs.sh https://utfs.io https://uploadthing.com;
       frame-src https://challenges.cloudflare.com https://telegram.org https://accounts.google.com;
       object-src 'none';
       base-uri 'self';
@@ -102,20 +102,23 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    return [
-      {
-        source: "/api/photos/:path*",
-        destination: `${backendUrl}/api/photos/:path*`,
-      },
-      {
-        source: "/api/payments/:path*",
-        destination: `${backendUrl}/api/payments/:path*`,
-      },
-      {
-        source: "/api/admin/:path*",
-        destination: `${backendUrl}/api/admin/:path*`,
-      },
-    ];
+    if (process.env.USE_EXTERNAL_BACKEND === "true") {
+      return [
+        {
+          source: "/api/photos/:path*",
+          destination: `${backendUrl}/api/photos/:path*`,
+        },
+        {
+          source: "/api/payments/:path*",
+          destination: `${backendUrl}/api/payments/:path*`,
+        },
+        {
+          source: "/api/admin/:path*",
+          destination: `${backendUrl}/api/admin/:path*`,
+        },
+      ];
+    }
+    return [];
   },
 };
 
